@@ -15,7 +15,7 @@ const Icosahedron = () => (
 );
 
 const Star = ({ p }: { p: number }) => {
-  const ref = useRef<THREE.Object3D>(null);
+  const ref = useRef<THREE.Mesh>(null);
 
   useLayoutEffect(() => {
     const distance = mix(2, 3.5, Math.random());
