@@ -12,12 +12,18 @@ import {
 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { CircleDashed } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { toast } from "react-toastify";
 
 const DownloadCV = () => {
+
+    const [isButtonClicked, setIsButtonClicked] = useState(false);
+
+    const [isLoading, setIsLoading] = useState(false);
+
     const router = useRouter();
 
     const [name, setName] = useState("");
@@ -33,7 +39,13 @@ const DownloadCV = () => {
 
     const validateAndDownload = () => {
         if (name.trim() !== "" && email.trim() !== "" && email.includes("@") && email.includes(".")) {
-            router.push(`/downloadipahacv-page`)
+            setIsButtonClicked(true);
+            setIsLoading(true);
+            // Redirect to download page after a short delay
+            setTimeout(() => {
+            router.push(`/downloadipahacv-page`);
+            }, 4000); // 4 seconds delay
+            // router.push(`/downloadipahacv-page`)
         } else {
             toast.error("Please enter a valid name and email address.");
         }
@@ -72,7 +84,16 @@ const DownloadCV = () => {
                     </div>
                     </div>
                     <DialogFooter>
-                    <Button type="submit" onClick={validateAndDownload}>Send</Button>
+                    <Button type="submit" disabled={isLoading} onClick={validateAndDownload}>
+                        {isButtonClicked ? (
+                            <>
+                            <CircleDashed className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" />
+                            Sending...
+                            </>
+                        ) : (
+                            "Send"
+                        )}
+                    </Button>
                     </DialogFooter>
                 </DialogContent>
                 </Dialog>

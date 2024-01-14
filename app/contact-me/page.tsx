@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { set, useForm } from "react-hook-form";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -19,75 +19,114 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { motion } from "framer-motion";
 import { GitHubLogoIcon, InstagramLogoIcon, LinkedInLogoIcon, TwitterLogoIcon } from "@radix-ui/react-icons";
-import { ArrowDownCircle, Send, SendIcon } from "lucide-react";
+import { ArrowDownCircle, Circle, CircleDashed, Send, SendIcon } from "lucide-react";
 import DownloadCV from "@/components/download-cv";
 import TextSpan from "@/components/text-span";
-import { useState } from "react";
 import { toast } from "react-toastify";
+import axios from "axios";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { clear } from "console";
 
-const formSchema = z.object({
-  username: z.string().min(2, {
-    message: "Required.",
-  }),
-});
 
-const onSubmit = async (formData: Record<string, any>) => {
-  try {
-      const response = await fetch('/api/send-email', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-              name: formData.username,
-              email: formData.email,
-              message: formData.message, // Assuming you have a message field in your form
-          }),
-      });
+const profileFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, {
+      message: "Name must be at least 3 characters.",
+    })
+    .max(30, {
+      message: "Name must not be longer than 30 characters.",
+    }),
+  email: z
+    .string({
+      required_error: "Please select an email to display.",
+    })
+    .email(),
+  message: z.string().max(160).min(4),
+  
+})
 
-      if (response.ok) {
-          toast.success("Email sent successfully!");
-          // Clear the form here
-      } else {
-          throw new Error('Failed to send email');
-      }
-  } catch (error) {
-      toast.error("An error occurred while sending the email.");
-  }
-};
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const ContactMePage = () => {
 
-  const sentence = "Get in touch".split("");
-
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-  });
-
   const router = useRouter();
 
-  const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+  const [isButtonClicked, setIsButtonClicked] = useState(false);
 
-    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setName(e.target.value);
-    }
+  const [isLoading, setIsLoading] = useState(false);
 
-    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEmail(e.target.value);
-    }
+  const sentence = "Get in touch".split("");
 
-    const validateAndDownload = () => {
-        if (name.trim() !== "" && email.trim() !== "" && email.includes("@") && email.includes(".")) {
-            router.push(`/downloadipahacv-page`)
-            toast.success("Email sent Successfully")
-            // Add Clear the form entries
-        } else {
-            toast.error("Please enter a valid name and email address and a message.");
-        }
+  
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: "",
+      email: "",
+      message: "",
+    },
+  })
+
+  
+  // function onSubmit(data: ProfileFormValues) {
+  //   console.log("Form Data", {JSON: JSON.stringify(data, null, 4)});
+  // }
+
+  async function onSubmit(data: ProfileFormValues) {
+    try {
+      setIsButtonClicked(true);
+      setIsLoading(true);
+      const response = await fetch('/api/sendEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+  
+      if (response.ok) {
+        console.log('Email sent successfully');
+        toast.success("Email sent successfully");
+
+        // Handle success, maybe clear the form or show a success message
+      } else {
+        console.log('Failed to send email');
+        // Handle error
+      }
+    } catch (error) {
+      console.error('Error sending email', error);
+      // Handle network error
+    } finally {
+      // Redirect to thank-you page after a short delay
+      setTimeout(() => {
+        setIsLoading(false);
+        setIsButtonClicked(false);
+        form.reset();
+    }, 6000); // 2 seconds delay
+      
     }
+  }
+
+  async function onSubmitw(data: ProfileFormValues) {
+    console.log("Form Data", {JSON: JSON.stringify(data, null, 4)})
+    try {
+      setIsButtonClicked(true);
+      setIsLoading(true);
+      const response = await axios.post('/api/sendEmail', data);
+      console.log(response);
+  
+      console.log('Email sent successfully');
+      
+      toast.success("Email sent successfully");
+      form.reset();
+      // Handle success, maybe clear the form or show a success message
+    } catch (error) {
+      console.error('Error sending email', error);
+      // Handle error
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full items-center justify-center">
@@ -134,27 +173,62 @@ const ContactMePage = () => {
             
         </div>
         <div className="p-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <Input type="text" placeholder="Your name"/>
-                <FormMessage />
-                <FormControl>
-                  <Input type="email" placeholder="youremail@email.com" {...field} />
-                </FormControl>
-                <FormMessage />
-                <Textarea placeholder="Type your message here." />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" onClick={onSubmit}>Submit</Button>
-        </form>
-      </Form>
+        <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Your name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <Input placeholder="youremail@email.com" {...field} />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="message"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Message</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Enter your message here"
+                  {...field}
+                />
+              </FormControl>
+              
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <Button type="submit" disabled={isLoading}>
+          {isButtonClicked ? (
+            <>
+              <CircleDashed className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" />
+              Sending...
+            </>
+          ) : (
+            "Send"
+          )}
+        </Button>
+      </form>
+    </Form>
       <div className="flex flex-row text-lg mt-40 justify-center">
           <ArrowDownCircle className="animate-bounce size-20" />
         </div>
