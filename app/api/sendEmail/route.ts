@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
   // configure Nodemailer
   const transpoprt = nodemailer.createTransport({
-    service: "ike4football@gmail",
+    service: "Gmail",
     auth: {
       user: process.env.EMAIL_USERNAME,
       pass: process.env.EMAIL_PASSWORD,
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const mailOptions = {
     from: email,
     to: "ike4football@gmail.com",
-    subject: `New message from ${name}`,
+    subject: `New message from ${email} - ${name}`,
     text: message,
   };
 
