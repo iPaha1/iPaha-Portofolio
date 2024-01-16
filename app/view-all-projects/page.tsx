@@ -6,10 +6,8 @@ import { Navbar } from "@/components/navbar";
 
 const ProjectsPage = () => {
     return ( 
-        <div className="min-h-screen absolute inset-0 z-[-1] h-full">
-            
-        <App />
-        
+        <div className="flex flex-col items-center justify-center h-full text-5xl">
+           This is a View All Projects Page
         
         </div>
      );

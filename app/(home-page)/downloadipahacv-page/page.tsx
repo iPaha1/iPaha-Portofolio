@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useConfettiStore } from "@/hooks/use-confetti-store";
 import { useState } from "react";
+import DownloadCVTypeWriting from "@/components/typewriting/downlaodcv-typewriting";
 
 
 const DownloadPage = () => {
@@ -47,6 +48,10 @@ const DownloadPage = () => {
 
     return ( 
         <div className="flex flex-col h-full items-center justify-center ">
+
+            {/* <div className="mb-30">
+                <DownloadCVTypeWriting />
+            </div> */}
             <motion.div 
                 whileHover={{ scale: 1.1 }}
                 initial={{ opacity: 0 }}

@@ -25,30 +25,30 @@ import { usePathname } from "next/navigation"
 const components: { title: string; href: string; description: string }[] = [
   {
     title: "Admin Dashboard",
-    href: "/docs/primitives/alert-dialog",
+    href: "/view-all-projects",
     description:
       "A complete multi functional admin dashboard which can be used for all types of web applications.",
   },
   {
     title: "Ecommerce Website",
-    href: "/docs/primitives/hover-card",
+    href: "/view-all-projects",
     description:
       "Advance Ecommerce Website with Next.js and Stripe API for payment processing.",
   },
   {
     title: "Event Booking and Management Website",
-    href: "/docs/primitives/progress",
+    href: "/view-all-projects",
     description:
       "Advance event booking and management website with Next.js and Stripe API for payment processing.",
   },
   {
     title: "Advance Blogging Website",
-    href: "/docs/primitives/scroll-area",
+    href: "/view-all-projects",
     description: "Advance blogging website with notificaiton system and user authentication system.",
   },
   {
     title: "Advance AI SAAS Platforn",
-    href: "/docs/primitives/tabs",
+    href: "/view-all-projects",
     description:
       "Advanc AI SAAS platform with user authentication system.",
   },
@@ -63,19 +63,19 @@ const components: { title: string; href: string; description: string }[] = [
 const aboutMeComponents: { title: string; href: string; description: string }[] = [
   {
     title: "Skills",
-    href: "/education-skills-experience",
+    href: "/education-experience-skills",
     description:
       "I have a wide range of skills and experience in web development, design, digital marketing, SEO, APIs and more.",
   },
   {
     title: "Experience",
-    href: "/education-skills-experience",
+    href: "/education-experience-skills",
     description:
       "I have worked with a wide range of companies and clients, from small startups to large corporations.",
   },
   {
     title: "Education",
-    href: "/education-skills-experience",
+    href: "/education-experience-skills",
     description:
       "I have a Bachelor's degree in Computering and IT from The Open University, London.",
   },
@@ -86,7 +86,7 @@ const aboutMeComponents: { title: string; href: string; description: string }[] 
   },
   {
     title: "My Journey",
-    href: "/docs/primitives/scroll-area",
+    href: "/my-journey",
     description: "I have a passion for innovation and I am always looking for new challenges and opportunities.",
   },
   
@@ -187,18 +187,19 @@ export function Navbar() {
           <NavigationMenuTrigger
               className={cn(
                 "dark:hidden data-[state=open]:bg-gray-300 hover:bg-gray-300 hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname === "/about-me" ? "bg-gray-300" : ""
+                navigationMenuTriggerStyle, pathname === "/contact-me" ? "bg-gray-300" : ""
               )}
             >About Me</NavigationMenuTrigger>
 
           <NavigationMenuTrigger
               className={cn(
                 "hidden dark:flex hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname === "/about-me" ? "bg-gray-300" : ""
+                navigationMenuTriggerStyle, pathname === "/contact-me" ? "bg-gray-300" : ""
               )}
             >About Me</NavigationMenuTrigger>
             <NavigationMenuContent>
-              <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] text-gray-700 hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
+              <ul className={cn("grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] text-gray-700 hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1",
+                navigationMenuTriggerStyle, pathname === "/contact-me" ? "bg-gray-300" : "" )}>
                 {aboutMeComponents.map((component) => (
                   <ListItem
                     key={component.title}
@@ -210,6 +211,22 @@ export function Navbar() {
                 ))}
               </ul>
             </NavigationMenuContent>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuTrigger
+                className={cn(
+                  "dark:hidden data-[state=open]:bg-gray-300 hover:bg-gray-300 hover:rounded-lg duration-3",
+                  navigationMenuTriggerStyle, pathname === "/blog" ? "bg-gray-300" : ""
+                )}
+              >Blog</NavigationMenuTrigger>
+
+            <NavigationMenuTrigger
+                className={cn(
+                  "hidden dark:flex hover:rounded-lg duration-3",
+                  navigationMenuTriggerStyle, pathname === "/blog" ? "bg-gray-300" : ""
+                )}
+              >Blog</NavigationMenuTrigger>
+
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>

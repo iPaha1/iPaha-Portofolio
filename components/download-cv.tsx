@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -12,6 +14,7 @@ import {
 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { set } from "lodash";
 import { CircleDashed } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -88,7 +91,7 @@ const DownloadCV = () => {
                         {isButtonClicked ? (
                             <>
                             <CircleDashed className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" />
-                            Sending...
+                            Sending ...
                             </>
                         ) : (
                             "Send"
@@ -130,7 +133,16 @@ const DownloadCV = () => {
                     </div>
                     </div>
                     <DialogFooter>
-                    <Button type="submit" onClick={validateAndDownload}>Send</Button>
+                    <Button type="submit" disabled={isLoading} onClick={validateAndDownload}>
+                        {isButtonClicked ? (
+                            <>
+                            <CircleDashed className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" />
+                            Sending ...
+                            </>
+                        ) : (
+                            "Send"
+                        )}
+                    </Button>
                     </DialogFooter>
                 </DialogContent>
                 </Dialog>

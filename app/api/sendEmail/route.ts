@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
   const { email, name, message } = await req.json();
-  console.log("Message body now recieved Good one", email, name, message);
+  // console.log("Message body now recieved Good one", email, name, message);
 
 
   // configure Nodemailer

@@ -72,7 +72,7 @@ function Scene({ numStars = 100 }) {
   );
 }
 
-export default function App() {
+export default function BirdsFlyingLigt() {
   return (
     <div className="">
       <Canvas gl={{ antialias: false }}>

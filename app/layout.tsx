@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
-import { Urbanist } from 'next/font/google'
+import { Cookie, Urbanist } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { Navbar } from '@/components/navbar'
 import Footer from '@/components/footer'
 import ToastifyProvider from '@/components/providers/react-taostify'
 import { ConfettiProvider } from '@/components/providers/confetti-provider'
+import CookiesConsent from '@/components/providers/cookies-consent'
 
 const font = Urbanist({ subsets: ['latin'] })
 
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={font.className}>
+        <CookiesConsent />
         <ConfettiProvider />
         <ToastifyProvider />
         <ThemeProvider

@@ -81,13 +81,13 @@ const MobileNav = () => {
 
                                     <Link href="/">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
-                                        Advance Eccommence
+                                        Advance Ecommerce
                                     </div>
                                     </Link>
 
                                     <Link href="/">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
-                                        Event Management System
+                                        Event Booking and Management System
                                     </div>
                                    
                                     </Link>
@@ -118,27 +118,40 @@ const MobileNav = () => {
                             <p >About Me</p>
                             </AccordionTrigger>
                             <AccordionContent>
-                            <Link href="/">
+                            <Link href="/education-experience-skills">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
-                                        Visit my page
+                                        Education
                                     </div>
                                     </Link>
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-4">
-                        <AccordionTrigger
-                                className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1"
-                            >
-                            <p >Contact Me</p>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                            <Link href="/contact-me">
+
+                                    <Link href="/education-experience-skills">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
-                                        Get in touch
+                                        Experience
                                     </div>
                                     </Link>
+
+                                    <Link href="/education-experience-skills">
+                                    <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
+                                        Skills
+                                    </div>
+                                    </Link>
+
+                                    <Link href="/my-journey">
+                                    <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
+                                        My Journey
+                                    </div>
+                                   
+                                    </Link>
+
+                                    <Link href="/contact-me">
+                                    <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
+                                        Contact Me
+                                    </div>
+                                    </Link>
+
                             </AccordionContent>
                         </AccordionItem>
+                        
                     </Accordion>
 
                     </SheetDescription>

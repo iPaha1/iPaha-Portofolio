@@ -129,7 +129,7 @@ const ContactMePage = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full items-center justify-center">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center justify-center">
         
         <div className="p-6">
             
@@ -172,7 +172,7 @@ const ContactMePage = () => {
             </motion.div>
             
         </div>
-        <div className="p-6">
+        <div className="p-6 mt-40">
         <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
