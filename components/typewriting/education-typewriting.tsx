@@ -14,7 +14,6 @@ const EducationTypeWriting = () => {
     - Developed a Learning Management System using JavaScript, React, and Node.js.
 
     In 2023, I focused on diversifying and certifying my skills:
-    - CompTIA A+: Solidified my foundations in IT operations and technical support.
     - Google IT Professional: Enhanced my understanding of network protocols, cloud computing, and security fundamentals.
     - Cisco Certified Support Technician: Gained insights into network setup, management, and troubleshooting.
     - Cisco Networking Essential: Strengthened my networking concepts, preparing me for complex network solutions.
