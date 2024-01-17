@@ -163,12 +163,12 @@ const ContactMePage = () => {
                 </a>
             </div>
 
-            <p className="flex items-center gap-2 ml-4 justify-center mt-4" >
+            <p className="flex items-center gap-2 ml-4 justify-start mt-10" >
                     <Link href="https://www.linkedin.com/in/isaac-paha-578911a9/"><LinkedInLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
                     <Link href=""><InstagramLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
                     <Link href=""><TwitterLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
                     <Link href="https://github.com/iPaha1"><GitHubLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
-                </p>
+            </p>
 
             </motion.div>
             
