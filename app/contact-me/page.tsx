@@ -26,6 +26,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 
 const profileFormSchema = z.object({
@@ -162,12 +163,12 @@ const ContactMePage = () => {
                 </a>
             </div>
 
-            <p className="flex items-center gap-2 ml-4 justify-start mt-10" >
-                <a href=""><LinkedInLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110 animate-pulse" /></a>
-                <a href=""><InstagramLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110 animate-pulse" /></a>
-                <a href=""><TwitterLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110 animate-pulse" /></a>
-                <a href=""><GitHubLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110 animate-pulse" /></a>
-            </p>
+            <p className="flex items-center gap-2 ml-4 justify-center mt-4" >
+                    <Link href="https://www.linkedin.com/in/isaac-paha-578911a9/"><LinkedInLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
+                    <Link href=""><InstagramLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
+                    <Link href=""><TwitterLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
+                    <Link href="https://github.com/iPaha1"><GitHubLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
+                </p>
 
             </motion.div>
             
