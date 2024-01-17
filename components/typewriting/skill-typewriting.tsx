@@ -12,7 +12,7 @@ const TypeWriting = () => {
             My full-stack capabilities are bolstered by proficiency in Next JS for server-side rendering and SEO optimization, along with skills in state management using Redux and React Router for seamless navigation. I'm also skilled in Next Auth and Next SEO for secure and visible web applications. Constantly adapting to new technologies, I thrive on challenges and am always eager to explore innovative solutions in the evolving tech landscape. I'm ready to collaborate and transform ideas into impactful digital experiences.                                                                `,
         ],
         loop: 0,
-        deleteSpeed: 5000,
+        deleteSpeed: 50000,
         typeSpeed: 20,
     });
 

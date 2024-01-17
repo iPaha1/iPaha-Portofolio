@@ -112,19 +112,17 @@ export function Navbar() {
             <NavigationMenuTrigger
               className={cn(
                 "dark:hidden data-[state=open]:bg-gray-300 hover:bg-gray-300 hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname === "/view-all-services" ? "bg-gray-300" : ""
               )}
             >Services</NavigationMenuTrigger>
 
           <NavigationMenuTrigger
               className={cn(
                 "hidden dark:flex hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname === "/view-all-services" ? "bg-gray-300" : ""
               )}
             >Services</NavigationMenuTrigger>
             
             <NavigationMenuContent>
-              <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] text-gray-700 hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
+              <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] text-gray-700 hover:bg-gray-300 hover:rounded-lg duration-300 px-2 py-1">
                 <li className="row-span-3">
                   <NavigationMenuLink asChild>
                     <a
@@ -142,13 +140,13 @@ export function Navbar() {
                     </a>
                   </NavigationMenuLink>
                 </li>
-                <ListItem href="/" title="Pricing">
+                <ListItem href="/pricing" title="Pricing" className={cn("", pathname === "/pricing" ? "bg-gray-300" : "")}>
                   Our prices are well structured and affordable.
                 </ListItem>
                 <ListItem href="/view-all-services" title="View all services" className={cn("", pathname === "/view-all-services" ? "bg-gray-300" : "")}>
                   View all our offers and services.
                 </ListItem>
-                <ListItem href="/" title="Partner with Me">
+                <ListItem href="/contact-me" title="Partner with Me" className={cn("", pathname === "/partner-with-me" ? "bg-gray-300" : "")}>
                   Partner with me next level of innovation.
                 </ListItem>
               </ul>
@@ -170,7 +168,7 @@ export function Navbar() {
             >Projects</NavigationMenuTrigger>
             
             <NavigationMenuContent>
-              <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] text-gray-700 hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
+              <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] text-gray-700 hover:bg-gray-300 hover:rounded-lg duration-300 px-2 py-1">
                 {components.map((component) => (
                   <ListItem
                     key={component.title}
@@ -198,7 +196,7 @@ export function Navbar() {
               )}
             >About Me</NavigationMenuTrigger>
             <NavigationMenuContent>
-              <ul className={cn("grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] text-gray-700 hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1",
+              <ul className={cn("grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] text-gray-700 hover:bg-gray-300 hover:rounded-lg duration-300 px-2 py-1",
                 navigationMenuTriggerStyle, pathname === "/contact-me" ? "bg-gray-300" : "" )}>
                 {aboutMeComponents.map((component) => (
                   <ListItem
@@ -213,21 +211,13 @@ export function Navbar() {
             </NavigationMenuContent>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuTrigger
-                className={cn(
-                  "dark:hidden data-[state=open]:bg-gray-300 hover:bg-gray-300 hover:rounded-lg duration-3",
-                  navigationMenuTriggerStyle, pathname === "/blog" ? "bg-gray-300" : ""
-                )}
-              >Blog</NavigationMenuTrigger>
-
-            <NavigationMenuTrigger
-                className={cn(
-                  "hidden dark:flex hover:rounded-lg duration-3",
-                  navigationMenuTriggerStyle, pathname === "/blog" ? "bg-gray-300" : ""
-                )}
-              >Blog</NavigationMenuTrigger>
-
-          </NavigationMenuItem>
+          <Link href="/blog" legacyBehavior passHref>
+            <NavigationMenuLink className="{navigationMenuTriggerStyle()}">
+              <p className={cn("ml-8", pathname === "/blog" ? "animate-pulse text-lg text-bolc" : " ")}>Blog</p>
+              
+            </NavigationMenuLink>
+          </Link>
+        </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
       </div>

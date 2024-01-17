@@ -11,29 +11,30 @@ const PrivacyAndPolicyTypeWriting = () => {
         words: [
             `Last updated: 16 January 2024\n\n
 
-            Introduction\n
-            Your privacy is critically important to us. At Isaac Paha's Portfolio, located at [Your Website URL], we have a few fundamental principles regarding privacy...\n
+            Introduction
+            Your privacy is critically important to us. At Isaac Paha's Portfolio, located at www.isaacpaha.com, we have a few fundamental principles regarding privacy...\n
 
-            Website Visitors\n
+            Website Visitors
             Like most website operators, Isaac Paha's Portfolio collects non-personally-identifying information typically made available by web browsers and servers, such as browser type, language preference, referring site, and the date and time of each visitor request...\n
 
-            Gathering of Personally-Identifying Information\n
+            Gathering of Personally-Identifying Information
             Certain visitors to Isaac Paha's Portfolio choose to interact with the website in ways that require Isaac Paha to gather personally-identifying information...\n
 
-            Security\n
+            Security
             The security of your Personal Information is important to us, but remember that no method of transmission over the Internet, or method of electronic storage, is 100% secure...\n
 
-            Cookies\n
+            Cookies
             A cookie is a string of information that a website stores on a visitor's computer, and that the visitor's browser provides to the website each time the visitor returns...\n
 
-            Privacy Policy Changes\n
+            Privacy Policy Changes
             Although most changes are likely to be minor, Isaac Paha may change its Privacy Policy from time to time, and in Isaac Paha's sole discretion...\n
 
-            Contact Information\n
-            For any questions about this Privacy Policy, please contact isaacpaha@gmail.com\n`,
+            Contact Information
+            For any questions about this Privacy Policy, please contact isaacpaha@gmail.com\n
+                                                                                    `,
         ],
         loop: 0,
-        deleteSpeed: 5000,
+        deleteSpeed: 50000,
         typeSpeed: 1,
     });
 

@@ -1,9 +1,9 @@
 import { CircleDashedIcon } from "lucide-react";
 
-const MyJourneyPage = () => {
+const BloggingPage = () => {
   return ( 
     <div className="flex flex-col items-center justify-center h-full text-5xl">
-      My Journey Page Coming Soon ...
+      Blog Page Coming Soon ...
       <CircleDashedIcon className="animate-spin mt-8" size={100} />
 
 
@@ -11,4 +11,4 @@ const MyJourneyPage = () => {
    );
 }
  
-export default MyJourneyPage;
+export default BloggingPage;

@@ -4,7 +4,7 @@ import { useTypewriter } from 'react-simple-typewriter';
 const EducationTypeWriting = () => {
     const [displayedText, setDisplayedText] = useState("");
 
-    const educationNarrative = `Charting My Educational Path in Technology
+    const educationNarrative = `
     My journey in computing and IT has been more than just acquiring degrees; it's been a journey of constant learning, skill development, and applying these in practical scenarios. Here's how I've grown academically and professionally:
 
     BSc Hons. Computing and IT (2021 - Present)
@@ -13,21 +13,19 @@ const EducationTypeWriting = () => {
     - Engaged in hands-on projects, applying concepts in real-world scenarios.
     - Developed a Learning Management System using JavaScript, React, and Node.js.
 
-    Certifications Adding to My Expertise (2023)
     In 2023, I focused on diversifying and certifying my skills:
     - CompTIA A+: Solidified my foundations in IT operations and technical support.
     - Google IT Professional: Enhanced my understanding of network protocols, cloud computing, and security fundamentals.
     - Cisco Certified Support Technician: Gained insights into network setup, management, and troubleshooting.
     - Cisco Networking Essential: Strengthened my networking concepts, preparing me for complex network solutions.
-    - Google IT Professional (Second Certification): Advanced my skills in IT infrastructure services.
 
-    Reflections on My Academic Journey
-    Each step in my academic journey has been about more than just learning; it's been about growing as a technologist. Balancing academics with project work, I've learned the importance of adaptability, continuous learning, and applying theory to practice in a rapidly evolving tech world. Ready for collaboration, I'm excited to transform ideas into impactful digital experiences.`;
+    Each step in my academic journey has been about more than just learning; it's been about growing as a technologist. Balancing academics with project work, I've learned the importance of adaptability, continuous learning, and applying theory to practice in a rapidly evolving tech world. Ready for collaboration, I'm excited to transform ideas into impactful digital experiences.
+                                                                                     `;
 
     const [text] = useTypewriter({
         words: [educationNarrative],
         loop: 0,
-        deleteSpeed: 5000,
+        deleteSpeed: 50000,
         typeSpeed: 20,
     });
 

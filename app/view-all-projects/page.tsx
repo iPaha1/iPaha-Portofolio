@@ -1,16 +1,14 @@
-import Footer from "@/components/footer";
-import HeroPage from "@/components/hero";
-import App from "@/components/motions/birds-flying-motion";
-import { Navbar } from "@/components/navbar";
+import { CircleDashedIcon } from "lucide-react";
+
+const ViewAllProjects = () => {
+  return ( 
+    <div className="flex flex-col items-center justify-center h-full text-5xl">
+        Projects Page Coming Soon ...
+      <CircleDashedIcon className="animate-spin mt-8" size={100} />
 
 
-const ProjectsPage = () => {
-    return ( 
-        <div className="flex flex-col items-center justify-center h-full text-5xl">
-           This is a View All Projects Page
-        
-        </div>
-     );
+    </div>
+   );
 }
  
-export default ProjectsPage;
+export default ViewAllProjects;

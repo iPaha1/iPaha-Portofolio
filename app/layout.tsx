@@ -7,6 +7,7 @@ import Footer from '@/components/footer'
 import ToastifyProvider from '@/components/providers/react-taostify'
 import { ConfettiProvider } from '@/components/providers/confetti-provider'
 import CookiesConsent from '@/components/providers/cookies-consent'
+import { Navbar1 } from '@/components/navbar1'
 
 const font = Urbanist({ subsets: ['latin'] })
 
@@ -32,6 +33,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            {/* <Navbar1 /> */}
         <Navbar />
         {children}
         <Footer />
