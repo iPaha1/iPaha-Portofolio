@@ -17,6 +17,10 @@ export default authMiddleware({
         "/privacy-policy",
         "/terms-and-conditions",
     ],
+
+    ignoredRoutes: [
+      "/api/webhooks",
+    ],
 });
  
 export const config = {

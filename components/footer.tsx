@@ -15,7 +15,7 @@ const Footer = () => {
                 </p>
 
                 <p className="dark:hidden text-center text-xs text-black sm:">
-                    <Link href="/privacy-policy" className="hover:underline">Privacy & Policy</Link>
+                    <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
                     <span className="mx-2">|</span>
                     <Link href="/terms-and-conditions" className="hover:underline">Terms & Conditions</Link>
                     <span className="mx-2">|</span>
