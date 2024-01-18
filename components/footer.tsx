@@ -1,5 +1,6 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import { GitHubLogoIcon, InstagramLogoIcon, LinkedInLogoIcon, TwitterLogoIcon } from "@radix-ui/react-icons";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -26,7 +27,7 @@ const Footer = () => {
                 </p>
 
                 <p className="hidden dark:block text-center text-xs text-white">
-                    <Link href="/privacy-policy" className="hover:underline">Privacy & Policy</Link>
+                    <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
                     <span className="mx-2">|</span>
                     <Link href="/terms-and-conditions" className="hover:underline">Terms & Conditions</Link>
                     <span className="mx-2">|</span>
@@ -47,6 +48,10 @@ const Footer = () => {
                 </p>
             
             </motion.div>
+            <div className="">
+                <UserButton afterSignOutUrl="/" />
+            </div>
+
 
             </div>
         </footer>

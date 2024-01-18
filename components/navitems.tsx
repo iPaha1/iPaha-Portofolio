@@ -19,8 +19,7 @@ import MobileNav from "./mobile-nav"
 import { ModeToggle } from "./theme-toggle"
 import path from "path"
 import { usePathname } from "next/navigation"
-import { UserButton } from "@clerk/nextjs"
-// import MotionNavbarItems from "./motions/navbarItemsNavbarItems/motion-navbarItemsNavbarItems"
+// import MotionNavbar from "./motions/navbar/motion-navbar"
 
 
 const components: { title: string; href: string; description: string }[] = [
@@ -93,7 +92,7 @@ const aboutMeComponents: { title: string; href: string; description: string }[] 
   
 ]
 
-export function NavbarItems() {
+export function Navbar() {
   
   const pathname = usePathname();
 
@@ -215,20 +214,20 @@ export function NavbarItems() {
           <NavigationMenuItem>
           <Link href="/blog" legacyBehavior passHref>
             <NavigationMenuLink className="{navigationMenuTriggerStyle()}">
-              <p className={cn("ml-8", pathname === "/blog" ? "animate-pulse text-lg text-blod" : " ")}>Blog</p>
+              <p className={cn("ml-8", pathname === "/blog" ? "animate-pulse text-lg text-bolc" : " ")}>Blog</p>
               
             </NavigationMenuLink>
           </Link>
         </NavigationMenuItem>
 
-        {/* <NavigationMenuItem>
+        <NavigationMenuItem>
           <Link href="/create-project" legacyBehavior passHref>
             <NavigationMenuLink className="{navigationMenuTriggerStyle()}">
-              <p className={cn("ml-8", pathname === "/create-project" ? "animate-pulse text-lg text-blod" : " ")}>Add Project</p>
+              <p className={cn("ml-8", pathname === "/create-project" ? "animate-pulse text-lg text-bolc" : " ")}>Add Project</p>
               
             </NavigationMenuLink>
           </Link>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
 
         </NavigationMenuList>
       </NavigationMenu>
@@ -236,9 +235,6 @@ export function NavbarItems() {
       
       <div>
         <MobileNav />
-      </div>
-      <div className="hidden md:block -ml-4">
-      <UserButton afterSignOutUrl="/" />
       </div>
       <div className="hidden md:block">
         <ModeToggle />

@@ -14,10 +14,11 @@ import {
     AccordionTrigger,
   } from "@/components/ui/accordion"
 
-import { MenuIcon } from "lucide-react";
+import { MenuIcon, User } from "lucide-react";
 import Link from "next/link";
 import Logo from "./logo";
 import { ModeToggle } from "./theme-toggle";
+import { UserButton } from "@clerk/nextjs";
 
   
 
@@ -36,6 +37,7 @@ const MobileNav = () => {
                             <Link href="/">
                                 <Logo />
                             </Link>
+                            
                         </div>
 
                     <Accordion type="single" collapsible className="w-full mt-5">
@@ -73,38 +75,38 @@ const MobileNav = () => {
                             <p >Projects</p>
                             </AccordionTrigger>
                             <AccordionContent>
-                                <Link href="/services">
+                                <Link href="/view-all-projects">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
                                         Admin Dashboard
                                     </div>
                                     </Link>
 
-                                    <Link href="/">
+                                    <Link href="/view-all-projects">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
                                         Advance Ecommerce
                                     </div>
                                     </Link>
 
-                                    <Link href="/">
+                                    <Link href="/view-all-projects">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
                                         Event Booking and Management System
                                     </div>
                                    
                                     </Link>
 
-                                    <Link href="/">
+                                    <Link href="/view-all-projects">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
                                         Advance Blogging Website.
                                     </div>
                                     </Link>
 
-                                    <Link href="/">
+                                    <Link href="/view-all-projects">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
                                         Advanced SAAS Application
                                     </div>
                                 </Link>
 
-                                <Link href="/">
+                                <Link href="/view-all-projects">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
                                         View all projects
                                     </div>

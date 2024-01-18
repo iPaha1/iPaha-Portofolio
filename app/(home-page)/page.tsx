@@ -1,6 +1,6 @@
 import Footer from "@/components/footer";
 import HeroPage from "@/components/hero";
-import { Navbar } from "@/components/navbar";
+// import { Navbar } from "@/components/navbar";
 import SkillsPage from "@/components/skills";
 import ServicesPage from "../view-all-services/page";
 import DownloadCV from "@/components/download-cv";
