@@ -10,8 +10,8 @@ const ViewAllProjects = () => {
   const projects = [
     {
       id: 1,
-      image: "/images/iPahaStore.png",
-      description: "Exploring the world of everyday life. Elevate your style with our sophisticated men's suit. Perfect for formal occasions and business meetings, this suit combines classic design with modern comfort. Available in various sizes and colors to suit your preferences.",
+      image: "/images/ecommerce.png",
+      description: "This Advanced E-Commerce Website showcases a modern and responsive design, built using Next.js for seamless server-side rendering and optimal performance. It features an intuitive app router for easy navigation, and Prisma for robust data management. I implemented clerk as my auth for safe and secure sign in. The user interface is crafted with Shadcn UI, providing a sleek and accessible shopping experience.",
       title: "Advance E-Commerce Website",
       // subTitle: "Advance E-Commerce Website",
       // detail: "Additional details for Project 1",
@@ -19,17 +19,17 @@ const ViewAllProjects = () => {
     },
     {
       id: 2,
-      image: "/images/iPahaStoreAdmin.png",
-      description: "Exploring the world of everyday life. Elevate your style with our sophisticated men's suit. Perfect for formal occasions and business meetings, this suit combines classic design with modern comfort. Available in various sizes and colors to suit your preferences.",
-      title: "Multi-Purpose Aministration Dashboard",
+      image: "/images/admin.png",
+      description: "The Multi-Purpose Admin Dashboard is a testament to efficient design and functionality. Developed with Next.js for a fast and scalable application, it integrates Prisma for database management, ensuring secure and reliable data storage. I implemented clerk as my auth for safe and secure sign in. The dashboard utilizes Shadcn UI for its clean and responsive interface, making admin tasks simpler and more efficient.",
+      title: "Multi-Purpose Admin Dashboard",
       // subTitle: "Multi-Purpose Aministration Dashboard",
       // detail: "Additional details for Project 2",
       url: "https://i-paha-store-admin.vercel.app/"
     },
     {
       id: 3,
-      image: "/images/photo1.png",
-      description: "Exploring the world of everyday life. Elevate your style with our sophisticated men's suit. Perfect for formal occasions and business meetings, this suit combines classic design with modern comfort. Available in various sizes and colors to suit your preferences.",
+      image: "/images/event.png",
+      description: "This Event Management System is designed to provide a comprehensive solution for event planning and execution. Built on Next.js for high performance, it features a robust backend with MongoDB, ensuring efficient data handling. I implemented clerk as my auth for safe and secure sign in. The system's interface is developed using Shadcn UI, offering an engaging and user-friendly experience for event organizers and attendees alike.",
       title: "Event Management System",
       // subTitle: "Project 3 Subtitle",
       // detail: "Additional details for Project 3",
@@ -109,7 +109,7 @@ const ViewAllProjects = () => {
   const sentence = "Explore My Projects".split("");
 
   return (
-    <div className="p-4 h-full">
+    <div className="p-4">
       <motion.div 
                 whileHover={{ scale: 1.1 }}
                 initial={{ opacity: 0 }}
@@ -143,7 +143,7 @@ const ViewAllProjects = () => {
                 className="aspect-square object-cover rounded-md"
               />
             </div>
-            <p className="text-sm text-gray-700">{project.description}</p>
+            <p className="text-sm text-gray-700 dark:hover:text-white hover:text-black">{project.description}</p>
             <div>
               <p className="font-semibold text-lg">{project.title}</p>
               {/* <p className="text-sm text-gray-500">{project.subTitle}</p> */}

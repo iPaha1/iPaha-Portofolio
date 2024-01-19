@@ -175,7 +175,7 @@ export function NavbarItems() {
                   <ListItem
                     key={component.title}
                     title={component.title}
-                    href={component.href}
+                    href={component.href} 
                   >
                     {component.description}
                   </ListItem>

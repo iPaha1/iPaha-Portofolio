@@ -26,7 +26,8 @@ const DownloadPage = () => {
         // Redirect to download page after a short delay
             setTimeout(() => {
                 const link = document.createElement('a');
-                link.href = "https://drive.google.com/uc?export=download&id=1rukz4VuqMOI_UP1yrs3_1ffb1nbIbiqi";
+                // link.href = "https://drive.google.com/uc?export=download&id=1rukz4VuqMOI_UP1yrs3_1ffb1nbIbiqi";
+                link.href = "https://drive.google.com/file/d/1RVaTZYeH2imZjqTO3SnsLWjyk4-9kRMv/view?usp=sharing";
                 document.body.appendChild(link); // Direct download link
                 link.download = "IpaHaCV.pdf"; // Setting the download attribute
                 document.body.appendChild(link);
