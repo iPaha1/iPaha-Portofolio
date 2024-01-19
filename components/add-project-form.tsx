@@ -27,24 +27,18 @@ import axios from "axios";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { UploadButton } from "@/utils/uploadthing";
+import Project from "@/lib/database/models/project-model";
 
 
-const profileFormSchema = z.object({
-  image: z
-    .string()
-    .min(2, {
-      message: "Please upload image.",
-    }),
-   
-  title: z
-    .string({
-      required_error: "Please enter title.",
-    }),
-    projectDescription: z.string().max(160).min(4),
+const projectFormSchema = z.object({
+  image: z.string().optional(),
+  title: z.string({ required_error: "Project title is required" }),
+  projectDescription: z.string().max(160).min(4),
   
-})
+});
 
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
+type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 const AddProjectForm = () => {
 
@@ -57,8 +51,8 @@ const AddProjectForm = () => {
   const sentence = "Get in touch".split("");
 
   
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
+  const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectFormSchema),
     mode: "onChange",
     defaultValues: {
       image: "",
@@ -68,61 +62,32 @@ const AddProjectForm = () => {
   })
 
   
-  // function onSubmit(data: ProfileFormValues) {
+  // function onSubmit(data: ProjectFormValues) {
   //   console.log("Form Data", {JSON: JSON.stringify(data, null, 4)});
   // }
 
-  async function onSubmit(data: ProfileFormValues) {
+  async function onSubmit(data: ProjectFormValues) {
     try {
       setIsButtonClicked(true);
       setIsLoading(true);
-      const response = await fetch('/api/sendEmail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-  
-      if (response.ok) {
-        console.log('Email sent successfully');
-        toast.success("Email sent successfully");
+      // Send the data to your backend endpoint (adjust the URL as needed)
+      const response = await axios.post('/api/mongoose', data);
 
-        // Handle success, maybe clear the form or show a success message
+      if (response.status === 200) {
+        console.log('Project Entered into DB Successfully');
+        toast.success("Project Entered into DB Successfully");
+        // Maybe navigate to a different page or reset the form
       } else {
-        console.log('Failed to send email');
+        console.log('Failed to add project to DB');
         // Handle error
       }
     } catch (error) {
-      console.error('Error sending email', error);
+      console.error('Error adding project to db', error);
       // Handle network error
     } finally {
-      // Redirect to thank-you page after a short delay
-      setTimeout(() => {
-        setIsLoading(false);
-        setIsButtonClicked(false);
-        form.reset();
-    }, 6000); // 2 seconds delay
-      
-    }
-  }
-
-  async function onSubmitw(data: ProfileFormValues) {
-    console.log("Form Data", {JSON: JSON.stringify(data, null, 4)})
-    try {
-      setIsButtonClicked(true);
-      setIsLoading(true);
-      const response = await axios.post('/api/sendEmail', data);
-      console.log(response);
-  
-      console.log('Email sent successfully');
-      
-      toast.success("Email sent successfully");
+      setIsLoading(false);
+      setIsButtonClicked(false);
       form.reset();
-      // Handle success, maybe clear the form or show a success message
-    } catch (error) {
-      console.error('Error sending email', error);
-      // Handle error
     }
   }
 
@@ -139,7 +104,20 @@ const AddProjectForm = () => {
             <FormItem>
               <FormLabel>Image</FormLabel>
               <FormControl>
-                <Input placeholder="Upload Image" {...field} />
+              <UploadButton
+                className="mt-4 ut-button:bg-red-500 ut-button:ut-readying:bg-red-500/50"
+                endpoint="imageUploader"
+                onClientUploadComplete={(res) => {
+                  // Do something with the response
+                  console.log("Files: ", res);
+                  alert("Upload Completed");
+                  form.setValue("image", res[0].url);
+                }}
+                onUploadError={(error: Error) => {
+                  // Do something with the error.
+                  alert(`ERROR! ${error.message}`);
+                }}
+              />
               </FormControl>
               <FormMessage />
             </FormItem>

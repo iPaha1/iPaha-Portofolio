@@ -48,7 +48,7 @@ const MobileNav = () => {
                             <p>Services</p>
                             </AccordionTrigger>
                             <AccordionContent>
-                                <Link href="/services">
+                                <Link href="/view-all-services">
                                 <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
                                 Our prices are well structured.
                                 </div>
@@ -60,7 +60,7 @@ const MobileNav = () => {
                                 </div>
                                 </Link>
 
-                                <Link href="/">
+                                <Link href="/contact-me">
                                 <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
                                 Partner with me.
                                 </div>
@@ -75,21 +75,21 @@ const MobileNav = () => {
                             <p >Projects</p>
                             </AccordionTrigger>
                             <AccordionContent>
-                                <Link href="/view-all-projects">
+                                <Link href="https://i-paha-store-admin.vercel.app/">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
-                                        Admin Dashboard
+                                        Advanced Admin Dashboard
                                     </div>
                                     </Link>
 
-                                    <Link href="/view-all-projects">
+                                    <Link href="https://i-paha-store.vercel.app/">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
-                                        Advance Ecommerce
+                                        Advance Ecommerce Website
                                     </div>
                                     </Link>
 
-                                    <Link href="/view-all-projects">
+                                    <Link href="https://i-paha-events.vercel.app/">
                                     <div className="text-gray-700 text-lg hover:bg-gray-300 hover:rounded-lg hover:text-gray-900 duration-300 px-2 py-1">
-                                        Event Booking and Management System
+                                        Event Management System
                                     </div>
                                    
                                     </Link>

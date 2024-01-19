@@ -15,8 +15,8 @@ const ProjectSchema = new Schema({
     description: { type: String, required: true},
     projectUrl: { type: String, required: true},
     imageUrl: { type: String, required: true},
-    createdAt: { type: Date, required: true},
-    updatedAt: { type: Date, required: true},
+    createdAt: { type: Date, default: Date.now,},
+    updatedAt: { type: Date, required: true,  default: Date.now,},
     });
 
     const Project = models.Project || model('Project', ProjectSchema);

@@ -7,7 +7,7 @@ export default authMiddleware({
     publicRoutes: [
         "/",
         "/view-all-projects",
-        "/view-all-projects/[id]",
+        // "/view-all-projects/[id]",
         "/contact-me",
         "/blog",
         "/education-experience-skills",
@@ -16,10 +16,15 @@ export default authMiddleware({
         "/view-all-services",
         "/privacy-policy",
         "/terms-and-conditions",
+        // "/downloadipahacv-page",
+        "/api/webhooks",
+
     ],
 
     ignoredRoutes: [
       "/api/webhooks",
+      "/api/mongoose",
+      "/api/uploadthing",
     ],
 });
  

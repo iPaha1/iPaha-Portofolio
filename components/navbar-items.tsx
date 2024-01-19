@@ -25,20 +25,20 @@ import { UserButton } from "@clerk/nextjs"
 
 const components: { title: string; href: string; description: string }[] = [
   {
-    title: "Admin Dashboard",
-    href: "/view-all-projects",
+    title: "Advanced Admin Dashboard",
+    href: "https://i-paha-store-admin.vercel.app/",
     description:
       "A complete multi functional admin dashboard which can be used for all types of web applications.",
   },
   {
-    title: "Ecommerce Website",
-    href: "/view-all-projects",
+    title: "Advanced Ecommerce Website",
+    href: "https://i-paha-store.vercel.app/",
     description:
       "Advance Ecommerce Website with Next.js and Stripe API for payment processing.",
   },
   {
-    title: "Event Booking and Management Website",
-    href: "/view-all-projects",
+    title: "Event Booking and Management System",
+    href: "https://i-paha-events.vercel.app/",
     description:
       "Advance event booking and management website with Next.js and Stripe API for payment processing.",
   },
