@@ -35,6 +35,15 @@ const ViewAllProjects = () => {
       // detail: "Additional details for Project 3",
       url: "https://i-paha-events.vercel.app/"
     },
+    {
+      id: 4,
+      image: "/images/lms.png",
+      description: "This Learning Management System (LMS) is a dynamic and user-centric educational platform, tailored for effective online learning and course management. Developed using Next.js, it delivers superior performance and server-side rendering for a seamless user experience. At its core, the system boasts an integration with Prisma for advanced data management, ensuring reliable and secure handling of educational content. The authentication is powered by clerk, providing a secure and straightforward sign-in process. The LMS's user interface is elegantly designed using Shadcn UI, offering an intuitive and engaging learning environment. This system is equipped with features like course creation, progress tracking, interactive quizzes, and forums, making it a comprehensive solution for educators and learners alike.",
+      title: "Learning Management System",
+      // subTitle: "Project 3 Subtitle",
+      // detail: "Additional details for Project 3",
+      url: "https://i-paha-study.vercel.app/"
+    },
 
   ];
     {/* {
