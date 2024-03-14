@@ -24,17 +24,16 @@ const DownloadPage = () => {
         setIsButtonClicked(true);
         setIsLoading(true);
         // Redirect to download page after a short delay
-            setTimeout(() => {
-                const link = document.createElement('a');
-                // link.href = "https://drive.google.com/uc?export=download&id=1rukz4VuqMOI_UP1yrs3_1ffb1nbIbiqi";
-                link.href = "https://drive.google.com/file/d/1RVaTZYeH2imZjqTO3SnsLWjyk4-9kRMv/view?usp=sharing";
-                document.body.appendChild(link); // Direct download link
-                link.download = "IpaHaCV.pdf"; // Setting the download attribute
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                toast.success("CV Downloaded Successfully");;
-            }, 3000); // 2 seconds delay
+        setTimeout(() => {
+            const link = document.createElement('a');
+            // Attempt to use a direct download link (This is just an example and might not work as expected)
+            link.href = "https://drive.google.com/uc?export=download&id=1RVaTZYeH2imZjqTO3SnsLWjyk4-9kRMv";
+            link.target = '_blank'; // Attempt to open in a new tab
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            toast.success("CV Downloaded Successfully");
+        }, 3000); // 3 seconds delay
         
 
         // Redirect to thank-you page after a short delay

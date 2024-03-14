@@ -18,6 +18,7 @@ export default authMiddleware({
         "/terms-and-conditions",
         "/downloadipahacv-page",
         "/api/webhooks",
+        "/thank-you",
 
     ],
 
