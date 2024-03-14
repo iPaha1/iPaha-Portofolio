@@ -16,7 +16,7 @@ export default authMiddleware({
         "/view-all-services",
         "/privacy-policy",
         "/terms-and-conditions",
-        // "/downloadipahacv-page",
+        "/downloadipahacv-page",
         "/api/webhooks",
 
     ],

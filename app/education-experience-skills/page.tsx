@@ -19,7 +19,7 @@ const ExperienceAndSkillsPage = () => {
         // Set a timer to update the state after 3 minutes
         const timer = setTimeout(() => {
             setShowExperienceTypeWriting(true);
-        }, 30000); // 3 minutes in milliseconds
+        }, 300); // 3 minutes in milliseconds
 
         // Cleanup the timer
         return () => clearTimeout(timer);
@@ -29,7 +29,7 @@ const ExperienceAndSkillsPage = () => {
         // Set a timer to update the state after 3 minutes
         const timer = setTimeout(() => {
             setShowEducationTypeWriting(true);
-        }, 60000); // 3 minutes in milliseconds
+        }, 600); // 3 minutes in milliseconds
 
         // Cleanup the timer
         return () => clearTimeout(timer);
@@ -60,8 +60,12 @@ const ExperienceAndSkillsPage = () => {
                 Skills
             </div>
             <SkillsTypeWriting />
+            <div className="mt-10">
+            <ScrollVelocity />
+            </div>
+            
 
-            <motion.div 
+            {/* <motion.div 
                 whileHover={{ scale: 1.1 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -72,7 +76,7 @@ const ExperienceAndSkillsPage = () => {
                     <div >
                     <ScrollVelocity />
                 </div>
-            </motion.div>
+            </motion.div> */}
             
             <div className="flex flex-row text-lg mt-60">
                 <ArrowDownCircle className="animate-bounce size-20" />

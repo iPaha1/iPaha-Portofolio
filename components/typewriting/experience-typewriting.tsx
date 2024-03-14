@@ -23,7 +23,7 @@ const SkillsTypeWriting = () => {
         ],
         loop: 0,
         deleteSpeed: 50000,
-        typeSpeed: 20,
+        typeSpeed: 1,
     });
 
     useEffect(() => {
