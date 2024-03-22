@@ -122,10 +122,8 @@ const ContactMePage = () => {
       
       toast.success("Email sent successfully");
       form.reset();
-      // Handle success, maybe clear the form or show a success message
     } catch (error) {
       console.error('Error sending email', error);
-      // Handle error
     }
   }
 
@@ -144,7 +142,7 @@ const ContactMePage = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-500 dark:bg-white"></span>
                 </span> */}
-            <h1 className="md:hidden text-5xl sm:text-5xl md:text-6xl font-bold">
+            <h1 className="md:hidden text-5xl sm:text-5xl md:text-6xl font-bold mt-20">
               Get in touch
             </h1>
 
@@ -158,15 +156,13 @@ const ContactMePage = () => {
                 <p>
                     <SendIcon className="w-4 h-4 transition-transform transform hover:scale-110 animate-pulse" />
                 </p>
-                <a href="mailto:contact@ipahait.com" className="hover:underline ml-4">
-                  contact@ipahait.com
+                <a href="mailto:pahaisaac@gmail.com" className="hover:underline ml-4">
+                  pahaisaac@gmail.com
                 </a>
             </div>
 
             <p className="flex items-center gap-2 ml-4 justify-start mt-10" >
                     <Link href="https://www.linkedin.com/in/isaac-paha-578911a9/"><LinkedInLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
-                    <Link href=""><InstagramLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
-                    <Link href=""><TwitterLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
                     <Link href="https://github.com/iPaha1"><GitHubLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
             </p>
 

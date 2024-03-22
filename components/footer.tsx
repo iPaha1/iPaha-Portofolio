@@ -18,8 +18,7 @@ const Footer = () => {
                     <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
                     <span className="mx-2">|</span>
                     <Link href="/terms-and-conditions" className="hover:underline">Terms & Conditions</Link>
-                    <span className="mx-2">|</span>
-                    <Link href="" className="hover:underline">FAQ</Link>
+                    {/* <Link href="" className="hover:underline">FAQ</Link> */}
                 </p>
 
                 <p className="hidden dark:block text-center text-xs text-white">
@@ -30,8 +29,7 @@ const Footer = () => {
                     <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>
                     <span className="mx-2">|</span>
                     <Link href="/terms-and-conditions" className="hover:underline">Terms & Conditions</Link>
-                    <span className="mx-2">|</span>
-                    <Link href="" className="hover:underline">FAQ</Link>
+                    {/* <Link href="" className="hover:underline">FAQ</Link> */}
                 </p>
 
                 <motion.div 

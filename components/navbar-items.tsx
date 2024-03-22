@@ -98,13 +98,13 @@ export function NavbarItems() {
   const pathname = usePathname();
 
   return (
-    <div className="h-16 sm:px-6 lg:px-8 top-0 flex justify-between items-center">
+    <div className="fixed top-0 right-0 left-0 p-4 flex items-center justify-between z-10 bg-slate-50 dark:bg-black">
       <div className="flex gap-x-2">
         <Link href="/">
           <Logo />
         </Link>
       </div>
-      <div>
+      <div className="flex justify-end items-center gap-x-4">
       <NavigationMenu>
         <NavigationMenuList
           className="hidden md:flex md:space-x-4 md:items-center"
@@ -112,16 +112,16 @@ export function NavbarItems() {
           <NavigationMenuItem>
             <NavigationMenuTrigger
               className={cn(
-                "dark:hidden data-[state=open]:bg-gray-300 hover:bg-gray-300 hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname === "/pricing" ? "bg-gray-300" : ""
+                "dark:hidden data-[state=open]:bg-gray-300 hover:bg-gray-300 hover:rounded-lg duration-3 gap-x-4",
+                navigationMenuTriggerStyle, pathname === "/blog" ? "bg-gray-300" : ""
               )}
-            >Services</NavigationMenuTrigger>
+            >Menu</NavigationMenuTrigger>
 
           <NavigationMenuTrigger
               className={cn(
-                "hidden dark:flex hover:rounded-lg duration-3",
+                "hidden dark:flex hover:rounded-lg duration-3 gap-x-4",
               )}
-            >Services</NavigationMenuTrigger>
+            >Menu</NavigationMenuTrigger>
             
             <NavigationMenuContent>
               <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] text-gray-700 hover:bg-gray-300 hover:rounded-lg duration-300 px-2 py-1">
@@ -129,106 +129,36 @@ export function NavbarItems() {
                   <NavigationMenuLink asChild>
                     <a
                       className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                      href="/"
+                      href="/about-me"
                     >
                       {/* <Icons.logo className="h-6 w-6" /> */}
-                      <Logo />
-                      <div className="mb-2 mt-4 text-lg font-medium">
+                      <div className="opacity-50">
+                        <Logo />
+                      </div>
+                      <div className="mb-2 mt-4 text-xs font-medium">
                         Limitless possibilities
                       </div>
-                      <p className="text-sm leading-tight text-muted-foreground">
-                        Our services are designed to help you achieve your goals and objectives.
+                      <p className="text-xl leading-tight text-muted-foreground font-bold hover:scale-110">
+                        About Me
                       </p>
                     </a>
                   </NavigationMenuLink>
                 </li>
-                <ListItem href="/pricing" title="Pricing" className={cn("", pathname === "/pricing" ? "bg-gray-300" : "")}>
-                  Our prices are well structured and affordable.
+                <ListItem href="/projects" title="Projects" className={cn("", pathname === "/projects" ? "bg-gray-300" : "")}>
+                  View all my projects.
                 </ListItem>
-                <ListItem href="/view-all-services" title="View all services" className={cn("", pathname === "/view-all-services" ? "bg-gray-300" : "")}>
-                  View all our offers and services.
+                
+                <ListItem href="/blog" title="Blog" className={cn("", pathname === "/blog" ? "bg-gray-300" : "")}>
+                  Explore my blog posts.
                 </ListItem>
+                
                 <ListItem href="/contact-me" title="Partner with Me" className={cn("", pathname === "/contact-me" ? "bg-gray-300" : "")}>
                   Partner with me for the next level of innovation.
                 </ListItem>
               </ul>
             </NavigationMenuContent>
           </NavigationMenuItem>
-          <NavigationMenuItem>
-          <NavigationMenuTrigger
-              className={cn(
-                "dark:hidden data-[state=open]:bg-gray-300 hover:bg-gray-300 hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname === "/view-all-projects" ? "bg-gray-300" : ""
-              )}
-            >Projects</NavigationMenuTrigger>
-
-          <NavigationMenuTrigger
-              className={cn(
-                "hidden dark:flex hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname === "/view-all-projects" ? "bg-gray-950" : ""
-              )}
-            >Projects</NavigationMenuTrigger>
-            
-            <NavigationMenuContent>
-              <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] text-gray-700 hover:bg-gray-300 hover:rounded-lg duration-300 px-2 py-1">
-                {components.map((component) => (
-                  <ListItem
-                    key={component.title}
-                    title={component.title}
-                    href={component.href} 
-                  >
-                    {component.description}
-                  </ListItem>
-                ))}
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-          <NavigationMenuTrigger
-              className={cn(
-                "dark:hidden data-[state=open]:bg-gray-300 hover:bg-gray-300 hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname === "/education-experience-skills" && "/contact-me" ? "bg-gray-300" : ""
-              )}
-            >About Me</NavigationMenuTrigger>
-
-          <NavigationMenuTrigger
-              className={cn(
-                "hidden dark:flex hover:rounded-lg duration-3",
-                navigationMenuTriggerStyle, pathname ===  "/education-experience-skills" && "/contact-me" ? "bg-gray-950" : ""
-              )}
-
-            >About Me</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] text-gray-700 hover:bg-gray-300 hover:rounded-lg duration-300 px-2 py-1">
-                {aboutMeComponents.map((component) => (
-                  <ListItem
-                    key={component.title}
-                    title={component.title}
-                    href={component.href}
-                  >
-                    {component.description}
-                  </ListItem>
-                ))}
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-          <Link href="/blog" legacyBehavior passHref>
-            <NavigationMenuLink className="{navigationMenuTriggerStyle()}">
-              <p className={cn("ml-8", pathname === "/blog" ? "animate-pulse text-lg text-blod" : " ")}>Blog</p>
-              
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
-
-        {/* <NavigationMenuItem>
-          <Link href="/create-project" legacyBehavior passHref>
-            <NavigationMenuLink className="{navigationMenuTriggerStyle()}">
-              <p className={cn("ml-8", pathname === "/create-project" ? "animate-pulse text-lg text-blod" : " ")}>Add Project</p>
-              
-            </NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem> */}
+                  
 
         </NavigationMenuList>
       </NavigationMenu>

@@ -27,7 +27,7 @@ export default function RootLayout({
     <ClerkProvider>
     <html lang="en">
       <body className={font.className}>
-        <CookiesConsent />
+        {/* <CookiesConsent /> */}
         <ConfettiProvider />
         <ToastifyProvider />
         <ThemeProvider
