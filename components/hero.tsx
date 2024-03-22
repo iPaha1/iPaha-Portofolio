@@ -35,7 +35,7 @@ const HeroPage = () => {
   const pFiveSentence = "continuous quest for excellence in the ever-evolving world of technology.".split("");
 // <div className="absolute inset-40 z-[-1] h-full flex justify-center">
     return (
-      <div className="min-h-screen flex flex-col gap-2 p-8 items-center justify-center">
+      <div className="min-h-screen flex flex-col gap-2 p-8 items-center justify-center mt-20">
 
         <HeroTypeWriting />
         
