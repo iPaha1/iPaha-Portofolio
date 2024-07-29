@@ -1,157 +1,119 @@
 "use client";
 
 import { Button } from "./ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-
-
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { connect } from "http2";
-import { set } from "lodash";
 import { CircleDashed } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-
 import { toast } from "react-toastify";
 
 const DownloadCV = () => {
-
-    const [isButtonClicked, setIsButtonClicked] = useState(false);
-
     const [isLoading, setIsLoading] = useState(false);
 
-    const router = useRouter();
+    const handleDownload = () => {
+        setIsLoading(true);
+        
+        const cvUrl = '/cv.pdf';
+        const fileName = 'Isaac_Paha_CV.pdf'; // You can customize the download filename
 
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+        try {
+            const link = document.createElement('a');
+            link.href = cvUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setName(e.target.value);
-    }
-
-    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEmail(e.target.value);
-    }
-
-    const validateAndDownload = () => {
-        if (name.trim() !== "" && email.trim() !== "" && email.includes("@") && email.includes(".")) {
-            setIsButtonClicked(true);
-            setIsLoading(true);
-            // Redirect to download page after a short delay
+            toast.success("CV download started!");
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Failed to start download. Please try again.");
+        } finally {
+            // Reset loading state after a short delay
             setTimeout(() => {
-            router.push(`/downloadipahacv-page`);
-            }, 4000); // 4 seconds delay
-            // router.push(`/downloadipahacv-page`)
-        } else {
-            toast.error("Please enter a valid name and email address.");
+                setIsLoading(false);
+            }, 1000);
         }
-    }
+    };
 
     return ( 
-        <div>
-            <Dialog>
-                <DialogTrigger asChild>
-                <Button
-                    variant="ghost"
-                    className="dark:hidden hover:bg-black hover:text-white text-black font-bold py-2 px-4 ml-4 transition-transform transform hover:scale-110"
-                >
-                    Download CV
-                </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                    <DialogTitle>Get My CV</DialogTitle>
-                    <DialogDescription>
-                        Enter your name and email address and press send to get my CV.
-                    </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">
-                        Name
-                        </Label>
-                        <Input type="text" placeholder="Your name" className="col-span-3" onChange={handleNameChange}/>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="username" className="text-right">
-                            Email
-                        </Label>
-                        <Input type="emial" placeholder="youremail@email.com" className="col-span-3" onChange={handleEmailChange}/>
-                    </div>
-                    </div>
-                    <DialogFooter>
-                    <Button type="submit" disabled={isLoading} onClick={validateAndDownload}>
-                        {isButtonClicked ? (
-                            <>
-                            <CircleDashed className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" />
-                            Sending ...
-                            </>
-                        ) : (
-                            "Send"
-                        )}
-                    </Button>
-                    </DialogFooter>
-                </DialogContent>
-                </Dialog>
-
-
-                <Dialog>
-                <DialogTrigger asChild>
-                <Button
-                    variant="ghost"
-                    className="hidden dark:block dark:hover:bg-white dark:hover:text-black dark:text-white font-bold py-2 px-4 ml-4 transition-transform transform hover:scale-110"
-                >
-                        Download CV
-                </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                    <DialogTitle>Get My CV</DialogTitle>
-                    <DialogDescription>
-                        Enter your name and email address and press send to get my CV.
-                    </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">
-                        Name
-                        </Label>
-                        <Input type="text" placeholder="Your name" className="col-span-3" onChange={handleNameChange}/>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="username" className="text-right">
-                            Email
-                        </Label>
-                        <Input type="emial" placeholder="youremail@email.com" className="col-span-3" onChange={handleEmailChange}/>
-                    </div>
-                    </div>
-                    <DialogFooter>
-                    <Button type="submit" disabled={isLoading} onClick={validateAndDownload}>
-                        {isButtonClicked ? (
-                            <>
-                            <CircleDashed className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" />
-                            Sending ...
-                            </>
-                        ) : (
-                            "Send"
-                        )}
-                    </Button>
-                    </DialogFooter>
-                </DialogContent>
-                </Dialog>
-            
-
-            
-        </div>
-     );
+        <Button
+            onClick={handleDownload}
+            disabled={isLoading}
+            className="font-bold py-2 px-4 transition-transform transform hover:scale-110
+                       bg-black text-white dark:bg-white dark:text-black 
+                       hover:bg-gray-800 dark:hover:bg-gray-200"
+        >
+            {isLoading ? (
+                <>
+                    <CircleDashed className="animate-spin h-5 w-5 mr-3" />
+                    Downloading...
+                </>
+            ) : (
+                "Download CV"
+            )}
+        </Button>
+    );
 }
- 
+
 export default DownloadCV;
+
+
+// "use client";
+
+// import { Button } from "./ui/button";
+// import { CircleDashed } from "lucide-react";
+// import { useRouter } from "next/navigation";
+// import { useState } from "react";
+// import { toast } from "react-toastify";
+
+// const DownloadCV = () => {
+//     const [isLoading, setIsLoading] = useState(false);
+//     const router = useRouter();
+
+//     const handleDownload = () => {
+//         setIsLoading(true);
+        
+//         // Assuming your CV is named 'Isaac_Paha_CV.pdf' and is in the public folder
+//         const cvUrl = '/cv.pdf';
+
+//         // Create a link element
+//         const link = document.createElement('a');
+//         link.href = cvUrl;
+//         link.download = 'cv.pdf'; // This will be the name of the downloaded file
+//         document.body.appendChild(link);
+        
+//         // Trigger the download
+//         link.click();
+        
+//         // Clean up
+//         document.body.removeChild(link);
+        
+//         // Show success message
+//         toast.success("CV download started!");
+        
+//         // Reset loading state after a short delay
+//         setTimeout(() => {
+//             setIsLoading(false);
+//         }, 1000);
+//     };
+
+//     return ( 
+//         <Button
+//             onClick={handleDownload}
+//             disabled={isLoading}
+//             className="font-bold py-2 px-4 transition-transform transform hover:scale-110
+//                        bg-black text-white dark:bg-white dark:text-black 
+//                        hover:bg-gray-800 dark:hover:bg-gray-200"
+//         >
+//             {isLoading ? (
+//                 <>
+//                     <CircleDashed className="animate-spin h-5 w-5 mr-3" />
+//                     Downloading...
+//                 </>
+//             ) : (
+//                 "Download CV"
+//             )}
+//         </Button>
+//     );
+// }
+ 
+// export default DownloadCV;

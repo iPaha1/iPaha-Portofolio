@@ -61,7 +61,7 @@ function Scene({ numStars = 100 }) {
 
   const stars = [];
   for (let i = 0; i < numStars; i++) {
-    stars.push(<Star p={progress(0, numStars, i)} />);
+    stars.push(<Star key={i} p={progress(0, numStars, i)} />);
   }
 
   return (
@@ -74,7 +74,7 @@ function Scene({ numStars = 100 }) {
 
 export default function BirdsFlyingApp() {
   return (
-    <div className="">
+    <div className="fixed inset-0 z-[-1] pointer-events-none">
       <Canvas gl={{ antialias: false }}>
         <Scene />
       </Canvas>
