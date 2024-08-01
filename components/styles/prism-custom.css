@@ -1,0 +1,82 @@
+@layer components {
+    pre[class*="language-"] {
+      @apply rounded-lg my-6 p-4 overflow-x-auto;
+      background-color: hsl(var(--secondary));
+      color: hsl(var(--secondary-foreground));
+    }
+  
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      @apply text-muted-foreground;
+    }
+  
+    .token.punctuation {
+      color: hsl(var(--secondary-foreground));
+    }
+  
+    .token.namespace {
+      @apply opacity-70;
+    }
+  
+    .token.property,
+    .token.tag,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: hsl(var(--primary));
+    }
+  
+    .token.boolean,
+    .token.number {
+      color: hsl(var(--accent));
+    }
+  
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: hsl(var(--accent-foreground));
+    }
+  
+    .token.operator,
+    .token.entity,
+    .token.url,
+    .language-css .token.string,
+    .style .token.string,
+    .token.variable {
+      color: hsl(var(--secondary-foreground));
+    }
+  
+    .token.atrule,
+    .token.attr-value,
+    .token.function,
+    .token.class-name {
+      color: hsl(var(--primary));
+    }
+  
+    .token.keyword {
+      color: hsl(var(--accent));
+    }
+  
+    .token.regex,
+    .token.important {
+      color: hsl(var(--destructive));
+    }
+  
+    .token.important,
+    .token.bold {
+      @apply font-bold;
+    }
+  
+    .token.italic {
+      @apply italic;
+    }
+  
+    .token.entity {
+      @apply cursor-help;
+    }
+  }

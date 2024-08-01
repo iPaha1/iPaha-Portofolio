@@ -73,7 +73,7 @@ const LandingPage = () => {
               <TextSpan key={index}>{letter === " " ? "\u00A0" : letter}</TextSpan>
             ))}
           </div>
-          <div className="text-xl text-gray-700 dark:text-gray-300">
+          <div className="text-xl font-thin">
             {[pOneSentence, pTwoSentence, pThreeSentence].map((sentence, sentenceIndex) => (
               <div key={sentenceIndex} className="flex flex-wrap justify-center">
                 {sentence.map((letter, letterIndex) => (
@@ -85,25 +85,32 @@ const LandingPage = () => {
             ))}
           </div>
         </motion.div>
+        {/* <a href={project.liveLink} target="_blank" rel="noopener noreferrer"></a> */}
 
         <motion.div 
           className="flex justify-center space-x-4 mb-8"
           variants={itemVariants}
         >
-          <Button variant="outline" size="icon" className="border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
+          <a href="https://github.com/iPaha1" target="_blank" rel="noopener noreferrer">
+          <Button variant="outline" size="icon" className="border border-amber-500 dark:border-amber-500 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
             <GitHubLogoIcon className="h-5 w-5" />
           </Button>
-          <Button variant="outline" size="icon" className="border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
+          </a>
+          <a href="https://www.linkedin.com/in/isaac-paha-578911a9/" target="_blank" rel="noopener noreferrer">
+          <Button variant="outline" size="icon" className="border border-amber-500 dark:border-amber-500 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
             <Linkedin className="h-5 w-5" />
           </Button>
-          <Button variant="outline" size="icon" className="border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
+          </a>
+          <Link href="mailto:pahaisaac@gmail.com" passHref>
+          <Button variant="outline" size="icon" className="border border-amber-500 dark:border-amber-500 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
             <Mail className="h-5 w-5" />
           </Button>
+          </Link>
         </motion.div>
         
         <motion.div variants={itemVariants}>
             <Link href="#projects" passHref>
-          <Button className="group bg-black dark:bg-white text-white dark:text-black hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white border border-black dark:border-white transition-colors" size="lg">
+          <Button className="group bg-black dark:bg-white text-white dark:text-black hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white border  border-amber-500  transition-colors" size="lg">
             View My Work
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Button>

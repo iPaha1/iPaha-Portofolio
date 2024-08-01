@@ -8,32 +8,32 @@ const SkillsSection = () => {
   const skillCategories = [
     {
       name: "Front-End Development",
-      icon: <Layout className="w-6 h-6 mb-2" />,
+      icon: <Layout className="w-8 h-8 mb-4" />,
       skills: ["JavaScript", "React JS", "HTML", "CSS", "Tailwind", "Framer Motion"]
     },
     {
       name: "Back-End Development",
-      icon: <Server className="w-6 h-6 mb-2" />,
+      icon: <Server className="w-8 h-8 mb-4" />,
       skills: ["Python", "Node JS", "Next JS"]
     },
     {
       name: "Full-Stack",
-      icon: <Code className="w-6 h-6 mb-2" />,
+      icon: <Code className="w-8 h-8 mb-4" />,
       skills: ["TypeScript", "React Router", "Next Auth", "Next SEO"]
     },
     {
       name: "Database",
-      icon: <Database className="w-6 h-6 mb-2" />,
+      icon: <Database className="w-8 h-8 mb-4" />,
       skills: ["MongoDB", "MySQL", "PostgreSQL"]
     },
     {
       name: "DevOps & Tools",
-      icon: <Cpu className="w-6 h-6 mb-2" />,
+      icon: <Cpu className="w-8 h-8 mb-4" />,
       skills: ["Git", "Docker", "CI/CD", "AWS"]
     },
     {
       name: "Certifications",
-      icon: <Shield className="w-6 h-6 mb-2" />,
+      icon: <Shield className="w-8 h-8 mb-4" />,
       skills: ["Google IT Professional", "Cisco Certified Support Technician", "Cisco Networking Essential"]
     }
   ];
@@ -44,10 +44,10 @@ const SkillsSection = () => {
   };
 
   return (
-    <section id="skills" className="py-20 bg-white dark:bg-black text-black dark:text-white">
+    <section id="skills" className="py-20 ">
       <div className="container mx-auto px-4">
         <motion.h2 
-          className="text-4xl font-bold mb-12 text-center"
+          className="text-5xl font-bold mb-12 text-center bg-clip-text "
           initial="hidden"
           animate="visible"
           variants={fadeInUp}
@@ -56,7 +56,7 @@ const SkillsSection = () => {
         </motion.h2>
         
         <motion.p 
-          className="text-lg mb-12 text-center max-w-3xl mx-auto"
+          className="text-xl mb-16 text-center max-w-3xl mx-auto"
           initial="hidden"
           animate="visible"
           variants={fadeInUp}
@@ -64,23 +64,33 @@ const SkillsSection = () => {
           As a versatile technologist, I excel in front-end and back-end development, with a focus on JavaScript and its frameworks. My expertise extends to crafting visually appealing interfaces and building robust server-side applications. I&apos;m constantly adapting to new technologies and ready to transform ideas into impactful digital experiences.
         </motion.p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 ">
           {skillCategories.map((category, index) => (
             <motion.div 
               key={index}
-              className=" dark:border p-6 rounded-lg shadow-md"
+              className="bg-white dark:bg-black p-6 rounded-xl shadow-lg border border-amber-500 dark:border-amber-500 hover:shadow-xl transition-shadow duration-300"
               initial="hidden"
               animate="visible"
               variants={fadeInUp}
               transition={{ delay: index * 0.1 }}
+              whileHover={{ scale: 1.03 }}
             >
-              <div className="flex items-center justify-center mb-4">
+              <div className="flex flex-col items-center mb-6">
                 {category.icon}
-                <h3 className="text-xl font-semibold ml-2">{category.name}</h3>
+                <h3 className="text-2xl font-semibold">{category.name}</h3>
               </div>
-              <ul className="list-disc list-inside">
+              <ul className="space-y-2">
                 {category.skills.map((skill, skillIndex) => (
-                  <li key={skillIndex} className="mb-2">{skill}</li>
+                  <motion.li 
+                    key={skillIndex} 
+                    className="flex items-center"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: (index * 0.1) + (skillIndex * 0.05) }}
+                  >
+                    <span className="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+                    {skill}
+                  </motion.li>
                 ))}
               </ul>
             </motion.div>
@@ -92,6 +102,102 @@ const SkillsSection = () => {
 };
 
 export default SkillsSection;
+
+
+// "use client";
+
+// import React from 'react';
+// import { motion } from 'framer-motion';
+// import { Code, Layout, Server, Database, Shield, Cpu } from 'lucide-react';
+
+// const SkillsSection = () => {
+//   const skillCategories = [
+//     {
+//       name: "Front-End Development",
+//       icon: <Layout className="w-6 h-6 mb-2" />,
+//       skills: ["JavaScript", "React JS", "HTML", "CSS", "Tailwind", "Framer Motion"]
+//     },
+//     {
+//       name: "Back-End Development",
+//       icon: <Server className="w-6 h-6 mb-2" />,
+//       skills: ["Python", "Node JS", "Next JS"]
+//     },
+//     {
+//       name: "Full-Stack",
+//       icon: <Code className="w-6 h-6 mb-2" />,
+//       skills: ["TypeScript", "React Router", "Next Auth", "Next SEO"]
+//     },
+//     {
+//       name: "Database",
+//       icon: <Database className="w-6 h-6 mb-2" />,
+//       skills: ["MongoDB", "MySQL", "PostgreSQL"]
+//     },
+//     {
+//       name: "DevOps & Tools",
+//       icon: <Cpu className="w-6 h-6 mb-2" />,
+//       skills: ["Git", "Docker", "CI/CD", "AWS"]
+//     },
+//     {
+//       name: "Certifications",
+//       icon: <Shield className="w-6 h-6 mb-2" />,
+//       skills: ["Google IT Professional", "Cisco Certified Support Technician", "Cisco Networking Essential"]
+//     }
+//   ];
+
+//   const fadeInUp = {
+//     hidden: { opacity: 0, y: 20 },
+//     visible: { opacity: 1, y: 0 }
+//   };
+
+//   return (
+//     <section id="skills" className="py-20 bg-white dark:bg-black text-black dark:text-white">
+//       <div className="container mx-auto px-4">
+//         <motion.h2 
+//           className="text-4xl font-bold mb-12 text-center"
+//           initial="hidden"
+//           animate="visible"
+//           variants={fadeInUp}
+//         >
+//           My Skills
+//         </motion.h2>
+        
+//         <motion.p 
+//           className="text-lg mb-12 text-center max-w-3xl mx-auto"
+//           initial="hidden"
+//           animate="visible"
+//           variants={fadeInUp}
+//         >
+//           As a versatile technologist, I excel in front-end and back-end development, with a focus on JavaScript and its frameworks. My expertise extends to crafting visually appealing interfaces and building robust server-side applications. I&apos;m constantly adapting to new technologies and ready to transform ideas into impactful digital experiences.
+//         </motion.p>
+
+//         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+//           {skillCategories.map((category, index) => (
+//             <motion.div 
+//               key={index}
+//               className=" dark:border p-6 rounded-lg shadow-md"
+//               initial="hidden"
+//               animate="visible"
+//               variants={fadeInUp}
+//               transition={{ delay: index * 0.1 }}
+//             >
+//               <div className="flex items-center justify-center mb-4">
+//                 {category.icon}
+//                 <h3 className="text-xl font-semibold ml-2">{category.name}</h3>
+//               </div>
+//               <ul className="list-disc list-inside">
+//                 {category.skills.map((skill, skillIndex) => (
+//                   <li key={skillIndex} className="mb-2">{skill}</li>
+//                 ))}
+//               </ul>
+//             </motion.div>
+//           ))}
+//         </div>
+//       </div>
+//     </section>
+//   );
+// };
+
+// export default SkillsSection;
 
 
 

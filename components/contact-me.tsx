@@ -15,8 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
-import { GitHubLogoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
-import { ArrowDownCircle, CircleDashed, SendIcon } from "lucide-react";
+import { ArrowDownCircle, CircleDashed } from "lucide-react";
 import DownloadCV from "@/components/download-cv";
 import TextSpan from "@/components/text-span";
 import { toast } from "react-toastify";
@@ -111,19 +110,8 @@ const ContactMePage = () => {
                   <TextSpan key={index}>{letter === " " ? "\u00A0" : letter}</TextSpan>
                 ))}
               </div>
-              <div className="mt-4 flex">
-                <p>
-                  <SendIcon className="w-4 h-4 transition-transform transform hover:scale-110 animate-pulse" />
-                </p>
-                <a href="mailto:pahaisaac@gmail.com" className="hover:underline ml-4">
-                  pahaisaac@gmail.com
-                </a>
-              </div>
-
-              <p className="flex items-center gap-2 ml-4 justify-start mt-10">
-                <Link href="https://www.linkedin.com/in/isaac-paha-578911a9/"><LinkedInLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
-                <Link href="https://github.com/iPaha1"><GitHubLogoIcon className="w-5 h-5 transition-transform transform hover:scale-110" /></Link>
-              </p>
+              
+              
             </motion.div>
           </div>
           
@@ -173,7 +161,7 @@ const ContactMePage = () => {
                   )}
                 />
                 
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} size='lg'>
                   {isButtonClicked ? (
                     <>
                       <CircleDashed className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" />

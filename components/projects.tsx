@@ -12,13 +12,13 @@ const ProjectsSection = () => {
     {
       id: 'multi-functional-ecommerce-dashboard',
       title: "Multi-Functional E-Commerce Website Dashboard",
-      description: "Constructed a comprehensive e-commerce platform, emphasizing seamless user experience and robust backend management.",
-      image: "/images/background1.jpeg"
+      description: "A fully functioning dashboard powering a real e-commerce platform. Features include billboards, product management, gift cards, customer reviews, shipping, returns, API keys, settings, notifications, and analytics. Technologies: Next.js, Stripe, Clerk authentication, Prisma ORM, MySQL (Amazon), Vercel, Tailwind CSS, Shadcn UI, Next.js App Router, Next SEO, Next.js API endpoints.",
+      image: "/images/Dashboard-image1.png"
     },
     {
       id: 'ecommerce-store-website',
       title: "E-Commerce Store Website",
-      description: "Constructed a comprehensive e-commerce platform, emphasizing seamless user experience and robust backend management.",
+      description: "An elegant and seamless frontend store that connects with the e-commerce dashboard. Features include add to cart, add to favorites, customer wallet, gift cards, and customer accounts. Technologies: Next.js, Stripe, Clerk authentication, Prisma ORM, MySQL (Amazon), Vercel, Tailwind CSS, Shadcn UI, Next.js App Router, Next SEO",
       image: "/images/background1.jpeg"
     },
   ];
@@ -38,7 +38,7 @@ const ProjectsSection = () => {
           {projects.map((project, index) => (
             <motion.div 
               key={project.id}
-              className="p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+              className="p-6 rounded-lg shadow-md border border-amber-500 dark:border-amber-500"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -53,8 +53,8 @@ const ProjectsSection = () => {
               />
               <h3 className="text-xl font-semibold mb-2 text-black dark:text-white">{project.title}</h3>
               <p className="text-gray-700 dark:text-gray-300 mb-4">{project.description}</p>
-              <Link href={`/projects/${project.id}`} className="inline-flex items-center text-black dark:text-white hover:underline">
-                <Button variant="outline" className="border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
+              <Link href={`/projects/${project.id}`} className="inline-flex items-center text-black dark:text-white">
+                <Button className="border border-amber-500 dark:border-amber-500 hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black transition-colors">
                 View Project <ArrowUpRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
