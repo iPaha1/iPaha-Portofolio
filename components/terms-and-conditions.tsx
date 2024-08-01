@@ -5,7 +5,7 @@ const TermsAndCondition = () => {
     <div className="max-w-4xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6">Terms and Conditions</h1>
       
-      <p className="mb-4">Last updated: [Insert Date]</p>
+      <p className="mb-4">Last updated: 1 August 2024</p>
       
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
