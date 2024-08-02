@@ -19,7 +19,7 @@ const ProjectsSection = () => {
       id: 'ecommerce-store-website',
       title: "E-Commerce Store Website",
       description: "An elegant and seamless frontend store that connects with the e-commerce dashboard. Features include add to cart, add to favorites, customer wallet, gift cards, and customer accounts. Technologies: Next.js, Stripe, Clerk authentication, Prisma ORM, MySQL (Amazon), Vercel, Tailwind CSS, Shadcn UI, Next.js App Router, Next SEO",
-      image: "/images/background1.jpeg"
+      image: "/images/ecommerce-store-image.jpeg"
     },
   ];
 

@@ -1,18 +1,39 @@
 "use client";
 
+import { act } from "@react-three/fiber";
 import { Button } from "./ui/button";
 import { CircleDashed } from "lucide-react";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { toast as sonnerToast } from "sonner";
+
+
+const formatDate = (date: Date) => {
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: '2-digit',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
+    };
+    return new Intl.DateTimeFormat('en-US', options).format(date);
+  };
+
+  const currentDate = new Date();
+  const formattedDate = `\n${formatDate(currentDate)}`;
+
 
 const DownloadCV = () => {
     const [isLoading, setIsLoading] = useState(false);
 
+
     const handleDownload = () => {
         setIsLoading(true);
         
-        const cvUrl = '/cv.pdf';
-        const fileName = 'Isaac_Paha_CV.pdf'; // You can customize the download filename
+        const cvUrl = '/files/cv.pdf';
+        const fileName = 'Isaac_Paha_CV.pdf'; 
 
         try {
             const link = document.createElement('a');
@@ -22,10 +43,29 @@ const DownloadCV = () => {
             link.click();
             document.body.removeChild(link);
 
-            toast.success("CV download started!");
+            sonnerToast(`CV download started! `, {
+                description: formattedDate,
+                action: {
+                    label: "Dismiss",
+                    onClick: () => {
+                        console.log("Toast dismissed");
+                    },
+                },
+            });
+
+
         } catch (error) {
             console.error("Download failed:", error);
-            toast.error("Failed to start download. Please try again.");
+            sonnerToast(`Failed to start download. Please try again.`, {
+                description: formattedDate,
+                action: {
+                    label: "Dismiss",
+                    onClick: () => {
+                        console.log("Toast dismissed");
+                    },
+                },
+            });
+            // toast.error("Failed to start download. Please try again.");
         } finally {
             // Reset loading state after a short delay
             setTimeout(() => {

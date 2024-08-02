@@ -5,7 +5,6 @@ import { ThemeProvider } from '@/components/providers/theme-provider'
 import Footer from '@/components/footer'
 import ToastifyProvider from '@/components/providers/react-taostify'
 import { ConfettiProvider } from '@/components/providers/confetti-provider'
-import { ClerkProvider } from '@clerk/nextjs'
 import Navbar from '@/components/navbar'
 import Script from 'next/script'
 
@@ -64,7 +63,6 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
       <html lang="en">
         <head>
           <Script id="schema-script" type="application/ld+json">
@@ -105,7 +103,6 @@ export default function RootLayout({
           </ThemeProvider>
         </body>
       </html>
-    </ClerkProvider>
   )
 }
 

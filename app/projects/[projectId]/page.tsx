@@ -110,8 +110,8 @@ const projectsData: { [key: string]: {
     "Prisma: For type-safe database access",
     "Vercel: For deployment and hosting"
   ],
-  image: "/images/background1.jpeg",
-  liveLink: "https://vercel.com/ipaha1s-projects/project-ecommerce-store",
+  image: "/images/ecommerce-store-image.jpeg",
+  liveLink: "https://project-ecommerce-store-ten.vercel.app/",
   },
 };
 
