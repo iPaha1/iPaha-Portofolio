@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     description: 'Explore the portfolio and projects of Isaac Paha, a full-stack developer specializing in modern web technologies.',
     images: [
       {
-        url: 'https://www.isaacpaha.com/og-image.jpg', // Replace with your actual OG image
+        url: '/images/profilePic.jpeg', 
         width: 1200,
         height: 630,
         alt: 'Isaac Paha - Full-Stack Developer'
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    site: '@isaacpaha', // Replace with your Twitter handle
+    site: '@iPaha3', 
     creator: '@isaacpaha'
   },
   robots: {
@@ -54,8 +54,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'your-google-verification-code', // Replace with your Google verification code
-    yandex: 'your-yandex-verification-code', // Replace with your Yandex verification code if needed
+    google: process.env.GOOGLE_VERIFICATION_CODE,
   },
 }
 
@@ -84,7 +83,7 @@ export default function RootLayout({
                   "@type": "Organization",
                   "name": "Freelance"
                 },
-                "description": "Full-stack developer specializing in React, Node.js, and modern web technologies."
+                "description": "Full-stack developer specializing in Python, React, Next js, Node.js, and modern web technologies."
               }
             `}
           </Script>
