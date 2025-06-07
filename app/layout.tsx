@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     locale: 'en_GB',
     url: 'https://www.isaacpaha.com',
     siteName: 'Isaac Paha - Full-Stack Developer & Tech Entrepreneur',
-    title: 'Isaac Paha | Full-Stack Developer & Tech Entrepreneur | Computing & IT Graduate',
+    title: 'Isaac Paha | Full-Stack Developer & Tech Entrepreneur',
     description: 'UK-based Computing & IT graduate and full-stack developer. Founder of iPaha Ltd, iPahaStores Ltd, and Okpah Ltd. Building innovative digital solutions with React.js, Next.js, and Node.js.',
     images: [
       {
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     creator: '@iPaha3',
     title: 'Isaac Paha | Full-Stack Developer & Tech Entrepreneur',
     description: 'Full-stack developer. Founder of three tech companies building innovative digital solutions.',
-    images: ['/images/isaac-paha-og-image.jpg']
+    images: ['/images/isaac-paha-og-image.png'],
   },
   robots: {
     index: true,
