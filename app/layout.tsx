@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     description: 'UK-based Computing & IT graduate and full-stack developer. Founder of iPaha Ltd, iPahaStores Ltd, and Okpah Ltd. Building innovative digital solutions with React.js, Next.js, and Node.js.',
     images: [
       {
-        url: '/images/isaac-paha-og-image.jpg',
+        url: '/images/isaac-paha-og-image.png',
         width: 1200,
         height: 630,
         alt: 'Isaac Paha - Full-Stack Developer & Tech Entrepreneur',
