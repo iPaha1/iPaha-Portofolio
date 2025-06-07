@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ExternalLink, 
   Github, 
-  Calendar,
   Users,
   Star,
   Code,
@@ -14,12 +13,12 @@ import {
   TrendingUp,
   Filter,
   Search,
- 
   Eye,
   Clock,
   Mail,
   Briefcase,
-  Building
+  Building,
+  MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import Link from 'next/link';
 
 // Project data with comprehensive details
 const projectsData = [
@@ -713,13 +713,31 @@ const Projects = () => {
               full-stack development and a proven track record of successful launches.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/contact" passHref>
               <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white">
                 <Mail className="w-5 h-5 mr-2" />
                 Start a Project
               </Button>
-              <Button size="lg" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50">
+              </Link>
+
+              {/* Uncomment this section if you want to add a scheduling button */}
+              {/* <Button size="lg" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50">
                 <Calendar className="w-5 h-5 mr-2" />
                 Schedule a Call
+              </Button> */}
+
+              <Button 
+                variant="outline" 
+                className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                onClick={() => {
+                    const message = "Hello Isaac! After reading about your journey and the three companies you've founded, I'm interested in discussing how we might work together. When would be a good time for a call?";
+                    const phone = "447402497091"; // Your number without +
+                    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                }}
+                >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Schedule Call
               </Button>
             </div>
           </motion.div>

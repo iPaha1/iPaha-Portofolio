@@ -485,18 +485,18 @@ const About = () => {
                   Schedule Call
                 </Button> */}
                 <Button 
-                    variant="outline" 
-                    className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                    onClick={() => {
-                        const message = "Hello Isaac! After reading about your journey and the three companies you've founded, I'm interested in discussing how we might work together. When would be a good time for a call?";
-                        const phone = "447402497091"; // Your number without +
-                        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-                        window.open(whatsappUrl, '_blank');
-                    }}
-                    >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Schedule Call
-                    </Button>
+                  variant="outline" 
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                  onClick={() => {
+                      const message = "Hello Isaac! After reading about your journey and the three companies you've founded, I'm interested in discussing how we might work together. When would be a good time for a call?";
+                      const phone = "447402497091"; // Your number without +
+                      const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                      window.open(whatsappUrl, '_blank');
+                  }}
+                  >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Schedule Call
+                </Button>
 
               </div>
 

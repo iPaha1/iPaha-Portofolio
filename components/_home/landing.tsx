@@ -142,7 +142,8 @@ const LandingPage = () => {
 
   const techStack = [
     "React.js", "Next.js", "TypeScript", "Node.js", "Tailwind CSS",
-    "Prisma ORM", "MySQL", "Express.js", "Clerk", "Stripe"
+    "Prisma ORM", "MySQL", "Express.js", "Clerk", "Stripe", "Python", "Django", 
+    "GraphQL", "AWS", "Docker", "Kubernetes"
   ];
 
   const products = [
