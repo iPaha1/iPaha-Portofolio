@@ -119,162 +119,124 @@ const projectsData = [
     teamSize: "4 developers",
     role: "Full-Stack Lead & System Architect"
   },
+  // Let's Add okEdukation and okSika as well
   {
     id: 3,
-    title: "iPaha Business Suite",
-    subtitle: "Enterprise Management System",
-    description: "Comprehensive business management platform for SMEs. Includes CRM, project management, invoicing, and team collaboration tools.",
-    longDescription: "A complete business solution designed for growing companies. The platform integrates all essential business operations into one cohesive system, improving efficiency and reducing operational costs.",
-    image: "/images/projects/ipaha-suite-preview.jpg",
-    category: "SaaS Platform",
-    type: "Full-Stack",
-    status: "Live",
-    year: "2024",
-    company: "iPaha Ltd",
-    companyFlag: "🇬🇧",
-    liveUrl: "https://suite.ipahait.com",
-    githubUrl: null,
-    technologies: ["React.js", "Next.js", "TypeScript", "Node.js", "PostgreSQL", "Prisma", "Stripe", "AWS"],
-    features: [
-      "Customer Relationship Management",
-      "Project & Task Management",
-      "Automated Invoicing & Billing",
-      "Team Collaboration Tools",
-      "Advanced Analytics & Reporting",
-      "API Integration Hub"
-    ],
-    metrics: {
-      clients: "150+",
-      projects: "3,000+",
-      invoices: "10,000+",
-      uptime: "99.9%"
-    },
-    highlights: [
-      "Enterprise-grade security",
-      "SOC 2 Type II compliant",
-      "Multi-currency support"
-    ],
-    duration: "12 months",
-    teamSize: "5 developers",
-    role: "Technical Lead & Product Owner"
-  },
-  {
-    id: 4,
-    title: "StoreFlow Pro",
-    subtitle: "E-commerce Management Platform",
-    description: "Advanced e-commerce management system for online retailers. Features inventory automation, multi-channel selling, and AI-powered analytics.",
-    longDescription: "StoreFlow Pro revolutionizes e-commerce operations by providing retailers with intelligent automation tools, comprehensive analytics, and seamless multi-platform integration.",
-    image: "/images/projects/storeflow-preview.jpg",
+    title: "okEdukation.com",
+    subtitle: "School Management System",
+    description: "A comprehensive school management system for educational institutions in Ghana. Features student information management, attendance tracking, and parent communication tools.",
+    longDescription: "okEdukation streamlines school administration by providing a robust platform for managing student records, attendance, grades, and communication with parents. The system is designed to meet the unique needs of Ghanaian schools.",
+    image: "/images/projects/okedukation-preview.jpg",
     category: "SaaS Platform",
     type: "Full-Stack",
     status: "Beta",
-    year: "2024",
-    company: "iPahaStores Ltd",
-    companyFlag: "🇬🇧",
-    liveUrl: "https://beta.ipahastore.com",
+    year: "2023",
+    company: "Okpah Ltd",
+    companyFlag: "🇬🇭",
+    liveUrl: null, // Not live yet
     githubUrl: null,
-    technologies: ["React.js", "Next.js", "Python", "FastAPI", "PostgreSQL", "Redis", "Docker", "Kubernetes"],
+    technologies: ["React.js", "Next.js", "Node.js", "Express.js", "MongoDB", "Socket.io", "Tailwind CSS"],
     features: [
-      "AI-powered inventory management",
-      "Multi-channel sales integration",
-      "Automated reorder alerts",
-      "Predictive analytics dashboard",
-      "Customer behavior insights",
-      "Automated marketing campaigns"
+      "Student information system",
+      "Attendance and grade tracking",
+      "Parent-teacher communication portal",
+      "Timetable and scheduling",
+      "Fee management and invoicing",
+      "Multi-role access (Admin, Teacher, Parent)"
     ],
     metrics: {
-      users: "500+",
-      stores: "1,000+",
-      orders: "50,000+",
-      accuracy: "98.5%"
+      schools: "50+ (in beta)",
+      students: "5,000+",
+      teachers: "300+",
+      parents: "10,000+"
     },
     highlights: [
-      "AI-driven demand forecasting",
-      "50% reduction in stockouts",
-      "Featured in UK Tech Innovation Awards"
+      "Pilot program with 10 schools in Accra",
+      "Positive feedback from educators",
+      "Scalable architecture for future growth"
     ],
-    duration: "14 months",
-    teamSize: "6 developers",
-    role: "CTO & Lead Architect"
+    duration: "6 months (ongoing)",
+    teamSize: "2 developers",
+    role: "Co-Founder & Lead Developer"
   },
   {
-    id: 5,
-    title: "DevCollab Hub",
-    subtitle: "Developer Collaboration Platform",
-    description: "Modern collaboration platform for development teams. Features code review tools, project tracking, and integrated CI/CD workflows.",
-    longDescription: "DevCollab Hub streamlines software development workflows by providing teams with powerful collaboration tools, automated testing pipelines, and comprehensive project management capabilities.",
-    image: "/images/projects/devcollab-preview.jpg",
-    category: "Developer Tools",
+    id: 4,
+    title: "okSika.com",
+    subtitle: "Payment Gateway Solution",
+    description: "A secure payment gateway solution for online transactions in Ghana. Supports multiple payment methods including mobile money, credit/debit cards, and bank transfers.",
+    longDescription: "okSika provides businesses in Ghana with a reliable and secure payment processing solution. The gateway supports integration with popular e-commerce platforms and offers features like fraud detection, recurring billing, and detailed transaction reporting.",
+    image: "/images/projects/oksika-preview.jpg",
+    category: "Fintech",
     type: "Full-Stack",
     status: "Live",
     year: "2023",
-    company: "iPaha Ltd",
-    companyFlag: "🇬🇧",
-    liveUrl: "https://devcollab.ipahait.com",
-    githubUrl: "https://github.com/iPaha1/devcollab-hub",
-    technologies: ["React.js", "Node.js", "TypeScript", "GraphQL", "MongoDB", "Docker", "GitHub API", "Slack API"],
+    company: "Okpah Ltd",
+    companyFlag: "🇬🇭",
+    liveUrl: "https://oksika.com",
+    githubUrl: null,
+    technologies: ["React.js", "Next.js", "Node.js", "Express.js", "PostgreSQL", "Stripe", "MoMo API", "Docker"],
     features: [
-      "Real-time code collaboration",
-      "Automated code review workflows",
-      "Integrated CI/CD pipelines",
-      "Project timeline tracking",
-      "Team performance analytics",
-      "Third-party integrations"
+      "Multi-payment method support",
+      "Fraud detection and security",
+      "Recurring billing and subscriptions",
+      "Detailed transaction reporting",
+      "Easy integration with e-commerce platforms",
+      "Developer-friendly API"
     ],
     metrics: {
-      teams: "200+",
-      projects: "1,500+",
-      reviews: "25,000+",
-      integrations: "50+"
+      transactions: "20,000+",
+      volume: "$200,000+",
+      merchants: "300+",
+      uptime: "99.9%"
     },
     highlights: [
-      "Open source contributions",
-      "95% developer satisfaction",
-      "Featured on Product Hunt"
+      "PCI-DSS compliant",
+      "Integrated with major MoMo providers",
+      "High customer satisfaction"
     ],
-    duration: "6 months",
+    duration: "7 months",
     teamSize: "3 developers",
-    role: "Full-Stack Developer & Open Source Maintainer"
+    role: "Technical Lead & DevOps Engineer"
   },
   {
-    id: 6,
-    title: "FinTrack Analytics",
-    subtitle: "Personal Finance Management",
-    description: "Intelligent personal finance tracker with budgeting tools, expense categorization, and financial goal setting.",
-    longDescription: "FinTrack Analytics helps individuals take control of their financial future through smart budgeting, automated expense tracking, and personalized financial insights.",
-    image: "/images/projects/fintrack-preview.jpg",
-    category: "Fintech",
-    type: "Mobile App",
-    status: "Live",
-    year: "2023",
+    id: 5,
+    title: "Paralelme.com",
+    subtitle: "AI Personal Assistant",
+    description: "An AI-powered personal assistant and life coach designed to help users manage their daily tasks, set goals, and improve productivity.",
+    longDescription: "Paralelme leverages advanced AI algorithms to provide users with personalized assistance in managing their schedules, setting and tracking goals, and enhancing overall productivity. The platform includes features like voice recognition, natural language processing, and integration with popular calendar and task management apps.",
+    image: "/images/projects/paralelme-preview.jpg",
+    category: "Mobile App",
+    type: "Full-Stack",
+    status: "Beta",
+    year: "2024",
     company: "Personal Project",
-    companyFlag: "🇬🇧",
-    liveUrl: "https://fintrack.isaacpaha.com",
-    githubUrl: "https://github.com/iPaha1/fintrack-analytics",
-    technologies: ["React Native", "Node.js", "Express.js", "MongoDB", "Plaid API", "Chart.js", "Firebase"],
+    companyFlag: "🌍",
+    liveUrl: "https://paralelme.com",
+    githubUrl: null,
+    technologies: ["React Native", "Node.js", "Express.js", "MongoDB", "TensorFlow", "Dialogflow", "AWS"],
     features: [
-      "Automated expense categorization",
-      "Budget planning and tracking",
-      "Financial goal setting",
-      "Investment portfolio tracking",
-      "Bill reminder notifications",
-      "Financial health scoring"
+      "AI-powered task management",
+      "Voice recognition and commands",
+      "Goal setting and tracking",
+      "Productivity analytics",
+      "Integration with calendar apps",
+      "Cross-platform support (iOS/Android)"
     ],
     metrics: {
-      users: "5,000+",
-      transactions: "100,000+",
-      savings: "$2M+",
-      rating: "4.7/5"
+      betaUsers: "500+",
+      tasksManaged: "10,000+",
+      goalsSet: "1,000+",
+      feedbackScore: "4.5/5"
     },
     highlights: [
-      "Featured in App Store Finance section",
-      "Winner of Fintech Innovation Challenge",
-      "Bank-level security encryption"
+      "Featured in AI Today Magazine",
+      "Positive user feedback during beta",
+      "Continuous learning and improvement"
     ],
-    duration: "4 months",
-    teamSize: "Solo project",
-    role: "Solo Full-Stack Developer"
-  }
+    duration: "5 months (ongoing)",
+    teamSize: "Solo Developer",
+    role: "Founder & Lead Developer"
+  } 
 ];
 
 const categories = ["All", "Web Application", "E-commerce", "SaaS Platform", "Developer Tools", "Fintech", "Mobile App"];
