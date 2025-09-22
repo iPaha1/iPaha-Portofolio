@@ -149,28 +149,34 @@ const LandingPage = () => {
   const products = [
     {
       name: "oKadwuma.com",
-      description: "Job search platform connecting Ghanaian jobseekers and employers"
+      description: "Job search platform connecting Ghanaian jobseekers and employers",
+      link: "https://www.okadwuma.com"
     },
     {
       name: "okDdwa.com", 
-      description: "Multi-tenant e-commerce marketplace for local traders"
+      description: "Multi-tenant e-commerce marketplace for local traders",
+      link: "https://www.okddwa.com"
     },
     // Add more products as needed - Delievery app, location app, school management app, etc.
     {
         name: "okSumame.com",
-        description: "Parcel delivery service connecting local couriers with customers"
+        description: "Parcel delivery service connecting local couriers with customers",
+        link: "/" // Coming soon
     },
     {
         name: "okSika.com",
-        description: "Payment gateway solution for online transactions"
+        description: "Payment gateway solution for online transactions",
+        link: "https://www.oksika.com"
     },
     {
         name: "okEdukation.com",
-        description: "School management system for educational institutions"
+        description: "School management system for educational institutions",
+        link: "https://www.okedukation.com"
     },
     {
         name: "Paralelme.com",
-        description: "AI powered personal assistant and life coach"
+        description: "AI powered personal assistant and life coach",
+        link: "https://www.paralelme.com"
     }
 
   ];
@@ -370,10 +376,11 @@ const LandingPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {products.map((product, index) => (
-              <motion.div
-                key={product.name}
-                initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
+              <Link href={product.link} target="_blank" rel="noopener noreferrer" className="contents" key={product.name}>
+                <motion.div
+                  key={product.name}
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
                 viewport={{ once: true }}
                 whileHover={{ y: -5 }}
@@ -386,6 +393,7 @@ const LandingPage = () => {
                 </div>
                 <p className="text-gray-700">{product.description}</p>
               </motion.div>
+              </Link>
             ))}
           </div>
         </div>
