@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 import { currentUser }   from "@clerk/nextjs/server";
 import { CVAnalyserPage } from "./_ai-cv-analyser/ai-cv-analyser-page";
 
+export const dynamic = 'force-dynamic';
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 

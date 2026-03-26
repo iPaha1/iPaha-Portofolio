@@ -8,6 +8,7 @@ import type { Metadata }        from "next";
 import { currentUser }          from "@clerk/nextjs/server";
 import { BirthdayPlannerPage } from "./_birthday-planner/birthday-planner-page";
 
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title:       "AI Kids Birthday Planner — Perfect Party in Minutes",

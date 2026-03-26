@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 import { currentUser } from "@clerk/nextjs/server";
 import { ProductivityScorePage } from "./_productivity-score/productivity-score-page";
 
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: "Productivity Score — Find What's Slowing You Down | Free Audit Tool",

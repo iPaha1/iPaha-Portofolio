@@ -9,6 +9,7 @@ import { currentUser }        from "@clerk/nextjs/server";
 import { prismadb }           from "@/lib/db";
 import { HomePlannerPage } from "./_first-home-planner/home-planner-page";
 
+export const dynamic = 'force-dynamic';
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 

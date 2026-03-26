@@ -8,6 +8,7 @@ import type { Metadata }     from "next";
 import { currentUser }       from "@clerk/nextjs/server";
 import { QRGeneratorPage } from "./_qr-code-generator/qr-generator-page";
 
+export const dynamic = 'force-dynamic';
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 

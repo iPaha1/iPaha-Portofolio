@@ -7,6 +7,7 @@ import { auth }                 from "@clerk/nextjs/server";
 import { prismadb }             from "@/lib/db";
 import { ChemistryEnginePage } from "./_chemistry-engine/chemistry-engine-page";
 
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title:       "Chemistry Understanding Engine | Isaac Paha",

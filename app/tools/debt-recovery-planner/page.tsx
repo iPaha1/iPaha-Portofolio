@@ -8,6 +8,7 @@ import type { Metadata }    from "next";
 import { currentUser }      from "@clerk/nextjs/server";
 import { DebtPlannerPage } from "./_debt-recovery-planner/debt-planner-page";
 
+export const dynamic = 'force-dynamic';
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 

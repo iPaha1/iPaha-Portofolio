@@ -8,6 +8,7 @@ import type { Metadata }      from "next";
 import { currentUser }        from "@clerk/nextjs/server";
 import { ShoppingListPage } from "./_smart-shopping-list/shopping-list-page";
 
+export const dynamic = 'force-dynamic';
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 

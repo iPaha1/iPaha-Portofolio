@@ -16,6 +16,7 @@ import { UserRole } from "../generated/prisma/enums";
 import { prismadb } from "../db";
 
 
+
 export async function syncUser() {
   try {
     const clerkUser = await currentUser();

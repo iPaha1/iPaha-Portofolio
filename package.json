@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate && next build",
     "generate:icons": "tsx scripts/generate-icons-sharp.ts",
     "generate:vapid-keys": "tsx scripts/generate-vapid-keys.ts",
     "generate:secret": "tsx scripts/generate-secret.ts",

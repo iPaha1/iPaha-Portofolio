@@ -10,6 +10,7 @@
 import type { Metadata }        from "next";
 import { RandomToolkitPage } from "./_random-toolkits/random-toolkit-page";
 
+export const dynamic = 'force-dynamic';
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 

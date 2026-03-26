@@ -8,6 +8,7 @@ import type { Metadata }    from "next";
 import { currentUser }      from "@clerk/nextjs/server";
 import { PhysicsEnginePage } from "./_physics-engine/physics-engine-page";
 
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: "Physics Understanding Engine — Not Just Formulas. The Full Story.",

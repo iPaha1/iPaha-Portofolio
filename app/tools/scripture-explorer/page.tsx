@@ -8,6 +8,7 @@ import type { Metadata }          from "next";
 import { currentUser }            from "@clerk/nextjs/server";
 import { ScriptureExplorerPage } from "./_scripture-explorer/scripture-explorer-page";
 
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title:       "Comparative Scripture Explorer — Bible, Qur'an & Tanakh Side by Side",

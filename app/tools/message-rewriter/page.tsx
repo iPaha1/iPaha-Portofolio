@@ -9,6 +9,7 @@ import { currentUser }         from "@clerk/nextjs/server";
 import { MessageRewriterPage } from "./_message-rewriter/message-rewriter-page";
 
 
+export const dynamic = 'force-dynamic';
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 

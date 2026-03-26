@@ -17,6 +17,7 @@ import { currentUser }     from "@clerk/nextjs/server";
 import { prismadb }        from "@/lib/db";
 import { InitialProfile, JobTrackerPage } from "./_application-tracker/job-tracker-page";
 
+export const dynamic = 'force-dynamic';
 
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 
