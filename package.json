@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:generate": "prisma generate && next build",
+    "prisma:generate": "prisma generate",
     "generate:icons": "tsx scripts/generate-icons-sharp.ts",
     "generate:vapid-keys": "tsx scripts/generate-vapid-keys.ts",
     "generate:secret": "tsx scripts/generate-secret.ts",
