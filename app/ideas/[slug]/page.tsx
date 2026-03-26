@@ -8,7 +8,7 @@ import { notFound } from "next/navigation";
 import { IDEAS } from "@/lib/data/ideas-data";
 import { IdeaDetailClient } from "../_ideas/idea-detail-client";
 
-
+const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
 interface Props {
   params: Promise<{ slug: string }>;
 }

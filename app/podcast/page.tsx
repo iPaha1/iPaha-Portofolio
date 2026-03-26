@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import { PodcastClient } from "./_podcast/podcast-client";
 
+const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
 
 export const metadata: Metadata = {
   title: "Signal & Noise — Podcast | Isaac Paha",

@@ -846,7 +846,7 @@ export function GameClient() {
         style={{ background: "linear-gradient(90deg, transparent, rgba(245,158,11,0.7) 40%, rgba(245,158,11,0.3) 100%)" }} />
 
       {/* ── Header ── */}
-      <header className="relative z-10 flex items-center justify-between px-6 py-4"
+      {/* <header className="relative z-10 flex items-center justify-between px-6 py-4"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(5,5,8,0.8)", backdropFilter: "blur(12px)" }}>
 
         <div className="flex items-center gap-4">
@@ -892,7 +892,92 @@ export function GameClient() {
             </button>
           ))}
         </div>
-      </header>
+      </header> */}
+
+      <header 
+  className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4"
+  style={{ 
+    borderBottom: "1px solid rgba(255,255,255,0.06)", 
+    background: "rgba(5,5,8,0.8)", 
+    backdropFilter: "blur(12px)" 
+  }}
+>
+  {/* Left section - always visible */}
+  <div className="flex items-center gap-3 sm:gap-4">
+    <Link href="/" aria-label="Back to home">
+      <Home className="w-5 h-5 text-amber-400" />
+    </Link>
+    <div className="flex items-center gap-2 sm:gap-2.5">
+      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xs flex items-center justify-center"
+        style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.25)" }}>
+        <Gamepad2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+      </div>
+      <div>
+        <h1 className="text-sm sm:text-base font-black text-white" style={{ letterSpacing: "-0.03em" }}>
+          Game Center
+        </h1>
+        <p className="text-[9px] sm:text-[10px] hidden xs:block" style={{ color: "rgba(255,255,255,0.3)" }}>
+          30 games · earn tokens · climb ranks
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {/* Right section - responsive */}
+  <div className="flex items-center gap-2 sm:gap-3">
+    {/* Token balance - always visible on mobile? Optional */}
+    {isSignedIn && (
+      <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xs"
+        style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
+        <Coins className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-amber-400" />
+        <span className="text-xs sm:text-sm font-black" style={{ color: "#f59e0b", letterSpacing: "-0.02em" }}>
+          {tokenBalance.toLocaleString()}
+        </span>
+      </div>
+    )}
+
+    {/* Desktop navigation (hidden on mobile) */}
+    <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+      {[
+        { id: "stats" as Panel, icon: BarChart3, label: "Stats", accent: "#f59e0b" },
+        { id: "leaderboard" as Panel, icon: Trophy, label: "Ranks", accent: "#f59e0b" },
+        { id: "multiplayer" as Panel, icon: Users, label: "Multi", accent: "#6366f1" },
+      ].map(({ id, icon: Icon, label, accent }) => (
+        <button key={id} onClick={() => panelToggle(id)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xs text-xs font-bold transition-all"
+          style={{
+            background: panel === id ? `${accent}20` : "rgba(255,255,255,0.04)",
+            border: panel === id ? `1px solid ${accent}35` : "1px solid rgba(255,255,255,0.08)",
+            color: panel === id ? accent : "rgba(255,255,255,0.45)",
+          }}>
+          <Icon className="w-3.5 h-3.5" />{label}
+        </button>
+      ))}
+    </div>
+
+    {/* Mobile dropdown menu (visible on small screens) */}
+    <div className="flex sm:hidden items-center gap-1.5">
+      {[
+        { id: "stats" as Panel, icon: BarChart3, label: "Stats", accent: "#f59e0b" },
+        { id: "leaderboard" as Panel, icon: Trophy, label: "Ranks", accent: "#f59e0b" },
+        { id: "multiplayer" as Panel, icon: Users, label: "Multi", accent: "#6366f1" },
+      ].map(({ id, icon: Icon, label, accent }) => (
+        <button key={id} onClick={() => panelToggle(id)}
+          className={`flex items-center justify-center w-9 h-9 rounded-xs transition-all ${
+            panel === id ? 'opacity-100' : 'opacity-70'
+          }`}
+          style={{
+            background: panel === id ? `${accent}20` : "rgba(255,255,255,0.04)",
+            border: panel === id ? `1px solid ${accent}35` : "1px solid rgba(255,255,255,0.08)",
+          }}
+          aria-label={label}
+        >
+          <Icon className="w-4 h-4" style={{ color: panel === id ? accent : "rgba(255,255,255,0.6)" }} />
+        </button>
+      ))}
+    </div>
+  </div>
+</header>
 
       {/* ── Main scrollable area ── */}
       <main className="relative z-10 overflow-y-auto" style={{ height: "calc(100vh - 65px)" }}>

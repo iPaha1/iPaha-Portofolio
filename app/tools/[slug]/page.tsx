@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ToolDetailClient } from "../_tools/tool-detail-client";
 
-
+const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
 interface Props {
   params: Promise<{ slug: string }>;
 }

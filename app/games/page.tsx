@@ -11,7 +11,7 @@
 import type { Metadata } from "next";
 import { GameClient } from "./_games/game-client";
 
-
+const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
 // ── All 30 games listed for keyword + structured-data coverage ──────────────
 const GAME_NAMES = [
   "Click Hunt", "Token Rain", "Mystery Box", "Reaction Test", "Memory Match",

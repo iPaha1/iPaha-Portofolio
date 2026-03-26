@@ -50,8 +50,8 @@ export async function GET(req: NextRequest) {
       wallet = await prismadb.tokenWallet.create({
         data: {
           userId: user.id,
-          balance: 100,
-          totalEarned: 100,
+          balance: 10,
+          totalEarned: 10,
           totalSpent: 0,
         },
       });
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
       await prismadb.tokenTransaction.create({
         data: {
           userId: user.id,
-          amount: 100,
+          amount: 10,
           type: "ACHIEVEMENT",
           description: "🎉 Welcome to the Gamification System! Here are 100 free tokens to get you started.",
           metadata: JSON.stringify({

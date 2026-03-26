@@ -6,7 +6,7 @@
 import type { Metadata } from "next";
 import { NewsletterClient } from "./_newsletter/newsletter-client";
 
-
+const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
 export const metadata: Metadata = {
   title: "The Signal — Newsletter | Isaac Paha",
   description:

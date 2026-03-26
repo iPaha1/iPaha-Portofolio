@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import { NowClient } from "./_now/now-client";
 
+const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
 
 export const metadata: Metadata = {
   title: "Now — What Isaac Is Doing | Isaac Paha",

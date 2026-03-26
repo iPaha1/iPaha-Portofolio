@@ -6,7 +6,7 @@
 import type { Metadata } from "next";
 import { IdeasLabClient } from "./_ideas/ideas-lab-client";
 
-
+const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
 export const metadata: Metadata = {
   title: "Ideas Lab — Where Ideas Get Dangerous",
   description:
