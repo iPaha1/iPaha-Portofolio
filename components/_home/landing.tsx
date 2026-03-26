@@ -194,7 +194,7 @@ const LandingPage = () => {
     visible: { 
       y: 0, 
       opacity: 1,
-      transition: { type: 'spring', stiffness: 100, damping: 12 }
+      transition: { type: 'spring' as const, stiffness: 100, damping: 12 }
     }
   };
 
@@ -439,7 +439,7 @@ const LandingPage = () => {
               My Vision
             </h2>
             <p className="text-xl md:text-2xl text-gray-700 leading-relaxed">
-              I build technology that solves real problems — with a focus on employment, commerce, education, and productivity in Africa and beyond. Every line of code is written with purpose, every product designed with impact in mind.
+              I build technology that solves real problems — with a focus on employment, commerce, education, and productivity in UK and beyond. Every line of code is written with purpose, every product designed with impact in mind.
             </p>
           </motion.div>
         </div>
@@ -886,7 +886,7 @@ export default LandingPage;
 //               My Vision
 //             </h2>
 //             <p className="text-xl md:text-2xl text-gray-300 leading-relaxed">
-//               I build technology that solves real problems — with a focus on employment, commerce, education, and productivity in Africa and beyond. Every line of code is written with purpose, every product designed with impact in mind.
+//               I build technology that solves real problems — with a focus on employment, commerce, education, and productivity in UK and beyond. Every line of code is written with purpose, every product designed with impact in mind.
 //             </p>
 //           </motion.div>
 //         </div>

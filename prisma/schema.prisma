@@ -1,0 +1,2418 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// =============================================================================
+// isaacpaha.com — Comprehensive Database Schema
+// Personal Brand Platform · Media Hub · Startup Portfolio · Community
+// =============================================================================
+// Stack: Next.js · Prisma ORM · MySQL
+// Author: Isaac Paha — iPaha Ltd
+// =============================================================================
+
+
+// =============================================================================
+// USERS
+// =============================================================================
+
+// Site visitor and registered user
+model User {
+  id                String    @id @default(cuid())
+  clerkId        String?   @unique // Clerk authentication ID
+  email             String    @unique
+  emailVerified     Boolean   @default(false)
+  emailVerifiedAt   DateTime?
+
+  // Profile
+  username          String?   @unique
+  displayName       String
+  firstName         String?
+  lastName          String?
+  bio               String?   @db.Text
+  avatarUrl         String?
+  websiteUrl        String?
+  twitterHandle     String?
+  linkedinUrl       String?
+  githubHandle      String?
+
+  // Role & permissions
+  role              UserRole  @default(READER)
+  isActive          Boolean   @default(true)
+  isBanned          Boolean   @default(false)
+  bannedAt          DateTime?
+  banReason         String?
+
+  // Geographic & device metadata
+  country           String?
+  countryCode       String?
+  region            String?
+  city              String?
+  timezone          String?
+  ipAddress         String?
+  userAgent         String?
+
+  // Source tracking
+  referralSource    String?
+  referralMedium    String?
+  referralCampaign  String?
+
+  // Engagement scores (cached)
+  totalArticlesRead Int       @default(0)
+  totalComments     Int       @default(0)
+  totalLikes        Int       @default(0)
+  reputationScore   Int       @default(0)
+
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  lastSeenAt        DateTime  @default(now())
+  lastLoginAt       DateTime?
+
+  // Auth
+  passwordHash      String?
+  authProvider      String?
+  authProviderId    String?
+
+  // Relationships
+  sessions          UserSession[]
+  comments          BlogComment[]
+  reactions         BlogReaction[]
+  bookmarks         Bookmark[]
+  likes             PostLike[]
+  newsletter        NewsletterSubscriber?
+  notifications     Notification[]
+  questionAsked     AskIsaacQuestion[]    @relation("QuestionAskedBy")
+  readingHistory    ReadingHistory[]
+  toolUsage         ToolUsageLog[]
+
+  socialTokens      SocialTokens?
+  socialSettings    SocialSettings?
+
+  // Tools
+  jobSeekerProfile      JobSeekerProfile?
+
+  // AI CV Analyser relations
+  cvAnalyses        CvAnalysis[]
+  cvCoverLetters    CvCoverLetter[]
+  cvInterviewSessions CvInterviewSession[]
+
+  // Qr Code
+  qrCodes     QrCode[]
+
+  // Debt Recovery Planner
+  debtProfile       DebtProfile?
+  repaymentPlans    RepaymentPlan[]
+  paymentLogs       PaymentLog[]
+  debtCoachMessages DebtCoachMessage[]
+
+  // First Home Planner
+  homeOwnerShipPlan   HomeOwnershipPlan?
+
+  // Smart Shopping List
+  shoppingLists        ShoppingList[]
+  listCollaborations   ListCollaborator[]
+
+  // Comparative Scripture Explorer 
+  scriptureExplorations  ScriptureExploration[]
+  scriptureNotes         ScriptureNote[]
+
+  // Math Understanding Engine 
+  mathQueries           MathQuery[]
+  mathPracticeSessions  MathPracticeSession[]
+  mathLearningProgress  MathLearningProgress?
+
+  // Physics Understanding Engine 
+  physicsQueries          PhysicsQuery[]
+  physicsPracticeSessions PhysicsPracticeSession[]
+  physicsLearningProgress PhysicsLearningProgress?
+
+  // Chemistry Understanding Engine
+  chemistryQueries          ChemistryQuery[]
+  chemistryPracticeSessions ChemistryPracticeSession[]
+  chemistryLearningProgress ChemistryLearningProgress?
+
+  // Kids Birthday Planner
+  party                     Party[]
+
+  // Gamification & achievements
+  userAchievements         UserAchievement[]
+  gameParticipation    GameParticipation[]
+  tokenWallet           TokenWallet?
+  tokenTransactions       TokenTransaction[]
+  userStreaks            UserStreak[]
+  gameSettings            GameSettings?
+  leaderboardEntries       LeaderboardEntry[]
+  participants            MultiplayerParticipant[]
+  tokenRedemptions         TokenRedemption[]
+  referralsAsReferrer   Referral[]          @relation("Referrer")
+  referralsAsReferred   Referral?           @relation("Referred")
+  referralCode          ReferralCode?
+
+
+  @@map("users")
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([createdAt])
+  @@index([countryCode])
+}
+
+// Session management
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+enum UserRole {
+  READER
+  SUBSCRIBER
+  ADMIN
+  SUPER_ADMIN
+}
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APPS (Products)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model App {
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  tagline      String
+  description  String    @db.Text
+  fullDescription String? @db.LongText
+  category     String
+  status       AppStatus @default(IN_DEVELOPMENT)
+  emoji        String    @default("📱")
+  coverImage   String?
+  logoImage    String?
+  accentColor  String    @default("#f59e0b")
+  isPublished  Boolean   @default(false)
+  isFeatured   Boolean   @default(false)
+  isNew        Boolean   @default(false)
+  comingSoon     Boolean  @default(false)
+
+  problemSolved  String? @db.LongText
+  businessModel  String? @db.LongText
+  targetUsers   String? @db.LongText
+  
+  // Company
+  company      String    // "iPaha Ltd" | "iPahaStores Ltd" | "Okpah Ltd"
+  companyFlag  String    @default("🇬🇧")
+
+  // Links
+  appUrl       String?
+  githubUrl    String?
+  playStoreUrl String?
+  appStoreUrl  String?
+
+  // Tech stack — JSON array of strings
+  techStack    String    @db.Text
+
+  // Metrics
+  userCount    Int       @default(0)
+  viewCount    Int       @default(0)
+  likeCount    Int       @default(0)
+
+  // Dates
+  launchDate   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  screenshots  AppScreenshot[]
+  changelog    AppChangelog[]
+  updates      AppUpdate[]
+  techItems    AppTechItem[]
+
+  @@map("apps")
+  @@index([slug])
+  @@index([status])
+  @@index([company])
+  @@index([isFeatured])
+}
+
+enum AppStatus {
+  COMING_SOON
+  IN_DEVELOPMENT
+  BETA
+  LIVE
+  DEPRECATED
+}
+
+enum ToolStatus {
+  LIVE
+  BETA
+  COMING_SOON
+}
+
+model AppScreenshot {
+  id        String   @id @default(cuid())
+  appId     String
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_screenshots")
+  @@index([appId])
+}
+
+model AppChangelog {
+  id          String   @id @default(cuid())
+  appId       String
+  version     String
+  title       String
+  description String   @db.Text
+  type        String   @default("feature") // feature | fix | improvement | breaking
+  releasedAt  DateTime
+  createdAt   DateTime @default(now())
+
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_changelog")
+  @@index([appId])
+  @@index([releasedAt])
+}
+
+// Build in public update log
+model AppUpdate {
+  id          String   @id @default(cuid())
+  appId       String
+  title       String
+  content     String   @db.LongText
+  dayNumber   Int?
+  metrics     String?  @db.Text // JSON: { users: 10, mrr: 50 }
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  app         App     @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_updates")
+  @@index([appId])
+  @@index([publishedAt])
+}
+
+model AppTechItem {
+  id          String   @id @default(cuid())
+  appId   String
+  name        String
+  category    String?
+  iconUrl     String?
+  url         String?
+
+  app         App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("project_tech_items")
+  @@index([appId])
+}
+
+// enum AppStatus {
+//   CONCEPT
+//   IN_PROGRESS
+//   LAUNCHED
+//   PAUSED
+//   DEPRECATED
+// }
+
+enum AppCategory {
+  WEB_APP
+  MOBILE_APP
+  API
+  OPEN_SOURCE
+  SAAS
+  TOOL
+  RESEARCH
+  OTHER
+}
+
+
+// =============================================================================
+// IDEAS LAB
+// =============================================================================
+
+model Idea {
+  id          String       @id @default(cuid())
+  title       String
+  slug        String       @unique
+  summary     String       @db.Text
+  content     String       @db.LongText
+  coverImage  String?
+  category    IdeaCategory @default(TECH)
+  status      IdeaStatus   @default(CONCEPT)
+  tags        String?      @db.Text // JSON string[]
+  isPublished Boolean      @default(false)
+  publishedAt DateTime?
+  isFeatured  Boolean      @default(false)
+
+  viewCount   Int          @default(0)
+  likeCount   Int          @default(0)
+  commentCount Int         @default(0)
+
+  metaTitle       String?
+  metaDescription String?
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("ideas")
+  @@index([slug])
+  @@index([category])
+  @@index([status])
+  @@index([isPublished])
+}
+
+enum IdeaCategory {
+  TECH
+  AI
+  BUSINESS
+  SOCIETY
+  AFRICA
+  FINTECH
+  EDUCATION
+  PHILOSOPHY
+  OTHER
+}
+
+enum IdeaStatus {
+  CONCEPT
+  EXPLORING
+  DEVELOPING
+  SHELVED
+  LAUNCHED
+}
+
+
+// =============================================================================
+// TOOLS
+// =============================================================================
+
+model Tool {
+  id              String       @id @default(cuid())
+  name            String
+  slug            String       @unique
+  tagLine         String       @db.Text
+  description     String       @db.Text
+  longDescription String?      @db.LongText
+  features        Json?        // List of features for the tool
+  icon            String?
+  tags            String?      @db.Text
+  coverImage      String?
+  category        ToolCategory @default(AI)
+  status          ToolStatus  @default(LIVE)
+  isPublic        Boolean      @default(true)
+  isPremium       Boolean      @default(false)
+  isFeatured      Boolean      @default(false)
+  isInteractive   Boolean      @default(false)
+  isActive        Boolean      @default(true)
+
+  version         String?      @default("1.0.0")
+  apiEndpoint     String?
+  config          String?      @db.Text // JSON
+
+  viewCount       Int          @default(0)
+  usageCount      Int          @default(0)
+  ratingAvg       Float?
+  ratingCount     Int          @default(0)
+
+  metaTitle       String?
+  metaDescription String?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  usageLogs       ToolUsageLog[]
+
+  cvAnalyses          CvAnalysis[]
+  qrCodes             QrCode[]
+  debtRecoveryPlanner        DebtProfile[]
+  jobApplicationPlanner   JobSeekerProfile[]
+  firstHomePlanner        HomeOwnershipPlan[]
+  smartShoppingList       ShoppingList[]
+  scriptureExplorer       ScriptureExploration[]
+  mathEngine              MathQuery[]
+  physicsEngine           PhysicsQuery[]
+  
+
+  @@map("tools")
+  @@index([slug])
+  @@index([category])
+  @@index([isActive])
+}
+
+
+
+model ToolUsageLog {
+  id           String   @id @default(cuid())
+  toolId       String
+  userId       String?
+  ipAddress    String?
+  inputData    String?  @db.Text
+  processingMs Int?
+  wasSuccess   Boolean  @default(true)
+  errorMsg     String?
+  country      String?
+  createdAt    DateTime @default(now())
+
+  tool         Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("tool_usage_logs")
+  @@index([toolId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum ToolCategory {
+  AI
+  PRODUCTIVITY
+  CAREER
+  STARTUP
+  EDUCATION
+  WRITING
+  OTHER
+}
+
+
+// =============================================================================
+// NEWSLETTER
+// =============================================================================
+
+model NewsletterSubscriber {
+  id                  String           @id @default(cuid())
+  email               String           @unique
+  userId              String?          @unique
+  firstName           String?
+  lastName            String?
+  displayName         String?
+
+  status              NewsletterStatus @default(ACTIVE)
+  subscribedAt        DateTime         @default(now())
+  unsubscribedAt      DateTime?
+  unsubscribeReason   String?
+  confirmedAt         DateTime?
+  confirmToken        String?          @unique
+
+  // Preferences
+  weeklyDigest        Boolean          @default(true)
+  newArticleAlerts    Boolean          @default(true)
+  projectUpdates      Boolean          @default(true)
+  communityPosts      Boolean          @default(true)
+  milestoneAlerts     Boolean          @default(false)
+
+  source              String?
+  segment             String?
+  tags                String?          @db.Text // JSON string[]
+
+  country             String?
+  countryCode         String?
+  timezone            String?
+
+  // Engagement stats
+  totalEmailsReceived Int              @default(0)
+  totalEmailsOpened   Int              @default(0)
+  totalLinksClicked   Int              @default(0)
+  lastOpenedAt        DateTime?
+  lastClickedAt       DateTime?
+  engagementScore     Float            @default(0)
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  user                User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  emailEvents         EmailEvent[]
+
+  @@map("newsletter_subscribers")
+  @@index([email])
+  @@index([status])
+  @@index([confirmedAt])
+  @@index([subscribedAt])
+}
+
+model NewsletterEdition {
+  id          String   @id @default(cuid())
+  issueNumber Int      @unique
+  title       String
+  slug        String   @unique
+  preview     String   @db.Text   // The preview line shown in email clients
+  content     String   @db.LongText  // Tiptap JSON
+  contentHtml String?  @db.LongText
+
+  // Stats
+  sentAt      DateTime?
+  recipientCount Int    @default(0)
+  openCount   Int       @default(0)
+  clickCount  Int       @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("newsletter_editions")
+  @@index([issueNumber])
+  @@index([sentAt])
+}
+
+model NewsletterCampaign {
+  id                String         @id @default(cuid())
+  title             String
+  subject           String
+  previewText       String?
+  htmlContent       String         @db.LongText
+  textContent       String         @db.LongText
+  type              CampaignType   @default(REGULAR)
+  status            CampaignStatus @default(DRAFT)
+
+  scheduledAt       DateTime?
+  sentAt            DateTime?
+
+  segments          String?        @db.Text // JSON
+  totalRecipients   Int            @default(0)
+
+  totalSent         Int            @default(0)
+  totalOpened       Int            @default(0)
+  totalClicked      Int            @default(0)
+  totalUnsubscribed Int            @default(0)
+  totalBounced      Int            @default(0)
+  openRate          Float?
+  clickRate         Float?
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  emailEvents       EmailEvent[]
+
+  @@map("newsletter_campaigns")
+  @@index([status])
+  @@index([sentAt])
+}
+
+model EmailEvent {
+  id             String               @id @default(cuid())
+  subscriberId   String
+  campaignId     String?
+  type           EmailEventType
+  emailAddress   String
+  ipAddress      String?
+  userAgent      String?
+  link           String?
+  bounceType     String?
+  bounceReason   String?
+  createdAt      DateTime             @default(now())
+
+  subscriber     NewsletterSubscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  campaign       NewsletterCampaign?  @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@map("email_events")
+  @@index([subscriberId])
+  @@index([campaignId])
+  @@index([type])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  subject     String
+  htmlContent String   @db.LongText
+  textContent String   @db.LongText
+  variables   String?  @db.Text // JSON: available template variables
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("email_templates")
+}
+
+enum NewsletterStatus {
+  PENDING
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+  COMPLAINED
+}
+
+enum CampaignType {
+  REGULAR
+  WELCOME
+  ANNOUNCEMENT
+  DIGEST
+  MILESTONE
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+enum EmailEventType {
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  UNSUBSCRIBED
+  BOUNCED
+  COMPLAINED
+  FAILED
+}
+
+
+// =============================================================================
+// MEDIA — PODCAST
+// =============================================================================
+
+model PodcastEpisode {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  description     String        @db.Text
+  showNotes       String?       @db.LongText
+  thumbnailImage  String?
+
+  audioUrl        String?
+  videoUrl        String?
+  youtubeId       String?
+  duration        Int?          // Seconds
+  episodeNumber   Int?
+  season          Int?          @default(1)
+
+  type            PodcastType   @default(SOLO)
+  status          EpisodeStatus @default(DRAFT)
+  publishedAt     DateTime?
+
+  guestName       String?
+  guestTitle      String?
+  guestImage      String?
+  guestUrl        String?
+
+  playCount       Int           @default(0)
+  likeCount       Int           @default(0)
+
+  metaTitle       String?
+  metaDescription String?
+  tags            String?       @db.Text // JSON
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  chapters        PodcastChapter[]
+
+  @@map("podcast_episodes")
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+}
+
+model PodcastChapter {
+  id          String         @id @default(cuid())
+  episodeId   String
+  title       String
+  startSecs   Int
+  createdAt   DateTime       @default(now())
+
+  episode     PodcastEpisode @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@map("podcast_chapters")
+  @@index([episodeId])
+}
+
+enum PodcastType {
+  SOLO
+  INTERVIEW
+  PANEL
+  READING
+}
+
+enum EpisodeStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+
+// =============================================================================
+// ASK ISAAC / NOW PAGE / TIMELINE / KNOWLEDGE LIBRARY
+// =============================================================================
+
+model AskIsaacQuestion {
+  id              String         @id @default(cuid())
+  userId          String?
+  askerName       String
+  askerEmail      String?
+  question        String         @db.Text
+  context         String?        @db.Text
+  status          QuestionStatus @default(SUBMITTED)
+  isPublic        Boolean        @default(false)
+  isAnonymous     Boolean        @default(false)
+  ipAddress       String?
+
+  answeredPostId  String?
+  answeredAt      DateTime?
+  answerSummary   String?        @db.Text
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  askedBy         User?          @relation("QuestionAskedBy", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("ask_isaac_questions")
+  @@index([status])
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+enum QuestionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  ANSWERED_PUBLICLY
+  ANSWERED_PRIVATELY
+  REJECTED
+}
+
+// "What I'm Thinking About Now" — updated monthly
+model NowPage {
+  id          String   @id @default(cuid())
+  month       Int
+  year        Int
+  title       String
+  content     String   @db.LongText
+  isPublished Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("now_pages")
+  @@unique([month, year])
+  @@index([year])
+  @@index([isPublished])
+}
+
+// Personal journey timeline
+model TimelineEvent {
+  id          String       @id @default(cuid())
+  year        Int
+  month       Int?
+  title       String
+  description String       @db.Text
+  type        TimelineType @default(MILESTONE)
+  icon        String?
+  imageUrl    String?
+  link        String?
+  isHighlight Boolean      @default(false)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+
+  @@map("timeline_events")
+  @@index([year])
+  @@index([type])
+}
+
+enum TimelineType {
+  EDUCATION
+  CAREER
+  PROJECT
+  PERSONAL
+  MILESTONE
+  AWARD
+}
+
+// Personal knowledge library — books, papers, courses
+model KnowledgeItem {
+  id            String        @id @default(cuid())
+  title         String
+  author        String?
+  type          KnowledgeType
+  url           String?
+  imageUrl      String?
+  description   String?       @db.Text
+  notes         String?       @db.LongText
+  rating        Int?
+  isRecommended Boolean       @default(false)
+  isFeatured    Boolean       @default(false)
+  finishedAt    DateTime?
+  startedAt     DateTime?
+  tags          String?       @db.Text // JSON
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("knowledge_items")
+  @@index([type])
+  @@index([isRecommended])
+}
+
+enum KnowledgeType {
+  BOOK
+  PAPER
+  COURSE
+  VIDEO
+  PODCAST
+  ARTICLE
+  TOOL
+  OTHER
+}
+
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String           @db.Text
+  link      String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  data      String?          @db.Text // JSON
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  COMMENT_REPLY
+  NEW_COMMENT_ON_FOLLOWED
+  NEW_ARTICLE
+  NEW_FOLLOWER
+  MENTION
+  NEWSLETTER
+  MILESTONE
+  SYSTEM
+}
+
+
+// =============================================================================
+// ANALYTICS & CACHING
+// =============================================================================
+
+// Site-wide daily statistics
+model SiteStatistic {
+  id                 String   @id @default(cuid())
+  date               DateTime @db.Date @unique
+
+  pageViews          Int      @default(0)
+  uniqueVisitors     Int      @default(0)
+  sessions           Int      @default(0)
+  bounceRate         Float?
+  avgSessionSecs     Int?
+
+  newPosts           Int      @default(0)
+  totalComments      Int      @default(0)
+  totalReactions     Int      @default(0)
+  totalShares        Int      @default(0)
+  totalBookmarks     Int      @default(0)
+
+  newUsers           Int      @default(0)
+  newSubscribers     Int      @default(0)
+  unsubscribes       Int      @default(0)
+  toolUsageCount     Int      @default(0)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("site_statistics")
+  @@index([date])
+}
+
+// Geographic analytics
+model CountryStatistic {
+  id               String   @id @default(cuid())
+  countryCode      String   @unique
+  countryName      String
+  flagEmoji        String?
+
+  totalVisitors    Int      @default(0)
+  totalPageViews   Int      @default(0)
+  totalUsers       Int      @default(0)
+  totalSubscribers Int      @default(0)
+  totalComments    Int      @default(0)
+
+  todayVisitors    Int      @default(0)
+  weekVisitors     Int      @default(0)
+  monthVisitors    Int      @default(0)
+
+  lastUpdated      DateTime @default(now())
+
+  @@map("country_statistics")
+  @@index([totalVisitors])
+}
+
+// Trending score cache
+// Score = (likes * 3 + comments * 5 + views) / hours_since_post
+model TrendingCache {
+  id        String   @id @default(cuid())
+  postId    String   @unique
+  score     Float    @default(0)
+  rank      Int?
+  period    String   @default("24h") // "24h" | "7d" | "30d"
+  updatedAt DateTime @default(now())
+
+  @@map("trending_cache")
+  @@index([score])
+  @@index([rank])
+}
+
+// Article recommendation cache
+model RecommendationCache {
+  id                String   @id @default(cuid())
+  sourcePostId      String
+  recommendedPostId String
+  score             Float    @default(0)
+  reason            String?  // "same_tag" | "same_category" | "popular"
+  createdAt         DateTime @default(now())
+  expiresAt         DateTime
+
+  @@map("recommendation_cache")
+  @@unique([sourcePostId, recommendedPostId])
+  @@index([sourcePostId])
+  @@index([score])
+}
+
+
+// =============================================================================
+// ADMIN
+// =============================================================================
+
+model AdminUser {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  firstName         String
+  lastName          String
+  avatarUrl         String?
+  role              AdminRole @default(ADMIN)
+  isActive          Boolean   @default(true)
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?
+
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  activityLogs      AdminActivityLog[]
+
+  @@map("admin_users")
+}
+
+// Full admin audit trail
+model AdminActivityLog {
+  id          String    @id @default(cuid())
+  adminId     String
+  action      String
+  entityType  String?
+  entityId    String?
+  description String?   @db.Text
+  ipAddress   String?
+  before      String?   @db.Text // JSON: state before change
+  after       String?   @db.Text // JSON: state after change
+  createdAt   DateTime  @default(now())
+
+  admin       AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("admin_activity_logs")
+  @@index([adminId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+// Site-wide settings key/value store
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  type        String?  @db.Text
+  label       String?  @db.Text
+  description String?  @db.Text
+  dataType    String   @default("string") // string | number | boolean | json
+  group       String?  // "general" | "seo" | "social" | "analytics"
+  isPublic    Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("site_settings")
+  @@index([group])
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+  EDITOR
+}
+
+
+// =============================================================================
+// SECURITY
+// =============================================================================
+
+model SecurityLog {
+  id          String   @id @default(cuid())
+  eventType   String
+  severity    String   @default("LOW") // LOW | MEDIUM | HIGH | CRITICAL
+  ipAddress   String
+  userAgent   String?
+  userId      String?
+  adminId     String?
+  details     String?  @db.Text // JSON
+  isResolved  Boolean  @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  createdAt   DateTime @default(now())
+
+  @@map("security_logs")
+  @@index([eventType])
+  @@index([severity])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@index([isResolved])
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   @unique // "ip:x.x.x.x:action"
+  count     Int      @default(1)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("rate_limits")
+  @@index([key])
+  @@index([resetAt])
+}
+
+
+// =============================================================================
+// MEDIA MENTIONS & CONTACT
+// =============================================================================
+
+model MediaMention {
+  id              String   @id @default(cuid())
+  title           String
+  publication     String
+  publicationLogo String?
+  url             String?
+  excerpt         String?  @db.Text
+  type            String?  // "article" | "podcast" | "interview" | "feature"
+  publishedAt     DateTime?
+  isFeatured      Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@map("media_mentions")
+  @@index([publishedAt])
+  @@index([isFeatured])
+}
+
+model ContactRequest {
+  id          String        @id @default(cuid())
+  name        String
+  email       String
+  subject     String
+  message     String        @db.LongText
+  type        ContactType   @default(GENERAL)
+  status      ContactStatus @default(NEW)
+  ipAddress   String?
+  source      String?
+  isSpam      Boolean       @default(false)
+  notes       String?       @db.Text
+  repliedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("contact_requests")
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ContactType {
+  GENERAL
+  SPEAKING
+  COLLABORATION
+  BUSINESS
+  PRESS
+  FEEDBACK
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+  SPAM
+}
+
+
+model ContactSubmission {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  type        String   // "collaboration" | "consulting" | "speaking" | "general"
+  subject     String?
+  message     String   @db.Text
+  budget      String?
+  company     String?
+  isRead      Boolean  @default(false)
+  isReplied   Boolean  @default(false)
+  repliedAt   DateTime?
+  ipAddress   String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contact_submissions")
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+}
+
+
+// =============================================================================
+// PREMIUM CONTENT & AI FEATURES
+// =============================================================================
+
+model PremiumContent {
+  id        String   @id @default(cuid())
+  postId    String   @unique
+  price     Decimal  @db.Decimal(10, 2)
+  currency  String   @default("GBP")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchases ContentPurchase[]
+
+  @@map("premium_content")
+}
+
+model ContentPurchase {
+  id            String         @id @default(cuid())
+  userId        String
+  contentId     String
+  amount        Decimal        @db.Decimal(10, 2)
+  currency      String         @default("GBP")
+  paymentId     String?
+  paymentStatus String         @default("PENDING")
+  purchasedAt   DateTime       @default(now())
+
+  content       PremiumContent @relation(fields: [contentId], references: [id])
+
+  @@map("content_purchases")
+  @@index([userId])
+  @@index([contentId])
+}
+
+// AI chatbot training documents
+model AiChatbotDoc {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.LongText
+  sourceType  String   // "blog_post" | "project" | "about_page" | "idea"
+  sourceId    String?
+  isActive    Boolean  @default(true)
+  embedding   String?  @db.LongText // Vector embedding
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ai_chatbot_docs")
+  @@index([sourceType])
+  @@index([isActive])
+}
+
+// AI chat session history
+model AiChatSession {
+  id           String   @id @default(cuid())
+  sessionKey   String   @unique
+  userId       String?
+  ipAddress    String?
+  messages     String   @db.LongText // JSON message array
+  messageCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("ai_chat_sessions")
+  @@index([sessionKey])
+  @@index([userId])
+}
+
+
+// =============================================================================
+// DOCUMENTS
+// =============================================================================
+
+model Document {
+  id          String         @id @default(cuid())
+  name        String
+  description String?        @db.Text
+  type        DocumentType   @default(OTHER)
+  fileName    String         @db.Text
+  fileUrl     String         @db.Text
+  fileSize    Int
+  mimeType    String
+  folderId    String?
+  uploaderId  String
+  isPublic    Boolean        @default(false)
+  tags        String?        @db.Text // JSON string[]
+  version     Int            @default(1)
+  uploadedAt  DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  folder      DocumentFolder? @relation(fields: [folderId], references: [id])
+
+  @@map("documents")
+  @@index([folderId])
+  @@index([uploaderId])
+  @@index([type])
+}
+
+model DocumentFolder {
+  id          String           @id @default(cuid())
+  name        String
+  description String?
+  parentId    String?
+  createdAt   DateTime         @default(now())
+
+  parent      DocumentFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children    DocumentFolder[] @relation("FolderHierarchy")
+  documents   Document[]
+
+  @@map("document_folders")
+}
+
+enum DocumentType {
+  REPORT
+  INVOICE
+  CONTRACT
+  POLICY
+  PRESS_KIT
+  RESUME
+  OTHER
+}
+
+
+// model MediaItem {
+//   id              String    @id @default(cuid())
+//   createdAt       DateTime  @default(now())
+//   url             String
+//   type            MediaType
+//   title           String?
+//   alt             String?
+  
+//   description     String?   @db.Text
+//   source          String?   // "blog_post" | "project" | "idea"
+//   sourceId        String?
+
+// }
+
+// enum MediaType {
+//   IMAGE
+//   VIDEO
+//   DOCUMENT
+//   AUDIO
+// }
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEDIA LIBRARY
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  OTHER
+}
+
+model MediaFile {
+  id            String       @id @default(cuid())
+
+  // Storage
+  filename      String                       // Cloudinary slug / stored name
+  originalName  String                       // Original filename from user's device
+  url           String       @db.Text        // Cloudinary secure_url
+  cloudinaryId  String?                      // Cloudinary public_id (needed for delete/transforms)
+  thumbnailUrl  String?      @db.Text        // Auto-generated thumbnail (video/document)
+
+  // Type & MIME
+  type          MediaType    @default(IMAGE)
+  mimeType      String
+
+  // Dimensions — images & video
+  width         Int?
+  height        Int?
+  duration      Float?                       // Seconds — video and audio
+
+  // Metadata
+  alt           String?      @db.Text
+  caption       String?      @db.Text
+  description   String?      @db.Text
+  tags          String?      @db.Text        // JSON string[] — e.g. ["blog","hero","portrait"]
+
+  // File size
+  size          Int                          // Bytes
+
+  // Organisation
+  folderId      String?
+  folder        MediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  // Usage tracking — what content references this file
+  usedIn        MediaUsage[]
+
+  // Soft delete / trash
+  isDeleted     Boolean      @default(false)
+  deletedAt     DateTime?
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("media_files")
+  @@index([type])
+  @@index([folderId])
+  @@index([isDeleted])
+  @@index([createdAt])
+  @@index([cloudinaryId])
+}
+
+model MediaFolder {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique          // URL-safe: "blog-images", "app-screenshots"
+  description String?
+  color       String        @default("#f59e0b")  // Folder chip colour in UI
+  icon        String        @default("Folder")   // Lucide icon name
+  parentId    String?
+
+  parent      MediaFolder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children    MediaFolder[] @relation("FolderTree")
+  files       MediaFile[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("media_folders")
+  @@index([parentId])
+  @@index([slug])
+}
+
+// Tracks which content items reference a media file.
+// Powers the "Used in X places" badge and prevents accidental deletions.
+model MediaUsage {
+  id          String    @id @default(cuid())
+  fileId      String
+  sourceType  String    // "blog_post" | "app" | "idea" | "tool" | "podcast" | "newsletter"
+  sourceId    String    // cuid of the referencing record
+  field       String    @default("")  // e.g. "coverImage", "screenshot", "avatar"
+  createdAt   DateTime  @default(now())
+
+  file        MediaFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, sourceType, sourceId, field])
+  @@map("media_usage")
+  @@index([fileId])
+  @@index([sourceType, sourceId])
+}
+
+// =============================================================================
+// SEO & INFRASTRUCTURE
+// =============================================================================
+
+model Redirect {
+  id          String   @id @default(cuid())
+  fromPath    String   @unique
+  toPath      String
+  statusCode  Int      @default(301)
+  isActive    Boolean  @default(true)
+  hitCount    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("redirects")
+  @@index([fromPath])
+  @@index([isActive])
+}
+
+model SitemapEntry {
+  id          String   @id @default(cuid())
+  path        String   @unique
+  priority    Float    @default(0.5)
+  changeFreq  String   @default("weekly")
+  lastMod     DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("sitemap_entries")
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("tags")
+  @@index([slug])
+  @@index([usageCount])
+}
+
+// =============================================================================
+// Social Media
+// =============================================================================
+
+
+// model SocialTokens {
+//   id              String    @id @default(cuid())
+//   createdAt       DateTime  @default(now())
+//   updatedAt       DateTime  @updatedAt
+
+//   // Twitter
+//   twitterToken    String?  @db.Text
+//   twitterRefreshToken String? @db.Text  // Added refresh token for Twitter
+//   twitterUserId   String?
+
+//   // Facebook
+//   facebookToken   String?  @db.Text
+//   facebookUserId  String?
+
+//   // Instagram (via Facebook)
+//   instagramUserId String?
+
+//   // LinkedIn
+//   linkedinToken   String?  @db.Text
+//   linkedinUserId  String?
+
+//   // user relationship
+//   userId        String    @unique
+//   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+// }
+
+
+// model SocialSettings {
+//   id                 String    @id @default(cuid())
+//   createdAt          DateTime  @default(now())
+//   updatedAt          DateTime  @updatedAt
+  
+//   // Auto-posting settings
+//   autoPostTwitter    Boolean   @default(false)
+//   autoPostFacebook   Boolean   @default(false)
+//   autoPostInstagram  Boolean   @default(false)
+//   autoPostLinkedin   Boolean   @default(false)
+  
+//   // Custom message templates
+//   twitterTemplate    String?
+//   facebookTemplate   String?
+//   instagramTemplate  String?
+//   linkedinTemplate   String?
+  
+//   // user relationship
+//   userId           String    @unique
+//   user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+// }
+
+// enum SocalMediaPlatform {
+//   TWITTER
+//   FACEBOOK
+//   INSTAGRAM
+//   LINKEDIN
+// }
+
+// =============================================================================
+// Social Media
+// =============================================================================
+
+
+enum SocialPlatform {
+  TWITTER
+  LINKEDIN
+  FACEBOOK
+  INSTAGRAM
+  THREADS
+  TIKTOK
+  YOUTUBE
+}
+
+// Per-user OAuth token store (one row per user, all platform tokens in one place)
+model SocialTokens {
+  id                    String    @id @default(cuid())
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Twitter / X
+  twitterToken          String?   @db.Text
+  twitterRefreshToken   String?   @db.Text
+  twitterTokenExpiry    DateTime?
+  twitterUserId         String?
+
+  // Facebook
+  facebookToken         String?   @db.Text
+  facebookTokenExpiry   DateTime?
+  facebookUserId        String?
+
+  // Instagram (via Facebook Login)
+  instagramUserId       String?
+
+  // LinkedIn
+  linkedinToken         String?   @db.Text
+  linkedinRefreshToken  String?   @db.Text
+  linkedinTokenExpiry   DateTime?
+  linkedinUserId        String?
+
+  // Threads (via Meta)
+  threadsToken          String?   @db.Text
+  threadsUserId         String?
+
+  // TikTok
+  tiktokToken           String?   @db.Text
+  tiktokRefreshToken    String?   @db.Text
+  tiktokTokenExpiry     DateTime?
+  tiktokUserId          String?
+
+  // YouTube (Google OAuth)
+  youtubeToken          String?   @db.Text
+  youtubeRefreshToken   String?   @db.Text
+  youtubeTokenExpiry    DateTime?
+  youtubeChannelId      String?
+
+  // User relationship
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("social_tokens")
+}
+
+// Per-user social media settings and templates
+model SocialSettings {
+  id                    String    @id @default(cuid())
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Auto-posting toggles (when AI cron generates a post, auto-publish to these)
+  autoPostTwitter       Boolean   @default(false)
+  autoPostFacebook      Boolean   @default(false)
+  autoPostInstagram     Boolean   @default(false)
+  autoPostLinkedin      Boolean   @default(false)
+  autoPostThreads       Boolean   @default(false)
+  autoPostTiktok        Boolean   @default(false)
+  autoPostYoutube       Boolean   @default(false)
+
+  // Per-platform content templates (supports {title}, {url}, {excerpt} variables)
+  twitterTemplate       String?   @db.Text
+  facebookTemplate      String?   @db.Text
+  instagramTemplate     String?   @db.Text
+  linkedinTemplate      String?   @db.Text
+  threadsTemplate       String?   @db.Text
+  tiktokTemplate        String?   @db.Text
+  youtubeTemplate       String?   @db.Text
+
+  // Cron / auto-draft settings (JSON — matches SocialCronSettings type in code)
+  cronSettings          String?   @db.Text
+
+  // User relationship
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("social_settings")
+}
+
+model SocialConnection {
+  id            String         @id @default(cuid())
+  platform      SocialPlatform @unique
+  handle        String?
+  displayName   String?
+  avatarUrl     String?
+  profileUrl    String?
+
+  // OAuth tokens (stored encrypted — use a library like @prisma/field-encryption in production)
+  accessToken   String         @db.Text
+  refreshToken  String?        @db.Text
+  tokenExpiry   DateTime?
+
+  // Profile stats (refreshed periodically)
+  followerCount Int?
+  followingCount Int?
+  postCount     Int?
+
+  // Status
+  isActive      Boolean        @default(true)
+  lastPostedAt  DateTime?
+  lastSyncedAt  DateTime?
+
+  // Timestamps
+  connectedAt   DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  posts         SocialPost[]
+
+  @@map("social_connections")
+  @@index([platform])
+  @@index([isActive])
+}
+
+model SocialPost {
+  id             String         @id @default(cuid())
+  connectionId   String
+  platform       SocialPlatform
+
+  // Content
+  content        String         @db.Text
+  mediaUrls      String?        @db.Text   // JSON string[]
+  hashtags       String?        @db.Text   // JSON string[]
+  linkUrl        String?                   // optional link attached to post
+
+  // Cross-posting source (if generated from a blog post)
+  blogPostId     String?
+
+  // Platform response (filled after publishing)
+  platformPostId String?                   // ID returned by the platform API
+  platformUrl    String?                   // Direct URL to the published post
+
+  // Scheduling
+  scheduledFor   DateTime?
+  publishedAt    DateTime?
+
+  // Status: draft | scheduled | published | failed
+  status         String         @default("draft")
+  failReason     String?        @db.Text   // populated if status = failed
+
+  // AI metadata
+  isAiGenerated  Boolean        @default(false)
+  aiPrompt       String?        @db.Text   // what prompt generated this
+
+  // Engagement stats (synced from platform)
+  likes          Int            @default(0)
+  shares         Int            @default(0)
+  comments       Int            @default(0)
+  impressions    Int            @default(0)
+  clicks         Int            @default(0)
+  reaches        Int            @default(0)
+
+  // Timestamps
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  connection     SocialConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@map("social_posts")
+  @@index([connectionId])
+  @@index([platform])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([scheduledFor])
+  @@index([isAiGenerated])
+}
+
+
+// =============================================================================
+// DEVELOPER HUB — Personal Knowledge System
+// Phase 1: Snippets · AI Prompts · Dev Commands · Error Solutions
+// =============================================================================
+
+
+enum HubEntryType {
+  // Phase 1
+  SNIPPET   // Code Snippet Vault
+  PROMPT    // AI Prompt Library
+  COMMAND   // Developer Command Library
+  ERROR     // Error Solution Library
+  // Phase 2
+  NOTE      // Learning Notes / Engineering Journal
+  API       // API Reference Hub
+  PATTERN   // Architecture Pattern Library
+  TEMPLATE  // Template Library
+  PLAYBOOK  // Developer Playbooks
+  RESOURCE  // Resource Library
+}
+
+enum HubLanguage {
+  // General
+  PLAINTEXT
+  BASH
+  MARKDOWN
+  // Web
+  HTML
+  CSS
+  JAVASCRIPT
+  TYPESCRIPT
+  JSX
+  TSX
+  // Backend
+  PYTHON
+  RUST
+  GO
+  JAVA
+  CSHARP
+  PHP
+  RUBY
+  // Data
+  SQL
+  PRISMA
+  GRAPHQL
+  JSON
+  YAML
+  // Config
+  DOCKERFILE
+  ENV
+  TOML
+  // Other
+  REGEX
+  OTHER
+}
+
+
+// ─── UNIFIED HUB ENTRY ───────────────────────────────────────────────────────
+// Single table for all Phase 1 entry types.
+// type-specific fields are stored in typed JSON columns.
+// This makes global search trivial and the schema lean.
+
+model HubEntry {
+  id          String       @id @default(cuid())
+  type        HubEntryType
+
+  // ── Universal fields ──────────────────────────────────────────────────────
+  title       String
+  description String?      @db.Text
+  content     String       @db.LongText  // main payload: code | prompt | command | solution
+  tags        String?      @db.Text      // JSON string[]
+  category    String?                    // free-text: "Prisma" | "React" | "Git" | "Docker" etc.
+  isFavourite Boolean      @default(false)
+  isPinned    Boolean      @default(false)
+  copyCount   Int          @default(0)   // how many times copied — surfaces actually useful entries
+  viewCount   Int          @default(0)
+
+  // ── SNIPPET-specific ──────────────────────────────────────────────────────
+  language    HubLanguage? @default(PLAINTEXT)  // syntax highlighting
+  framework   String?                            // "Next.js" | "React" | "Express" etc.
+
+  // ── PROMPT-specific ───────────────────────────────────────────────────────
+  aiModel     String?                // "claude-sonnet" | "gpt-4o" | "gemini" etc.
+  exampleOutput String?  @db.LongText // optional sample output to preview
+
+  // ── ERROR-specific ────────────────────────────────────────────────────────
+  errorMessage  String?  @db.Text    // raw error message / stack trace snippet
+  solution      String?  @db.LongText // step-by-step fix
+  technology    String?              // "Next.js 14" | "Prisma 5" | "Node 20" etc.
+
+
+  // ── NOTE ──────────────────────────────────────────────────────────────────
+  references    String?  @db.Text      // JSON string[] of URLs
+  difficulty    String?               // "Beginner" | "Intermediate" | "Advanced" | "Expert"
+
+  // ── API ───────────────────────────────────────────────────────────────────
+  httpMethod      String?             // "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+  endpointUrl     String?  @db.Text
+  requestExample  String?  @db.LongText
+  responseExample String?  @db.LongText
+  apiHeaders      String?  @db.Text   // JSON Record<string, string>
+  authType        String?             // "Bearer Token" | "API Key" | "Basic Auth" | "None"
+
+  // ── PATTERN ───────────────────────────────────────────────────────────────
+  advantages    String?  @db.LongText
+  disadvantages String?  @db.LongText
+  useCases      String?  @db.LongText
+  relatedTech   String?  @db.Text     // JSON string[]
+  diagramUrl    String?
+
+  // ── TEMPLATE ──────────────────────────────────────────────────────────────
+  templateType  String?               // "README" | "API Documentation" | "Bug Report" etc.
+
+  // ── PLAYBOOK ──────────────────────────────────────────────────────────────
+  steps          String?  @db.LongText  // JSON PlaybookStep[]
+  estimatedTime  String?               // "~30 min" | "1-2 hours"
+
+  // ── RESOURCE ──────────────────────────────────────────────────────────────
+  resourceUrl   String?  @db.Text
+  resourceType  String?               // "DOCUMENTATION" | "COURSE" | "ARTICLE" | "VIDEO" | "TOOL" | "BOOK" | "PODCAST"
+  rating        Int?                  // 1-5
+  author        String?
+
+  // ── Timestamps ────────────────────────────────────────────────────────────
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("hub_entries")
+  @@index([type])
+  @@index([isFavourite])
+  @@index([isPinned])
+  @@index([category])
+  @@index([language])
+  @@index([createdAt])
+  @@index([copyCount])
+  // Full-text search index (MySQL FULLTEXT — add manually after migration if needed)
+  // @@index([title, description, content]) -- not supported by Prisma directly for FULLTEXT
+}
+
+
+
+// ─── HUB AI ASSISTANT CONVERSATION ──────────────────────────────────────────
+// Stores conversation history for the Hub AI Assistant.
+// Each session is a series of messages. Sessions are scoped to admin user.
+
+model HubConversation {
+  id        String   @id @default(cuid())
+  title     String?                       // auto-generated from first message
+  messages  String   @db.LongText         // JSON HubMessage[]
+  context   String?  @db.Text             // JSON string[] of entry IDs used in last answer
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("hub_conversations")
+  @@index([createdAt])
+}
+
+
+
+
+
+// =============================================================================
+// JOB APPLICATION TRACKER
+// =============================================================================
+
+model JobSeekerProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+
+  // Display
+  displayName       String
+  avatarUrl         String?
+  headline          String?
+  bio               String?  @db.Text
+  location          String?
+  currentRole       String?
+  targetRole        String?
+  targetSectors     String?  @db.Text
+  yearsExperience   Int?
+
+  // Social links (private — only visible to user)
+  linkedinUrl       String?
+  githubUrl         String?
+  portfolioUrl      String?
+  twitterUrl        String?
+
+  // Privacy settings
+  isPublicProfile   Boolean  @default(true)
+  showCompanyNames  Boolean  @default(true)
+  showOnLadder      Boolean  @default(true)
+  ladderDisplayName String?
+
+  // Employment status
+  isEmployed        Boolean  @default(false)
+  employedAt        DateTime?
+  employedCompany   String?
+  employedRole      String?
+
+  // Gamification
+  xpPoints          Int      @default(0)
+  level             Int      @default(1)
+  streakDays        Int      @default(0)
+  lastActivityDate  DateTime?
+  totalApplications Int      @default(0)
+  // applicationCount  Int      @default(0)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Link to Tools model
+  toolId          String?
+  Tool              Tool?                @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications      JobApplication[]
+  badges            UserBadge[]
+  discussions       Discussion[]
+  discussionReplies DiscussionReply[]
+  discussionLikes   DiscussionLike[]
+  sharedProgress    SharedProgress[]
+  ladderEntry       LadderEntry?
+
+  @@map("job_seeker_profiles")
+}
+
+model JobApplication {
+  id              String            @id @default(cuid())
+  profileId       String
+
+  // Core fields
+  jobTitle        String
+  company         String?
+  hideCompany     Boolean           @default(false)
+  sector          String?
+  location        String?
+  workType        WorkType          @default(FULL_TIME)
+  workMode        WorkMode          @default(HYBRID)
+  salaryMin       Int?
+  salaryMax       Int?
+  salaryCurrency  String            @default("GBP")
+  jobUrl          String?
+
+  // Status tracking
+  status          ApplicationStatus @default(APPLIED)
+  appliedAt       DateTime          @default(now())
+  statusUpdatedAt DateTime          @default(now())
+  statusHistory   String?           @db.Text
+
+  // Notes & reflection
+  notes           String?           @db.Text
+  coverLetterUsed Boolean           @default(false)
+  resumeVersion   String?
+
+  // Interview reflection journal
+  interviewNotes  String?           @db.Text
+  whatWentWell    String?           @db.Text
+  whatToImprove   String?           @db.Text
+  interviewDate   DateTime?
+  interviewRound  Int?
+
+  // Follow-up tracking
+  followUpDate    DateTime?
+  followedUp      Boolean           @default(false)
+
+  // AI coaching cache
+  aiInsight       String?           @db.Text
+
+  // Outcome
+  outcome         String?
+  rejectionReason String?
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  profile         JobSeekerProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("job_applications")
+  @@index([profileId])
+  @@index([status])
+  @@index([appliedAt])
+  @@index([sector])
+}
+
+model LadderEntry {
+  id                 String           @id @default(cuid())
+  profileId          String           @unique
+
+  totalApplications  Int              @default(0)
+  activeApplications Int              @default(0)
+  interviews         Int              @default(0)
+  offers             Int              @default(0)
+  rejections         Int              @default(0)
+  lastApplicationAt  DateTime?
+  rank               Int?
+
+  weeklyApplications Int              @default(0)
+  weeklyUpdatedAt    DateTime?
+
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  profile            JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("ladder_entries")
+  @@index([totalApplications])
+  @@index([rank])
+}
+
+model UserBadge {
+  id        String           @id @default(cuid())
+  profileId String
+  type      BadgeType
+  awardedAt DateTime         @default(now())
+  metadata  String?
+
+  profile   JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("user_badges")
+  @@unique([profileId, type])
+  @@index([profileId])
+}
+
+model Discussion {
+  id          String             @id @default(cuid())
+  profileId   String
+  category    DiscussionCategory @default(GENERAL)
+  title       String
+  content     String             @db.Text
+  isAnonymous Boolean            @default(false)
+  isPinned    Boolean            @default(false)
+  isResolved  Boolean            @default(false)
+  viewCount   Int                @default(0)
+  likeCount   Int                @default(0)
+  replyCount  Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime?
+
+  profile     JobSeekerProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  replies     DiscussionReply[]
+  likes       DiscussionLike[]
+
+  @@map("discussions")
+  @@index([profileId])
+  @@index([category])
+  @@index([createdAt])
+  @@index([likeCount])
+}
+
+model DiscussionReply {
+  id              String           @id @default(cuid())
+  discussionId    String
+  profileId       String
+  content         String           @db.Text
+  isAnonymous     Boolean          @default(false)
+  likeCount       Int              @default(0)
+  isMarkedHelpful Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+
+  discussion      Discussion       @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  profile         JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("discussion_replies")
+  @@index([discussionId])
+  @@index([profileId])
+}
+
+model DiscussionLike {
+  id           String           @id @default(cuid())
+  discussionId String
+  profileId    String
+  createdAt    DateTime         @default(now())
+
+  discussion   Discussion       @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  profile      JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("discussion_likes")
+  @@unique([discussionId, profileId])
+}
+
+model SharedProgress {
+  id         String           @id @default(cuid())
+  profileId  String
+  platform   String
+  message    String           @db.Text
+  stats      String           @db.Text
+  shareCount Int              @default(1)
+  createdAt  DateTime         @default(now())
+
+  profile    JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("shared_progress")
+  @@index([profileId])
+}
+
+
+enum ApplicationStatus {
+  WISHLIST        // saved to apply later
+  APPLIED         // submitted application
+  PHONE_SCREEN    // phone/initial screen scheduled or done
+  INTERVIEW       // interview stage (any round)
+  ASSESSMENT      // technical test / take-home
+  FINAL_ROUND     // final interview
+  OFFER           // offer received
+  ACCEPTED        // offer accepted — user is employed
+  REJECTED        // rejected at any stage
+  WITHDRAWN       // user withdrew
+  GHOSTED         // no response after reasonable time
+}
+
+enum WorkType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  FREELANCE
+  INTERNSHIP
+  APPRENTICESHIP
+}
+
+enum WorkMode {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum DiscussionCategory {
+  GENERAL
+  ADVICE
+  SUCCESS_STORY
+  VENT
+  QUESTION
+  RESOURCE
+  INTERVIEW_PREP
+  SALARY
+}
+
+enum BadgeType {
+  FIRST_APPLICATION
+  TEN_APPLICATIONS
+  FIFTY_APPLICATIONS
+  HUNDRED_APPLICATIONS
+  FIRST_INTERVIEW
+  RESILIENCE
+  STREAK_7
+  STREAK_30
+  EMPLOYED
+  COMMUNITY_HELPER
+  TOP_SHARER
+}
+
+
+
+// =============================================================================
+// AI CV ANALYSER PRO
+// Stores saved analyses, cover letters, and interview sessions for signed-in users.
+// =============================================================================
+ 
+// ─── Saved CV Analysis ────────────────────────────────────────────────────────
+ 
+model CvAnalysis {
+  id            String      @id @default(cuid())
+  userId        String
+ 
+  // Label & context
+  label         String                        // e.g. "Software Engineer @ Google"
+  jobTitle      String?
+  companyName   String?
+  targetRole    String?
+  roleMode      CVRoleMode  @default(GENERAL)
+ 
+  // Input data
+  cvText        String      @db.Text          // the CV that was analysed (up to 15k chars)
+  jobDescription String?    @db.Text          // job description if provided
+ 
+  // Score snapshot (denormalised for quick dashboard queries)
+  overallScore  Int         @default(0)
+  atsScore      Int         @default(0)
+  keywordScore  Int         @default(0)
+  languageScore Int         @default(0)
+  structureScore Int        @default(0)
+  jobMatchScore Int         @default(0)
+ 
+  // Full analysis JSON (all sections, rewrites, suggestions, etc.)
+  analysisJson  String      @db.LongText      // JSON.stringify(CVAnalysis)
+ 
+  // Metadata
+  isStarred     Boolean     @default(false)   // user can star favourite analyses
+  notes         String?     @db.Text          // user's personal notes on this analysis
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Link to Tool model
+  toolId        String?
+  tool          Tool?      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+ 
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coverLetters      CvCoverLetter[]
+  interviewSessions CvInterviewSession[]
+ 
+  @@map("cv_analyses")
+  @@index([userId])
+  @@index([createdAt])
+  @@index([overallScore])
+}
+ 
+// ─── Cover Letters ────────────────────────────────────────────────────────────
+ 
+model CvCoverLetter {
+  id          String            @id @default(cuid())
+  analysisId  String
+  userId      String
+ 
+  content     String            @db.Text      // the generated cover letter text
+  style       CoverLetterStyle  @default(PROFESSIONAL)
+  jobTitle    String?
+  companyName String?
+ 
+  // User edits (if they edited the generated letter)
+  editedContent String?         @db.Text
+  isEdited      Boolean         @default(false)
+ 
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+ 
+  analysis    CvAnalysis        @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId],    references: [id], onDelete: Cascade)
+ 
+  @@map("cv_cover_letters")
+  @@index([analysisId])
+  @@index([userId])
+}
+ 
+// ─── Interview Sessions ───────────────────────────────────────────────────────
+// One per analysis — stores the 12 questions + answers for study/revision.
+ 
+model CvInterviewSession {
+  id          String   @id @default(cuid())
+  analysisId  String
+  userId      String
+ 
+  jobTitle    String?
+  questions   String   @db.LongText          // JSON: InterviewQuestion[] (with modelAnswer)
+ 
+  // Study progress: which questions the user has marked as "ready"
+  markedReady String?  @db.Text              // JSON: number[] of question indices
+  studyCount  Int      @default(0)           // how many times they've opened the study tab
+  lastStudied DateTime?
+ 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+ 
+  analysis    CvAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId],     references: [id], onDelete: Cascade)
+ 
+  @@map("cv_interview_sessions")
+  @@index([analysisId])
+  @@index([userId])
+}
+
+enum CoverLetterStyle {
+  PROFESSIONAL
+  CREATIVE
+  CONCISE
+}
+ 
+enum CVRoleMode {
+  GENERAL
+  TECH
+  FINANCE
+  GRADUATE
+  BUSINESS
+  HEALTHCARE
+  CREATIVE
+}
+
+
+
+// =============================================================================
+// QR CODE GENERATOR
+// =============================================================================
+
+model QrCode {
+  id          String      @id @default(cuid())
+  userId      String
+
+  label       String                        // user-given name, e.g. "My Portfolio QR"
+  type        QRCodeType  @default(URL)
+  content     String      @db.Text          // raw encoded content (URL, vCard, WiFi string…)
+  qrData      String      @db.Text          // the final string encoded into the QR matrix
+
+  // Design settings (serialised JSON of QRDesign object)
+  designJson  String?     @db.Text
+
+  // Dynamic QR — the actual QR encodes a short redirect URL
+  // Users can edit `destination` at any time without reprinting
+  isDynamic   Boolean     @default(false)
+  dynamicId   String?     @unique           // 6-char alphanumeric short code
+  destination String?     @db.Text          // where the dynamic QR redirects to
+
+  // Visibility
+  isPublic    Boolean     @default(false)
+
+  // Analytics (denormalised for fast queries)
+  totalScans  Int         @default(0)
+  lastScanned DateTime?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Link to Tool model
+  toolId        String?
+  tool          Tool?      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scans       QrScan[]
+
+  @@map("qr_codes")
+  @@index([userId])
+  @@index([dynamicId])
+  @@index([createdAt])
+}
+
+// ─── Scan Event ───────────────────────────────────────────────────────────────
+// Recorded each time a dynamic QR code is scanned
+
+model QrScan {
+  id         String   @id @default(cuid())
+  qrCodeId   String
+  scannedAt  DateTime @default(now())
+
+  // Analytics metadata
+  device     String?              // "mobile" | "desktop" | "tablet"
+  country    String?              // ISO country code (from Vercel headers)
+  ip         String?              // hashed / anonymised IP
+  userAgent  String?  @db.Text
+  referrer   String?
+
+  qrCode     QrCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+
+  @@map("qr_scans")
+  @@index([qrCodeId])
+  @@index([scannedAt])
+}
+
+enum QRCodeType {
+  URL
+  LINKEDIN
+  INSTAGRAM
+  TWITTER
+  VCARD
+  EMAIL
+  SMS
+  PHONE
+  WIFI
+  PAYMENT
+  TEXT
+}
+
+
+
+// =============================================================================
+// END — isaacpaha.com · iPaha Ltd
+// 35 models · 25+ enums · Production-ready
+// =============================================================================

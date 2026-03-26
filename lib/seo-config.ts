@@ -131,8 +131,8 @@ export const seoConfig = {
   
   // Image assets
   images: {
-    profile: '/images/photo1.png',
-    ogImage: '/images/isaac-paha-og-image.jpg',
+    profile: '/images/isaac-paha-og-image.png',
+    ogImage: '/images/logo-og.png',
     logo: '/images/logo.png',
     favicon: '/favicon.ico',
     appleTouchIcon: '/apple-touch-icon.png'

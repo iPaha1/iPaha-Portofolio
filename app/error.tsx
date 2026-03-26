@@ -1,362 +1,359 @@
+// =============================================================================
+// app/error.tsx
+// Amber circuit-burn — live system diagnostic recovery
+// isaacpaha.com · #08080f · amber · Sora
+// MUST be "use client" — Next.js requirement for error boundaries
+// =============================================================================
 "use client";
 
-import React, { useEffect } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { 
-  AlertTriangle, 
-  RefreshCw, 
-  Home, 
-  ArrowLeft,
-  Bug,
-  Shield,
-  Settings,
-  Mail,
-  Phone,
-  MessageCircle,
-  Copy,
-  CheckCircle,
-  ExternalLink
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 
-interface ErrorPageProps {
+interface ErrorProps {
   error: Error & { digest?: string };
   reset: () => void;
 }
 
-const ErrorPage = ({ error }: ErrorPageProps) => {
-  const [copied, setCopied] = React.useState(false);
-  const [errorDetails, setErrorDetails] = React.useState<string>('');
+const DIAG_STEPS = [
+  { msg: "Capturing fault trace…",       icon: "◈" },
+  { msg: "Isolating error boundary…",    icon: "◈" },
+  { msg: "Scanning component tree…",     icon: "◈" },
+  { msg: "Saving state snapshot…",       icon: "◈" },
+  { msg: "Clearing corrupted cache…",    icon: "◈" },
+  { msg: "Preparing recovery payload…",  icon: "◈" },
+];
 
+export default function Error({ error, reset }: ErrorProps) {
+  const [step,       setStep]       = useState(0);
+  const [ready,      setReady]      = useState(false);
+  const [retrying,   setRetrying]   = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [mounted,    setMounted]    = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  // Walk through diagnostic steps
   useEffect(() => {
-    // Log error to console and error reporting service
-    console.error('Application Error:', error);
-    
-    // Create error details for support
-    const details = `
-Error: ${error.message}
-Digest: ${error.digest || 'N/A'}
-Timestamp: ${new Date().toISOString()}
-User Agent: ${navigator.userAgent}
-URL: ${window.location.href}
-    `.trim();
-    
-    setErrorDetails(details);
-  }, [error]);
-
-  const copyErrorDetails = async () => {
-    try {
-      await navigator.clipboard.writeText(errorDetails);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy error details:', err);
+    if (step < DIAG_STEPS.length) {
+      const t = setTimeout(() => setStep(s => s + 1), 420);
+      return () => clearTimeout(t);
+    } else {
+      const t = setTimeout(() => setReady(true), 300);
+      return () => clearTimeout(t);
     }
-  };
+  }, [step]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
+  const handleRetry = useCallback(() => {
+    setRetrying(true);
+    setReady(false);
+    setStep(0);
+    setTimeout(() => {
+      reset();
+    }, 1000);
+  }, [reset]);
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.6 }
-    }
-  };
-
-  const pulseVariants = {
-    animate: {
-      scale: [1, 1.1, 1],
-      transition: {
-        duration: 2,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
-  };
-
-  // Quick solutions
-  const solutions = [
-    {
-      icon: RefreshCw,
-      title: 'Refresh the Page',
-      description: 'Sometimes a simple refresh can resolve temporary issues',
-      action: () => window.location.reload(),
-      color: 'text-blue-600'
-    },
-    {
-      icon: ArrowLeft,
-      title: 'Go Back',
-      description: 'Return to the previous page you were viewing',
-      action: () => window.history.back(),
-      color: 'text-green-600'
-    },
-    {
-      icon: Home,
-      title: 'Go Home',
-      description: 'Start fresh from the homepage',
-      action: () => window.location.href = '/',
-      color: 'text-amber-600'
-    }
-  ];
+  if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-red-400/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-red-300/3 rounded-full blur-2xl animate-pulse delay-500"></div>
-      </div>
+    <div
+      className="fixed inset-0 overflow-hidden flex flex-col"
+      style={{ background: "#08080f", fontFamily: "'Sora', system-ui, sans-serif" }}
+    >
+      {/* ── Ambient grid ── */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.013) 1px, transparent 1px)," +
+          "linear-gradient(90deg, rgba(255,255,255,0.013) 1px, transparent 1px)",
+        backgroundSize: "64px 64px",
+      }} />
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-4xl mx-auto text-center"
-        >
-          {/* Error Icon */}
-          <motion.div
-            variants={pulseVariants}
-            animate="animate"
-            className="mb-8"
-          >
-            <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertTriangle className="w-12 h-12 text-red-500" />
+      {/* ── Red fault hairline ── */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] z-20" style={{
+        background: "linear-gradient(90deg, transparent, #ef4444 20%, #f59e0b 60%, transparent 100%)",
+        animation: "hairlinePulse 2.4s ease-in-out infinite",
+      }} />
+
+      {/* ── Error glow corona ── */}
+      <div className="absolute top-0 left-0 right-0 pointer-events-none" style={{
+        height: 300,
+        background: "radial-gradient(ellipse at 50% 0%, rgba(239,68,68,0.08) 0%, transparent 68%)",
+      }} />
+      <div className="absolute bottom-0 right-0 pointer-events-none" style={{
+        width: 380, height: 380,
+        background: "radial-gradient(circle, rgba(245,158,11,0.045) 0%, transparent 65%)",
+        filter: "blur(50px)",
+      }} />
+
+      {/* ── Circuit board SVG — top right ── */}
+      <svg
+        className="absolute top-0 right-0 pointer-events-none"
+        style={{ opacity: 0.06, animation: "fadeIn 1.2s 0.3s both" }}
+        width="380" height="380" viewBox="0 0 380 380" aria-hidden="true"
+      >
+        {/* Horizontal traces */}
+        {[30,70,110,150,190,230,270,310].map(y => (
+          <line key={`h${y}`} x1="0" y1={y} x2={340 + Math.sin(y * 0.05) * 15} y2={y}
+            stroke="#f59e0b" strokeWidth="0.8" strokeDasharray={`${6 + (y % 4)} ${10 + (y % 6)}`} />
+        ))}
+        {/* Vertical traces */}
+        {[50,110,170,230,290,350].map(x => (
+          <line key={`v${x}`} x1={x} y1="0" x2={x} y2={280 + Math.cos(x * 0.04) * 12}
+            stroke="#f59e0b" strokeWidth="0.7" strokeDasharray={`${5 + (x % 5)} 12`} />
+        ))}
+        {/* Junctions */}
+        {[[50,30],[110,70],[170,110],[230,150],[290,190],[50,190],[170,230],[290,270],[110,30],[350,110]].map(([x,y], i) => (
+          <rect key={i} x={x-3} y={y-3} width="6" height="6" fill="#f59e0b" opacity="0.7" rx="1" />
+        ))}
+        {/* Burn node — short-circuit point */}
+        <circle cx="200" cy="140" r="22" fill="none" stroke="#ef4444" strokeWidth="1.5" opacity="0.9"
+          style={{ animation: "burnPulse 1.8s ease-in-out infinite" }} />
+        <circle cx="200" cy="140" r="11" fill="rgba(239,68,68,0.15)" />
+        <circle cx="200" cy="140" r="4"  fill="#ef4444" opacity="0.8" />
+        <line x1="186" y1="126" x2="214" y2="154" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="214" y1="126" x2="186" y2="154" stroke="#ef4444" strokeWidth="1.8" strokeLinecap="round" />
+        {/* Arc sparks */}
+        {[[-18,-18],[20,-16],[22,16],[-16,20]].map(([dx,dy],i) => (
+          <circle key={i} cx={200+dx} cy={140+dy} r="1.5" fill="#f59e0b"
+            style={{ animation: `spark ${0.9 + i * 0.2}s ease-in-out ${i * 0.15}s infinite` }} />
+        ))}
+      </svg>
+
+      {/* ── Main ── */}
+      <div className="relative z-10 flex flex-col md:flex-row items-center justify-center flex-1 gap-10 px-6 py-12">
+
+        {/* Left: identity + actions */}
+        <div className="flex flex-col items-start max-w-sm w-full">
+
+          {/* Fault badge */}
+          <div className="flex items-center gap-2.5 mb-8" style={{ animation: "slideRight 0.55s 0.05s both" }}>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xs"
+              style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
+              <div className="w-1.5 h-1.5 rounded-full" style={{
+                background: "#ef4444", boxShadow: "0 0 7px #ef4444",
+                animation: "blink 1.1s ease-in-out infinite",
+              }} />
+              <span className="font-mono text-[10px] font-bold tracking-[0.25em] uppercase" style={{ color: "#ef4444" }}>
+                System Fault
+              </span>
             </div>
-          </motion.div>
+            {error.digest && (
+              <span className="font-mono text-[10px]" style={{ color: "rgba(255,255,255,0.16)" }}>
+                #{error.digest.slice(0, 8).toUpperCase()}
+              </span>
+            )}
+          </div>
 
-          {/* Error Header */}
-          <motion.div variants={itemVariants} className="mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Oops! Something Went Wrong
-            </h1>
-            <p className="text-xl text-gray-600 mb-6 max-w-2xl mx-auto">
-              I&apos;m sorry, but there seems to be a technical issue. Don&apos;t worry - 
-              as a full-stack developer, I take these things seriously!
-            </p>
-            
-            <div className="flex flex-wrap justify-center gap-3 mb-6">
-              <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
-                <Bug className="w-3 h-3 mr-1" />
-                Error Detected
-              </Badge>
-              <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50">
-                <Shield className="w-3 h-3 mr-1" />
-                Working on Fix
-              </Badge>
+          {/* Fault icon */}
+          <div className="relative mb-6" style={{ animation: "slideRight 0.55s 0.12s both" }}>
+            <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+              <circle cx="36" cy="36" r="32" stroke="rgba(239,68,68,0.12)" strokeWidth="1.5" />
+              <circle cx="36" cy="36" r="32" stroke="#ef4444" strokeWidth="1.5"
+                strokeDasharray="201" strokeDashoffset="50"
+                style={{ animation: "spinRing 9s linear infinite", transformOrigin: "36px 36px" }} />
+              <circle cx="36" cy="36" r="22" stroke="rgba(245,158,11,0.12)" strokeWidth="1" />
+              <path d="M36 19 L51 44 H21 Z"
+                fill="rgba(239,68,68,0.1)" stroke="#ef4444" strokeWidth="1.5" strokeLinejoin="round" />
+              <line x1="36" y1="26" x2="36" y2="36" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="36" cy="41" r="1.8" fill="#ef4444" />
+            </svg>
+          </div>
+
+          <h1 className="font-black mb-2.5" style={{
+            fontSize: "clamp(26px,4.5vw,40px)",
+            letterSpacing: "-0.04em",
+            color: "rgba(255,255,255,0.9)",
+            animation: "slideRight 0.55s 0.2s both",
+          }}>
+            Something broke.
+          </h1>
+
+          <p className="text-sm leading-relaxed mb-8" style={{
+            color: "rgba(255,255,255,0.38)",
+            fontFamily: "Georgia, serif",
+            maxWidth: 300,
+            animation: "slideRight 0.55s 0.26s both",
+          }}>
+            An unexpected fault occurred. The system has isolated the error and is
+            ready to recover. Try again or return home.
+          </p>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-3 flex-wrap" style={{ animation: "slideRight 0.55s 0.32s both" }}>
+            <button
+              onClick={handleRetry}
+              disabled={retrying || !ready}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xs font-black text-sm text-black transition-all disabled:opacity-50"
+              style={{
+                background: ready && !retrying ? "#f59e0b" : "#92400e",
+                boxShadow: ready && !retrying ? "0 0 28px rgba(245,158,11,0.32)" : "none",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {retrying ? (
+                <>
+                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="rgba(0,0,0,0.25)" strokeWidth="3" />
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="black" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  Restarting…
+                </>
+              ) : !ready ? (
+                <>
+                  <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  Diagnosing…
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                  Try Again
+                </>
+              )}
+            </button>
+
+            <Link href="/"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xs font-bold text-sm transition-all"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)" }}>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              Go home
+            </Link>
+          </div>
+        </div>
+
+        {/* Right: diagnostic terminal */}
+        <div className="w-full max-w-sm" style={{ animation: "fadeUp 0.6s 0.35s both" }}>
+          <div className="rounded-xs overflow-hidden" style={{
+            background: "rgba(0,0,0,0.5)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
+          }}>
+            {/* Terminal header */}
+            <div className="flex items-center justify-between px-4 py-2.5" style={{
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(255,255,255,0.02)",
+            }}>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  {["#ef4444","#f59e0b","#22c55e"].map(c => (
+                    <div key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c, opacity: 0.65 }} />
+                  ))}
+                </div>
+                <span className="font-mono text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                  fault-recovery.sh
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full" style={{
+                  background: ready ? "#22c55e" : "#f59e0b",
+                  boxShadow: `0 0 5px ${ready ? "#22c55e" : "#f59e0b"}`,
+                  transition: "all 0.4s",
+                }} />
+                <span className="font-mono text-[9px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                  {ready ? "READY" : "RUNNING"}
+                </span>
+              </div>
             </div>
-          </motion.div>
 
-          {/* Quick Solutions */}
-          <motion.div variants={itemVariants} className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">
-              Let&apos;s Try to Fix This
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {solutions.map((solution, index) => (
-                <motion.div
-                  key={solution.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                  whileHover={{ y: -5 }}
-                >
-                  <Card className="border-2 border-gray-200 hover:border-amber-300 hover:shadow-lg transition-all duration-300 cursor-pointer h-full"
-                        onClick={solution.action}>
-                    <CardHeader className="text-center">
-                      <div className={`w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3`}>
-                        <solution.icon className={`w-6 h-6 ${solution.color}`} />
-                      </div>
-                      <CardTitle className="text-lg font-semibold text-gray-900">
-                        {solution.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center pt-0">
-                      <CardDescription className="text-gray-600">
-                        {solution.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+            {/* Terminal body */}
+            <div className="p-4 space-y-2 font-mono text-[11px] min-h-[220px]">
+              {/* Boot line */}
+              <div className="flex items-center gap-2 mb-1" style={{ opacity: 0.4 }}>
+                <span style={{ color: "#f59e0b" }}>$</span>
+                <span style={{ color: "rgba(255,255,255,0.5)" }}>./fault-recovery.sh --auto</span>
+              </div>
+
+              {DIAG_STEPS.map((s, i) => (
+                <div key={i} className="flex items-center gap-2.5 transition-opacity duration-300"
+                  style={{ opacity: i < step ? 1 : 0 }}>
+                  <span style={{ color: i < step - 1 ? "#22c55e" : "#f59e0b", fontSize: 10 }}>
+                    {i < step - 1 ? "✓" : s.icon}
+                  </span>
+                  <span style={{ color: i < step - 1 ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.75)" }}>
+                    {s.msg}
+                  </span>
+                  {i === step - 1 && !ready && (
+                    <span style={{ color: "rgba(255,255,255,0.3)", animation: "blink 0.7s infinite" }}>█</span>
+                  )}
+                </div>
               ))}
-            </div>
-          </motion.div>
 
-          {/* Error Details for Developers/Support */}
-          <motion.div variants={itemVariants} className="mb-12">
-            <Card className="border border-gray-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-amber-500" />
-                  Technical Details
-                </CardTitle>
-                <CardDescription>
-                  Information for debugging and support
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                  <div className="text-sm text-gray-700 mb-2">
-                    <strong>Error:</strong> {error.message || 'Unknown error occurred'}
+              {ready && (
+                <div style={{ animation: "fadeUp 0.35s both", marginTop: 4 }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span style={{ color: "#22c55e" }}>✓</span>
+                    <span style={{ color: "rgba(255,255,255,0.7)" }}>System ready. Safe to retry.</span>
                   </div>
-                  {error.digest && (
-                    <div className="text-sm text-gray-700 mb-2">
-                      <strong>Error ID:</strong> {error.digest}
+
+                  {error.message && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => setShowDetail(d => !d)}
+                        className="flex items-center gap-1.5 transition-opacity"
+                        style={{ color: "rgba(255,255,255,0.28)", fontSize: 10, opacity: 0.7 }}
+                      >
+                        <span style={{ color: "#f59e0b" }}>{showDetail ? "▾" : "▸"}</span>
+                        {showDetail ? "hide" : "show"} error detail
+                      </button>
+
+                      {showDetail && (
+                        <div className="mt-2 p-3 rounded-xs break-all leading-relaxed text-[10px]"
+                          style={{
+                            background: "rgba(239,68,68,0.07)",
+                            border: "1px solid rgba(239,68,68,0.18)",
+                            color: "rgba(255,160,160,0.7)",
+                            animation: "fadeUp 0.25s both",
+                          }}>
+                          {error.message}
+                        </div>
+                      )}
                     </div>
                   )}
-                  <div className="text-sm text-gray-700">
-                    <strong>Time:</strong> {new Date().toLocaleString('en-GB')}
-                  </div>
                 </div>
-                
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyErrorDetails}
-                    className="border-gray-300 hover:bg-gray-50"
-                  >
-                    {copied ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copy Error Details
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Link href="/contact">
-                    <Button variant="outline" size="sm" className="border-amber-300 text-amber-700 hover:bg-amber-50">
-                      <Mail className="w-4 h-4 mr-2" />
-                      Report Error
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Developer Info */}
-          <motion.div variants={itemVariants} className="mb-8">
-            <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 p-8 rounded-2xl border border-amber-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                About the Developer
-              </h3>
-              <p className="text-gray-600 mb-6">
-                I&apos;m Isaac Paha, a Computing & IT graduate and full-stack developer who built platforms 
-                serving 100K+ users. I take system reliability seriously and will investigate this issue promptly.
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="text-center p-4 bg-white rounded-lg border border-amber-200">
-                  <div className="text-lg font-bold text-amber-600">99.9%</div>
-                  <div className="text-sm text-gray-600">Uptime Record</div>
-                </div>
-                <div className="text-center p-4 bg-white rounded-lg border border-amber-200">
-                  <div className="text-lg font-bold text-amber-600">100K+</div>
-                  <div className="text-sm text-gray-600">Users Served</div>
-                </div>
-                <div className="text-center p-4 bg-white rounded-lg border border-amber-200">
-                  <div className="text-lg font-bold text-amber-600">24hrs</div>
-                  <div className="text-sm text-gray-600">Response Time</div>
-                </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/contact">
-                  <Button className="bg-amber-500 hover:bg-amber-600 text-white">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Contact Isaac
-                  </Button>
-                </Link>
-                
-                <a href="tel:+447402497091">
-                  <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50">
-                    <Phone className="w-4 h-4 mr-2" />
-                    Call Direct
-                  </Button>
-                </a>
-              </div>
+              )}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Company Links */}
-          <motion.div variants={itemVariants}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Meanwhile, Check Out My Companies
-            </h3>
-            <div className="flex flex-wrap justify-center gap-4">
-              <a 
-                href="https://ipahait.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-amber-300 hover:shadow-md transition-all duration-300"
-              >
-                <span>🇬🇧</span>
-                <span className="font-medium text-gray-900">iPaha Ltd</span>
-                <ExternalLink className="w-3 h-3 text-gray-400" />
-              </a>
-              
-              <a 
-                href="https://ipahastore.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-amber-300 hover:shadow-md transition-all duration-300"
-              >
-                <span>🇬🇧</span>
-                <span className="font-medium text-gray-900">iPahaStores Ltd</span>
-                <ExternalLink className="w-3 h-3 text-gray-400" />
-              </a>
-              
-              <a 
-                href="https://okpah.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-amber-300 hover:shadow-md transition-all duration-300"
-              >
-                <span>🇬🇭</span>
-                <span className="font-medium text-gray-900">Okpah Ltd</span>
-                <ExternalLink className="w-3 h-3 text-gray-400" />
-              </a>
-            </div>
-          </motion.div>
-
-          {/* Fun Message */}
-          <motion.div variants={itemVariants} className="mt-8">
-            <p className="text-sm text-gray-500">
-              🚀 Error aside, I&apos;d love to tell you about the platforms I&apos;ve built that serve 100K+ users! 
-              Check out my <Link href="/projects" className="text-amber-600 hover:text-amber-700 underline">projects</Link> when this is fixed.
-            </p>
-          </motion.div>
-        </motion.div>
+          {/* Quick links row */}
+          <div className="flex gap-2 mt-3">
+            {[
+              { href: "/blog",  label: "Blog"  },
+              { href: "/tools", label: "Tools" },
+              { href: "/games", label: "Games" },
+            ].map(l => (
+              <Link key={l.href} href={l.href}
+                className="flex-1 text-center py-2 rounded-xs text-[10px] font-bold transition-all"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)" }}>
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* ── Wordmark ── */}
+      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 font-mono text-[9px] tracking-[0.3em] uppercase"
+        style={{ color: "rgba(255,255,255,0.08)", animation: "fadeIn 1s 1s both" }}>
+        isaacpaha.com
+      </p>
+
+      <style>{`
+        @keyframes fadeIn       { from{opacity:0} to{opacity:1} }
+        @keyframes fadeUp       { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideRight   { from{opacity:0;transform:translateX(-18px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes blink        { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes spinRing     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes hairlinePulse{ 0%,100%{opacity:1} 50%{opacity:0.5} }
+        @keyframes burnPulse    { 0%,100%{opacity:.9;r:22px} 50%{opacity:.4;r:26px} }
+        @keyframes spark        { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0;transform:scale(2.5)} }
+        a:hover { background:rgba(245,158,11,0.07)!important; color:rgba(255,255,255,0.75)!important; border-color:rgba(245,158,11,0.2)!important; }
+      `}</style>
     </div>
   );
-};
-
-export default ErrorPage;
+}

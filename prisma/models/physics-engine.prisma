@@ -1,0 +1,124 @@
+// =============================================================================
+// PHYSICS UNDERSTANDING ENGINE
+// Stores saved explanations, practice sessions, and learning progress.
+// =============================================================================
+
+// ─── Saved Physics Explanation ────────────────────────────────────────────────
+
+model PhysicsQuery {
+  id            String    @id @default(cuid())
+  userId        String?   // null = anonymous (analytics only)
+
+  // Input
+  question      String    @db.Text
+  level         PhysicsLevel @default(GCSE)
+  isExplorerMode Boolean  @default(false)  // Theory Explorer vs Question mode
+
+  // Extracted metadata
+  topic         String?                    // e.g. "Mechanics"
+  conceptName   String?                    // e.g. "Newton's Second Law"
+  difficulty    String?                    // Introductory | GCSE | A-Level | University
+
+  // Full result
+  resultJson    String?   @db.LongText     // JSON.stringify(PhysicsExplanation)
+
+  // Visualisation metadata (denormalised)
+  hasVisualisation  Boolean  @default(false)
+  visualisationType PhysicsVisualisationType? @default(NONE)
+
+  // User engagement
+  isStarred     Boolean  @default(false)
+  isSaved       Boolean  @default(false)
+  notes         String?  @db.Text
+  viewCount     Int      @default(1)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  toolId        String?
+  tool          Tool?     @relation(fields: [toolId], references: [id], onDelete: SetNull)
+
+  user          User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  practiceSessions PhysicsPracticeSession[]
+
+  @@map("physics_queries")
+  @@index([userId])
+  @@index([topic])
+  @@index([conceptName])
+  @@index([createdAt])
+}
+
+// ─── Practice Session ─────────────────────────────────────────────────────────
+
+model PhysicsPracticeSession {
+  id           String       @id @default(cuid())
+  queryId      String
+  userId       String?
+
+  topic        String?
+  conceptName  String?
+  level        PhysicsLevel @default(GCSE)
+  sessionType  String       @default("practice")  // "practice" | "theory_questions"
+
+  // Questions (JSON: PhysicsPracticeQuestion[])
+  questionsJson String      @db.LongText
+
+  // Progress tracking
+  attemptedIds  String?     @db.Text   // JSON: number[]
+  correctIds    String?     @db.Text   // JSON: number[]
+  score         Int?
+
+  completedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  query        PhysicsQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("physics_practice_sessions")
+  @@index([queryId])
+  @@index([userId])
+}
+
+// ─── Learning Progress ────────────────────────────────────────────────────────
+
+model PhysicsLearningProgress {
+  id              String       @id @default(cuid())
+  userId          String       @unique
+
+  // JSON: { topic: string, count: number, lastStudied: string, level: string }[]
+  topicsJson      String       @db.Text  
+
+  // Totals
+  totalQueries    Int          @default(0)
+  totalPractice   Int          @default(0)
+  avgPracticeScore Int?
+
+  // Gamification
+  streakDays      Int          @default(0)
+  lastActivityDate DateTime?
+  xpPoints        Int          @default(0)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("physics_learning_progress")
+}
+
+enum PhysicsLevel {
+  GCSE
+  ALEVEL
+  UNIVERSITY
+}
+
+enum PhysicsVisualisationType {
+  WAVE
+  MOTION_GRAPH
+  CIRCUIT
+  VECTOR
+  FUNCTION_GRAPH
+  GEOMETRIC
+  NONE
+}

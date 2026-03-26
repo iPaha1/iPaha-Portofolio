@@ -1,0 +1,117 @@
+// =============================================================================
+// CHEMISTRY UNDERSTANDING ENGINE
+// Stores saved explanations, practice sessions, and learning progress.
+// =============================================================================
+
+// ─── Saved Chemistry Explanation ──────────────────────────────────────────────
+
+model ChemistryQuery {
+  id             String    @id @default(cuid())
+  userId         String?
+
+  // Input
+  question       String    @db.Text
+  level          ChemistryLevel @default(GCSE)
+  isExplorerMode Boolean   @default(false)
+
+  // Extracted metadata
+  topic          String?
+  conceptName    String?
+  difficulty     String?
+
+  // Full result
+  resultJson     String?   @db.LongText
+
+  // Visualisation metadata (denormalised for fast queries)
+  hasVisualisation  Boolean  @default(false)
+  visualisationType ChemistryVisualisationType? @default(NONE)
+
+  // User interactions
+  isSaved    Boolean   @default(false)
+  isStarred  Boolean   @default(false)
+  notes      String?   @db.Text
+  viewCount  Int       @default(0)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  user             User?                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  practiceSessions ChemistryPracticeSession[]
+
+  @@index([userId])
+  @@index([userId, isSaved])
+  @@index([topic])
+}
+
+// ─── Chemistry Practice Session ───────────────────────────────────────────────
+
+model ChemistryPracticeSession {
+  id          String         @id @default(cuid())
+  queryId     String
+  userId      String?
+
+  // Metadata
+  topic       String?
+  conceptName String?
+  level       ChemistryLevel @default(GCSE)
+  sessionType String         @default("practice")  // "practice" | "theory_questions"
+
+  // Questions & progress
+  questionsJson String  @db.LongText   // JSON array of question objects
+  attemptedIds  String? @db.Text       // JSON array of attempted question IDs
+  correctIds    String? @db.Text       // JSON array of correctly answered IDs
+  score         Int?                   // 0-100
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  query ChemistryQuery  @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  user  User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([queryId])
+  @@index([userId])
+}
+
+// ─── Chemistry Learning Progress ──────────────────────────────────────────────
+
+model ChemistryLearningProgress {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // Aggregates
+  totalQueries      Int     @default(0)
+  totalPractice     Int     @default(0)
+  avgPracticeScore  Float?
+
+  // Topic map — JSON: [{ topic, count, lastStudied, level }]
+  topicsJson String @db.Text
+
+  // Gamification
+  streakDays        Int      @default(0)
+  lastActivityDate  DateTime?
+  xpPoints          Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+
+enum ChemistryLevel {
+  GCSE
+  ALEVEL
+  UNIVERSITY
+}
+
+enum ChemistryVisualisationType {
+  ENERGY_DIAGRAM
+  PERIODIC_ELEMENT
+  MOLECULAR
+  WAVE
+  FUNCTION_GRAPH
+  NONE
+}

@@ -1,26 +1,31 @@
-import { motion } from 'framer-motion';
-import { Code } from 'lucide-react';
+import exp from "constants";
+import Image from "next/image";
+import Link from "next/link";
 
-
-// Enhanced Logo Component
 const Logo = () => {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="flex items-center gap-3"
-    >
-      <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
-        <Code className="w-5 h-5 text-white" />
-      </div>
-      <div className="hidden sm:block">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-amber-600 bg-clip-text text-transparent">
-          iPaha
-        </h1>
-        <p className="text-xs text-gray-600 -mt-1">Full-Stack Developer</p>
-      </div>
-    </motion.div>
-  );
-};
+    return (
+        <div>
+            <Link href="/" className="flex items-center space-x-2">
+            <Image
+                src="/images/logo.png"
+                alt="Picture of the author"
+                width={100}
+                height={100}
+                className="dark:hidden transition-transform transform hover:scale-110 rounded-md"
+            />
+            </Link>
+            <Link href="/" className="flex items-center space-x-2">
+            <Image
+                src="/images/logo-black.png"
+                alt="Picture of the author"
+                width={100}
+                height={100}
+                className="hidden dark:block transition-transform transform hover:scale-110 rounded-md"
+            />
+            </Link>
+        </div>
+    );
+
+}   
 
 export default Logo;

@@ -1,0 +1,365 @@
+
+// =============================================================================
+// BLOG
+// =============================================================================
+
+model BlogPost {
+  id                String      @id @default(cuid())
+  title             String
+  slug              String      @unique
+  excerpt           String      @db.Text
+  content           String      @db.LongText
+
+  // Media
+  coverColor       String?     @default("#f59e0b")
+  coverEmoji       String?
+  coverImage        String?
+  coverImageAlt     String?
+  coverImageCaption String?
+  ogImage           String?
+
+  // SEO
+  metaTitle         String?
+  metaDescription   String?     @db.Text
+  canonicalUrl      String?
+  keywords          String?     @db.Text
+  schemaType        String?     @default("Article")
+
+  // Status & publishing
+  status            BlogStatus  @default(DRAFT)
+  isPublished       Boolean     @default(false)
+  publishedAt       DateTime?
+  scheduledAt       DateTime?
+  featuredAt        DateTime?
+
+  // Classification
+  categoryId        String?
+  seriesId          String?
+  seriesOrder       Int?
+  seriesPart         String?     // e.g. "Part 1: Getting Started"
+  isPremium         Boolean     @default(false)
+  isFeatured        Boolean     @default(false)
+  isPinned          Boolean     @default(false)
+  isIdeasLab        Boolean     @default(false)
+  isBuildInPublic   Boolean     @default(false)
+  isEditorPick       Boolean     @default(false)
+  tags              String?     @db.Text // JSON string[]
+
+  // Reading metrics
+  readingTimeMinutes Int        @default(0)
+  wordCount         Int         @default(0)
+
+  // Engagement counters (denormalised for performance)
+  viewCount         Int         @default(0)
+  uniqueViewCount   Int         @default(0)
+  likeCount         Int         @default(0)
+  commentCount      Int         @default(0)
+  bookmarkCount     Int         @default(0)
+  shareCount        Int         @default(0)
+
+  // Trending score = (likes*3 + comments*5 + views) / hours_since_post
+  trendingScore     Float       @default(0)
+  trendingUpdatedAt DateTime?
+
+  // Author
+  authorId          String
+  authorName        String
+  authorImage       String?
+  authorBio         String?     @db.Text
+
+  // Table of contents (JSON)
+  tableOfContents   String?     @db.Text
+
+  // Timestamps
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  deletedAt         DateTime?
+
+  // Relations
+  category          BlogCategory?   @relation(fields: [categoryId], references: [id])
+  series            BlogSeries?     @relation(fields: [seriesId], references: [id])
+  comments          BlogComment[]
+  reactions         BlogReaction[]
+  likes             PostLike[]
+  bookmarks         Bookmark[]
+  viewLogs          PostViewLog[]
+  readingHistory    ReadingHistory[]
+  revisions         BlogRevision[]
+  shareEvents       ShareEvent[]
+  seoAudit          SeoAudit?
+
+  @@map("blog_posts")
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([categoryId])
+  @@index([seriesId])
+  @@index([trendingScore])
+  @@index([isFeatured])
+  @@index([isIdeasLab])
+  @@index([isBuildInPublic])
+  @@index([deletedAt])
+}
+
+model BlogCategory {
+  id              String    @id @default(cuid())
+  name            String    @unique
+  slug            String    @unique
+  description     String?   @db.Text
+  longDescription String?   @db.Text
+  color           String?
+  icon            String?
+  coverImage      String?
+  sortOrder       Int       @default(0)
+  isActive        Boolean   @default(true)
+  isFeatured      Boolean   @default(false)
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  posts           BlogPost[]
+  subcategories   BlogSubcategory[]
+
+  @@map("blog_categories")
+  @@index([slug])
+  @@index([isActive])
+}
+
+model BlogSubcategory {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  description String?
+  categoryId  String
+  sortOrder   Int          @default(0)
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+
+  category    BlogCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("blog_subcategories")
+  @@index([categoryId])
+  @@index([slug])
+}
+
+// Article series (e.g. "Building in Public — Paralel Me AI")
+model BlogSeries {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  description String?    @db.Text
+  coverImage  String?
+  isActive    Boolean    @default(true)
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  posts       BlogPost[]
+
+  @@map("blog_series")
+  @@index([slug])
+}
+
+// Full version history for posts
+model BlogRevision {
+  id           String   @id @default(cuid())
+  postId       String
+  title        String
+  content      String   @db.LongText
+  excerpt      String?  @db.Text
+  revisionNote String?
+  revisedBy    String
+  createdAt    DateTime @default(now())
+
+  post         BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("blog_revisions")
+  @@index([postId])
+}
+
+// Threaded comments
+model BlogComment {
+  id          String        @id @default(cuid())
+  postId      String
+  userId      String?
+  parentId    String?
+
+  authorName  String
+  authorEmail String
+  authorUrl   String?
+  avatarUrl   String?
+  content     String        @db.Text
+
+  status      CommentStatus @default(PENDING)
+  isEdited    Boolean       @default(false)
+  editedAt    DateTime?
+  ipAddress   String?
+  userAgent   String?
+  isFlagged   Boolean       @default(false)
+  flagReason  String?
+  moderatedAt DateTime?
+  moderatedBy String?
+  likeCount   Int           @default(0)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  post        BlogPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  parent      BlogComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies     BlogComment[] @relation("CommentReplies")
+
+  @@map("blog_comments")
+  @@index([postId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Article reactions: 🔥 Insightful / 💡 Interesting / 🤔 Thought-provoking
+model BlogReaction {
+  id        String       @id @default(cuid())
+  postId    String
+  userId    String?
+  ipAddress String?
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  post      BlogPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("blog_reactions")
+  @@unique([postId, userId])
+  @@unique([postId, ipAddress])
+  @@index([postId])
+  @@index([type])
+}
+
+// Post likes 👍
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("post_likes")
+  @@unique([postId, userId])
+  @@unique([postId, ipAddress])
+  @@index([postId])
+}
+
+// Saved / bookmarked articles
+model Bookmark {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bookmarks")
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+// Page view tracking
+model PostViewLog {
+  id             String   @id @default(cuid())
+  postId         String
+  userId         String?
+  ipAddress      String?
+  userAgent      String?
+  referrer       String?
+  country        String?
+  countryCode    String?
+  readPercent    Int?
+  timeOnPageSecs Int?
+  sessionId      String?
+  createdAt      DateTime @default(now())
+
+  post           BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_view_logs")
+  @@index([postId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([countryCode])
+}
+
+// Per-user reading history for recommendation engine
+model ReadingHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  postId      String
+  readAt      DateTime @default(now())
+  readPercent Int?     @default(0)
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("reading_history")
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+}
+
+// Social share events
+model ShareEvent {
+  id        String   @id @default(cuid())
+  postId    String
+  platform  String   // "twitter" | "linkedin" | "facebook" | "copy" | "whatsapp"
+  userId    String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("share_events")
+  @@index([postId])
+  @@index([platform])
+}
+
+// SEO audit store per post
+model SeoAudit {
+  id            String   @id @default(cuid())
+  postId        String   @unique
+  score         Int?
+  issues        String?  @db.Text // JSON array
+  suggestions   String?  @db.Text // JSON array
+  lastAuditedAt DateTime @default(now())
+
+  post          BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("seo_audits")
+}
+
+enum BlogStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  SPAM
+  REJECTED
+}
+
+enum ReactionType {
+  FIRE   // 🔥 Insightful
+  BULB   // 💡 Interesting
+  THINK  // 🤔 Thought-provoking
+  CLAP   // 👏 Well-written
+  LOVE   // ❤️ Love this
+}
+

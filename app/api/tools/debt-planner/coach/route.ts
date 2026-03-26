@@ -1,0 +1,82 @@
+// =============================================================================
+// isaacpaha.com — Debt Recovery Planner: AI Financial Coach API
+// app/api/tools/debt-planner/coach/route.ts
+//
+// POST { message, history[], financialContext? }
+// Conversational AI coach — can answer financial questions, reassure, advise
+// on budget decisions. Always includes safety disclaimer framing.
+// =============================================================================
+
+import { NextRequest, NextResponse } from "next/server";
+import Anthropic                     from "@anthropic-ai/sdk";
+import { auth }                      from "@clerk/nextjs/server";
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+const SYSTEM_PROMPT = `You are a warm, practical AI financial planning coach. You help people manage debt, budget more effectively, and build confidence around their finances.
+
+Your personality:
+- Empathetic but honest — never sugarcoat, never alarm
+- Specific and practical — give concrete numbers and steps, not vague advice
+- Supportive but not patronising — treat users as capable adults
+- Clear about your limitations — you give guidance, not regulated financial advice
+
+Rules you ALWAYS follow:
+1. NEVER give strict regulated financial advice (e.g. specific investment advice, legal recommendations)
+2. NEVER make users feel shame or guilt about their debt situation
+3. ALWAYS recommend professional help (StepChange, Citizens Advice, a financial adviser) if the situation seems severe
+4. Keep responses concise — 3-5 sentences for most questions, longer only when necessary
+5. Use the currency/numbers from their financial context when provided
+6. If asked something outside your scope (investments, legal, tax), say so clearly and redirect
+
+Opening disclaimer to weave in naturally when starting a new conversation:
+"I can help you think through your finances and create a plan — just keep in mind this is planning guidance, not regulated financial advice."`;
+
+export async function POST(req: NextRequest) {
+    // const { clerkId } = await auth()
+
+    // if (!clerkId){
+    //     return
+    // }
+  try {
+    const { message, history = [], financialContext } = await req.json();
+
+    if (!message?.trim()) {
+      return NextResponse.json({ error: "message required" }, { status: 400 });
+    }
+
+    // Build messages array - include financial context as first user/assistant exchange
+    const messages: { role: "user" | "assistant"; content: string }[] = [];
+
+    if (financialContext && history.length === 0) {
+      messages.push({
+        role: "user",
+        content: `Here's my financial situation for context:\n${JSON.stringify(financialContext, null, 2)}\n\nPlease acknowledge this and let me know you're ready to help.`,
+      });
+      messages.push({
+        role: "assistant",
+        content: `Thanks for sharing your financial details. I can see your situation clearly and I'm here to help you work through it. This is planning guidance rather than regulated financial advice, so I'll focus on practical steps you can take. What's on your mind?`,
+      });
+    }
+
+    // Add conversation history (last 10 exchanges max for context window)
+    const recentHistory = history.slice(-20);
+    messages.push(...recentHistory);
+
+    // Add current message
+    messages.push({ role: "user", content: message.trim() });
+
+    const response = await anthropic.messages.create({
+      model:      "claude-sonnet-4-20250514",
+      max_tokens: 600,
+      system:     SYSTEM_PROMPT,
+      messages,
+    });
+
+    const reply = response.content[0].type === "text" ? response.content[0].text : "";
+    return NextResponse.json({ ok: true, reply });
+  } catch (err: any) {
+    console.error("[debt-planner/coach]", err);
+    return NextResponse.json({ error: "Coach unavailable — please try again" }, { status: 500 });
+  }
+}

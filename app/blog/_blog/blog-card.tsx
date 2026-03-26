@@ -1,169 +1,212 @@
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { BookOpen, Calendar, Clock, User, Star, ArrowRight } from 'lucide-react';
+"use client";
 
-// Blog post card component
-interface BlogPostAuthor {
-  name: string;
-  role: string;
-}
+import React from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Clock, Eye, MessageSquare, ArrowRight, Flame } from "lucide-react";
+import { type BlogPost, BLOG_CATEGORIES } from "@/lib/data/blog-data";
+import { staggerItem } from "@/lib/animations";
+import { cn } from "@/lib/utils";
 
-interface BlogPost {
-  title: string;
-  subtitle: string;
-  excerpt: string;
-  category: string;
-  tags: string[];
-  slug: string;
-  publishedAt: string | Date;
-  readTime: number;
-  featured?: boolean;
-  author: BlogPostAuthor;
-}
-
-interface BlogPostCardProps {
+interface BlogCardProps {
   post: BlogPost;
-  featured?: boolean;
-  index?: number;
+  variant?: "default" | "large" | "compact" | "horizontal";
 }
 
-const BlogPostCard: React.FC<BlogPostCardProps> = ({ post, featured = false, index = 0 }) => {
-  const [isHovered, setIsHovered] = useState(false);
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      viewport={{ once: true }}
-      whileHover={{ y: -5 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className={`group ${featured ? 'md:col-span-2' : ''}`}
-    >
-      <Card className="h-full bg-white border border-gray-200 hover:border-amber-300 hover:shadow-2xl transition-all duration-500 overflow-hidden">
-        
-        {/* Post Image */}
-        <div className={`relative overflow-hidden bg-gradient-to-br from-amber-100 to-amber-200 ${featured ? 'h-64' : 'h-48'}`}>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-6xl font-bold text-amber-500/30">
-              {post.title.charAt(0)}
-            </div>
+export const BlogCard = ({ post, variant = "default" }: BlogCardProps) => {
+  const category = BLOG_CATEGORIES.find((c) => c.name === post.category);
+  const isHot = post.viewCount > 10000;
+
+  if (variant === "compact") {
+    return (
+      <motion.div variants={staggerItem}>
+        <Link href={`/blog/${post.slug}`} className="group flex items-start gap-3 py-3 border-b border-gray-100 last:border-0">
+          <div
+            className="w-10 h-10 rounded-xs shrink-0 flex items-center justify-center text-xl"
+            style={{ backgroundColor: `${post.coverColor}12` }}
+          >
+            {post.coverEmoji}
           </div>
-          
-          {/* Category Badge */}
-          <div className="absolute top-4 left-4">
-            <Badge className="bg-amber-500 hover:bg-amber-600 text-white">
-              {post.category}
-            </Badge>
-          </div>
-
-          {/* Featured Badge */}
-          {post.featured && (
-            <div className="absolute top-4 right-4">
-              <Badge variant="outline" className="bg-white/90 border-amber-500 text-amber-700">
-                <Star className="w-3 h-3 mr-1" />
-                Featured
-              </Badge>
-            </div>
-          )}
-
-          {/* Hover Overlay */}
-          <AnimatePresence>
-            {isHovered && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/60 flex items-center justify-center"
-              >
-                <Link href={`/blog/${post.slug}`}>
-                  <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Read Article
-                  </Button>
-                </Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-            <Calendar className="w-4 h-4" />
-            <span>{new Date(post.publishedAt).toLocaleDateString('en-GB', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</span>
-            <span>•</span>
-            <Clock className="w-4 h-4" />
-            <span>{post.readTime} min read</span>
-          </div>
-          
-          <CardTitle className={`${featured ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 group-hover:text-amber-600 transition-colors line-clamp-2`}>
-            <Link href={`/blog/${post.slug}`}>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 group-hover:text-amber-700 leading-snug line-clamp-2 transition-colors duration-200">
               {post.title}
-            </Link>
-          </CardTitle>
-          
-          <CardDescription className="text-amber-600 font-medium">
-            {post.subtitle}
-          </CardDescription>
-        </CardHeader>
+            </p>
+            <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+              <span>{post.readingTime} min</span>
+              <span>·</span>
+              <span>{post.viewCount.toLocaleString()} reads</span>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  }
 
-        <CardContent>
-          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-            {post.excerpt}
-          </p>
+  if (variant === "horizontal") {
+    return (
+      <motion.div variants={staggerItem}>
+        <Link href={`/blog/${post.slug}`} className="group flex gap-5 p-5 bg-white border border-gray-100 rounded-xs hover:border-amber-200 hover:shadow-md hover:shadow-amber-50 transition-all duration-300">
+          {/* Cover swatch */}
+          <div
+            className="w-20 h-20 md:w-24 md:h-24 rounded-xs shrink-0 flex items-center justify-center text-3xl relative overflow-hidden"
+            style={{ backgroundColor: `${post.coverColor}10` }}
+          >
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: `radial-gradient(circle at 2px 2px, ${post.coverColor}50 1px, transparent 0)`,
+                backgroundSize: "16px 16px",
+              }}
+            />
+            <span className="relative z-10">{post.coverEmoji}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className="text-[10px] font-bold tracking-widest uppercase"
+                style={{ color: category?.color }}
+              >
+                {category?.icon} {post.category}
+              </span>
+              {post.isEditorsPick && (
+                <span className="text-[9px] font-black tracking-widest uppercase bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-xs">
+                  Editor&apos;s Pick
+                </span>
+              )}
+              {isHot && (
+                <span className="flex items-center gap-0.5 text-[9px] font-black text-orange-500">
+                  <Flame className="w-2.5 h-2.5 fill-orange-500" /> Hot
+                </span>
+              )}
+            </div>
+            <h3 className="text-base font-black text-gray-900 group-hover:text-amber-800 leading-tight mb-2 line-clamp-2 transition-colors duration-200">
+              {post.title}
+            </h3>
+            <p className="text-sm text-gray-400 line-clamp-1 mb-3">{post.excerpt}</p>
+            <div className="flex items-center gap-3 text-xs text-gray-400">
+              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{post.readingTime} min</span>
+              <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{post.viewCount.toLocaleString()}</span>
+              <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{post.commentCount}</span>
+              <span className="ml-auto">{formatDate(post.publishedAt)}</span>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  }
 
-          {/* Tags */}
-          <div className="flex flex-wrap gap-1 mb-4">
-            {post.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs bg-gray-100 text-gray-600 hover:bg-amber-100 hover:text-amber-700 transition-colors">
-                {tag}
-              </Badge>
-            ))}
-            {post.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
-                +{post.tags.length - 3} more
-              </Badge>
+  // Default card
+  return (
+    <motion.div variants={staggerItem} className="h-full">
+      <Link href={`/blog/${post.slug}`} className="group block h-full">
+        <article
+          className={cn(
+            "h-full flex flex-col bg-white border border-gray-100 rounded-xs overflow-hidden hover:border-amber-200 hover:shadow-xl hover:shadow-amber-50/60 transition-all duration-400",
+            variant === "large" && "md:flex-row"
+          )}
+        >
+          {/* Cover */}
+          <div
+            className={cn(
+              "relative flex items-center justify-center overflow-hidden",
+              variant === "large" ? "md:w-2/5 min-h-[220px]" : "min-h-[160px]"
+            )}
+            style={{ backgroundColor: `${post.coverColor}10` }}
+          >
+            <div
+              className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-500"
+              style={{
+                backgroundImage: `radial-gradient(circle at 2px 2px, ${post.coverColor}60 1px, transparent 0)`,
+                backgroundSize: "20px 20px",
+              }}
+            />
+            <span className="text-6xl relative z-10 group-hover:scale-110 transition-transform duration-500">
+              {post.coverEmoji}
+            </span>
+            {post.isEditorsPick && (
+              <div className="absolute top-3 left-3 text-[9px] font-black tracking-widest uppercase bg-amber-500 text-white px-2 py-1 rounded-xs">
+                Editor&apos;s Pick
+              </div>
+            )}
+            {isHot && (
+              <div className="absolute top-3 right-3 flex items-center gap-1 text-[9px] font-black text-orange-600 bg-orange-50 border border-orange-200 px-2 py-1 rounded-xs">
+                <Flame className="w-2.5 h-2.5 fill-orange-500" /> Trending
+              </div>
+            )}
+            {post.seriesName && (
+              <div className="absolute bottom-3 left-3 text-[9px] font-bold text-gray-600 bg-white/80 backdrop-blur-sm px-2 py-1 rounded-xs border border-gray-200">
+                {post.seriesName} · Part {post.seriesPart}
+              </div>
             )}
           </div>
 
-          {/* Author & Read More */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">{post.author.name}</p>
-                <p className="text-xs text-gray-500">{post.author.role}</p>
-              </div>
+          {/* Content */}
+          <div className="flex flex-col flex-1 p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className="text-[10px] font-bold tracking-[0.15em] uppercase px-2.5 py-1 rounded-xs"
+                style={{
+                  color: category?.color,
+                  backgroundColor: `${category?.color}12`,
+                }}
+              >
+                {category?.icon} {post.category}
+              </span>
             </div>
-            
-            <Link href={`/blog/${post.slug}`}>
-              <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700 hover:bg-amber-50">
-                Read More
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
+
+            <h3
+              className={cn(
+                "font-black text-gray-900 group-hover:text-amber-800 leading-tight mb-3 transition-colors duration-200",
+                variant === "large" ? "text-2xl" : "text-lg"
+              )}
+            >
+              {post.title}
+            </h3>
+
+            <p className="text-sm text-gray-500 leading-relaxed line-clamp-3 mb-4 flex-1">
+              {post.excerpt}
+            </p>
+
+            {/* Tags */}
+            <div className="flex flex-wrap gap-1.5 mb-5">
+              {post.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-xs"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+              <div className="flex items-center gap-3 text-xs text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {post.readingTime} min
+                </span>
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {post.viewCount.toLocaleString()}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MessageSquare className="w-3 h-3" />
+                  {post.commentCount}
+                </span>
+              </div>
+              <ArrowRight className="w-4 h-4 text-amber-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </article>
+      </Link>
     </motion.div>
   );
 };
-
-export default BlogPostCard;

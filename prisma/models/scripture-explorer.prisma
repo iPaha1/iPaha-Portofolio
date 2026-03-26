@@ -1,0 +1,54 @@
+// =============================================================================
+// COMPARATIVE SCRIPTURE EXPLORER
+// Personal library of saved explorations, notes, and bookmarks.
+// =============================================================================
+
+model ScriptureExploration {
+  id          String   @id @default(cuid())
+  userId      String
+
+  // What was explored
+  topic       String                          // display title, e.g. "Forgiveness"
+  query       String   @db.Text              // the raw user query
+  mode        String   @default("compare")   // "compare" | "figure" | "deep-dive"
+  traditions  String?                        // comma-separated: "Christianity, Islam, Judaism"
+
+  // Full AI response stored as JSON (so we can reconstruct the UI)
+  resultJson  String   @db.LongText
+
+  // User curation
+  isStarred   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  toolId        String?
+  tool          Tool?     @relation(fields: [toolId], references: [id], onDelete: SetNull)
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes       ScriptureNote[]
+
+  @@map("scripture_explorations")
+  @@index([userId])
+  @@index([createdAt])
+  @@index([isStarred])
+}
+
+// ─── Per-exploration study notes ─────────────────────────────────────────────
+
+model ScriptureNote {
+  id            String               @id @default(cuid())
+  explorationId String               @unique   // one note set per exploration
+  userId        String
+
+  content       String               @db.Text  // user's personal notes (up to 2000 chars)
+
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  exploration   ScriptureExploration @relation(fields: [explorationId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId],        references: [id], onDelete: Cascade)
+
+  @@map("scripture_notes")
+  @@index([userId])
+}

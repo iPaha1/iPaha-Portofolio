@@ -1,0 +1,600 @@
+// =============================================================================
+// GAMIFICATION SYSTEM - Prisma Schema Additions
+// Add these models to your existing Prisma schema
+// =============================================================================
+
+// ─── Game Event (The "drop" system) ──────────────────────────────────────────
+model GameEvent {
+  id            String          @id @default(cuid())
+  type          GameType
+  subType       String?         // "click_hunt", "token_rain", "quiz", "mystery_box", "reaction"
+  rewardTokens  Int
+  bonusTokens   Int?            // For multipliers
+  title         String
+  description   String?
+  duration      Int             // seconds
+  startTime     DateTime?
+  endTime       DateTime?
+  isGlobal      Boolean         @default(false)
+  isActive      Boolean         @default(true)
+  isFlash       Boolean         @default(false)  // Limited time event
+  targetUsers   String?         @db.Text        // JSON array of user IDs if targeted
+  minUsers      Int?            // For multiplayer events
+  maxWinners    Int?            // For limited winner events
+  triggerType   TriggerType     @default(SCHEDULED)
+  triggerData    String?        @db.Text        // JSON for AI triggers
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  participations GameParticipation[]
+  triggers      GameTriggerLog[]
+  tokenTransaction      TokenTransaction[]
+
+  @@map("game_events")
+  @@index([isActive])
+  @@index([type])
+  @@index([startTime])
+}
+
+// ─── User Participation ───────────────────────────────────────────────────────
+model GameParticipation {
+  id            String      @id @default(cuid())
+  userId        String
+  gameEventId   String
+  rewardEarned  Int
+  score         Int?        // For reaction games, quiz scores
+  timeTaken     Int?        // milliseconds
+  completedAt   DateTime    @default(now())
+  isWinner      Boolean     @default(false)
+  metadata      String?     @db.Text  // JSON for game-specific data
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameEvent     GameEvent   @relation(fields: [gameEventId], references: [id], onDelete: Cascade)
+
+  @@map("game_participations")
+  @@index([userId])
+  @@index([gameEventId])
+  @@index([completedAt])
+  @@unique([userId, gameEventId])
+}
+
+// ─── Token System ────────────────────────────────────────────────────────────
+model TokenWallet {
+  id            String      @id @default(cuid())
+  userId        String      @unique
+  balance       Int         @default(0)
+  totalEarned   Int         @default(0)
+  totalSpent    Int         @default(0)
+  lastUpdated   DateTime    @updatedAt
+  createdAt     DateTime    @default(now())
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  TokenTransaction[]
+
+  @@map("token_wallets")
+}
+
+model TokenTransaction {
+  id            String          @id @default(cuid())
+  userId        String
+  amount        Int             // positive = earned, negative = spent
+  type          TransactionType
+  description   String
+  gameEventId   String?
+  metadata      String?         @db.Text  // JSON
+  createdAt     DateTime        @default(now())
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenWallet   TokenWallet[]
+  gameEvent     GameEvent?      @relation(fields: [gameEventId], references: [id])
+
+  @@map("token_transactions")
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ─── Game Triggers Log ────────────────────────────────────────────────────────
+model GameTriggerLog {
+  id            String      @id @default(cuid())
+  triggerType   TriggerType
+  gameEventId   String?
+  userId        String?     // If triggered for specific user
+  reason        String?     @db.Text
+  aiDecision    String?     @db.Text  // JSON of AI reasoning
+  success       Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+
+  gameEvent     GameEvent?  @relation(fields: [gameEventId], references: [id])
+
+  @@map("game_trigger_logs")
+  @@index([triggerType])
+  @@index([createdAt])
+}
+
+// ─── User Achievements ───────────────────────────────────────────────────────
+
+model Achievement {
+  id            String          @id @default(cuid())
+  categoryId    String
+  name          String
+  slug          String          @unique
+  description   String
+  icon          String
+  badgeImage    String?
+  rarity        AchievementRarity @default(COMMON)
+  requirement   String          @db.Text      // JSON requirement config
+  rewardTokens  Int
+  rewardItems   String?         @db.Text      // JSON array of item IDs
+  isHidden      Boolean         @default(false)
+  isLimited     Boolean         @default(false)
+  expiresAt     DateTime?
+  totalUnlocked Int             @default(0)
+  createdAt     DateTime        @default(now())
+  
+  category      AchievementCategory @relation(fields: [categoryId], references: [id])
+  userAchievements UserAchievement[]
+  
+  @@map("achievements")
+  @@index([categoryId])
+  @@index([rarity])
+}
+
+model UserAchievement {
+  id            String          @id @default(cuid())
+  userId        String
+  achievementId String
+  progress      Int?            // For progress-based achievements
+  unlockedAt    DateTime        @default(now())
+  notified      Boolean         @default(false)
+  
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement     @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  @@map("user_achievements")
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([unlockedAt])
+}
+
+// ─── User Streaks ────────────────────────────────────────────────────────────
+model UserStreak {
+  id            String      @id @default(cuid())
+  userId        String      @unique
+  currentStreak Int         @default(0)
+  longestStreak Int         @default(0)
+  lastPlayedAt  DateTime?
+  streakBonus   Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_streaks")
+}
+
+// ─── User Game Settings (Opt-out) ────────────────────────────────────────────
+model GameSettings {
+  id            String      @id @default(cuid())
+  userId        String      @unique
+  gameEnabled   Boolean     @default(true)
+  soundEnabled  Boolean     @default(true)
+  notificationsEnabled Boolean @default(true)
+  minGameDelay  Int?        // Minimum minutes between games (user preference)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("game_settings")
+}
+
+
+
+// =============================================================================
+// GAMIFICATION PHASE 2 - Additional Prisma Models
+// Add to existing schema
+// =============================================================================
+
+// ─── Leaderboard System ───────────────────────────────────────────────────────
+model Leaderboard {
+  id            String          @id @default(cuid())
+  type          LeaderboardType
+  period        LeaderboardPeriod
+  startsAt      DateTime
+  endsAt        DateTime
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  
+  entries       LeaderboardEntry[]
+  
+  @@map("leaderboards")
+  @@index([type, period, isActive])
+  @@index([startsAt, endsAt])
+}
+
+model LeaderboardEntry {
+  id            String          @id @default(cuid())
+  leaderboardId String
+  userId        String
+  rank          Int
+  score         Int
+  previousRank  Int?            // Track movement
+  rewardsAwarded Boolean        @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  leaderboard   Leaderboard     @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("leaderboard_entries")
+  @@unique([leaderboardId, userId])
+  @@index([leaderboardId, rank])
+  @@index([userId])
+}
+
+// ─── Achievement System (Enhanced) ───────────────────────────────────────────
+model AchievementCategory {
+  id            String          @id @default(cuid())
+  name          String
+  slug          String          @unique
+  description   String?
+  icon          String
+  sortOrder     Int             @default(0)
+  createdAt     DateTime        @default(now())
+  
+  achievements  Achievement[]
+  
+  @@map("achievement_categories")
+}
+
+
+// ─── Multiplayer Events ──────────────────────────────────────────────────────
+model MultiplayerEvent {
+  id            String          @id @default(cuid())
+  title         String
+  description   String
+  gameType      MultiplayerGameType
+  status        MultiplayerStatus @default(SCHEDULED)
+  startsAt      DateTime
+  endsAt        DateTime
+  maxPlayers    Int
+  currentPlayers Int             @default(0)
+  entryFee      Int?             // Token cost to join
+  prizePool     Int              @default(0)
+  minPlayers    Int              @default(2)
+  winnerReward  Int?
+  createdAt     DateTime         @default(now())
+  
+  participants  MultiplayerParticipant[]
+  
+  @@map("multiplayer_events")
+  @@index([status])
+  @@index([startsAt])
+}
+
+model MultiplayerParticipant {
+  id            String          @id @default(cuid())
+  eventId       String
+  userId        String
+  score         Int             @default(0)
+  rank          Int?
+  status        ParticipantStatus @default(REGISTERED)
+  joinedAt      DateTime        @default(now())
+  completedAt   DateTime?
+  
+  event         MultiplayerEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("multiplayer_participants")
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([score])
+}
+
+// ─── Token Store / Redemption ────────────────────────────────────────────────
+model TokenStoreItem {
+  id            String          @id @default(cuid())
+  name          String
+  description   String
+  type          StoreItemType
+  tokenCost     Int
+  stock         Int?            // null = unlimited
+  imageUrl      String?
+  isActive      Boolean         @default(true)
+  expiresAt     DateTime?
+  metadata      String?         @db.Text      // JSON for item-specific data
+  createdAt     DateTime        @default(now())
+  
+  redemptions   TokenRedemption[]
+  
+  @@map("token_store_items")
+  @@index([type])
+  @@index([isActive])
+}
+
+model TokenRedemption {
+  id            String          @id @default(cuid())
+  userId        String
+  itemId        String
+  tokenCost     Int
+  status        RedemptionStatus @default(PENDING)
+  redeemedAt    DateTime        @default(now())
+  processedAt   DateTime?
+  metadata      String?         @db.Text
+  
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item          TokenStoreItem  @relation(fields: [itemId], references: [id])
+  
+  @@map("token_redemptions")
+  @@index([userId])
+  @@index([status])
+}
+
+// ─── Referral System ────────────────────────────────────────────────────────
+model Referral {
+  id            String          @id @default(cuid())
+  referrerId    String
+  referredId    String          @unique
+  status        ReferralStatus  @default(PENDING)
+  rewardGiven   Boolean         @default(false)
+  rewardAmount  Int             @default(0)
+  completedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  
+  referrer      User            @relation("Referrer", fields: [referrerId], references: [id])
+  referred      User            @relation("Referred", fields: [referredId], references: [id])
+  
+  @@map("referrals")
+  @@index([referrerId])
+  @@index([status])
+}
+
+model ReferralCode {
+  id            String          @id @default(cuid())
+  userId        String          @unique
+  code          String          @unique
+  uses          Int             @default(0)
+  maxUses       Int?            // null = unlimited
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("referral_codes")
+  @@index([code])
+}
+
+// ─── AI Trigger Config ──────────────────────────────────────────────────────
+model AITriggerConfig {
+  id            String          @id @default(cuid())
+  name          String
+  triggerType   TriggerType
+  conditions    String          @db.Text      // JSON conditions
+  action        String          @db.Text      // JSON action
+  cooldown      Int?            // minutes
+  priority      Int             @default(0)
+  isActive      Boolean         @default(true)
+  successCount  Int             @default(0)
+  failureCount  Int             @default(0)
+  lastTriggered DateTime?
+  createdAt     DateTime        @default(now())
+  
+  @@map("ai_trigger_configs")
+  @@index([triggerType, isActive])
+}
+
+
+
+model MultiplayerRoom {
+  id         String                @id @default(cuid())
+  code       String                @unique
+  gameType   String
+  status     MultiplayerRoomStatus @default(WAITING)
+  hostId     String
+  maxPlayers Int                   @default(6)
+  entryFee   Int                   @default(0)
+  prizePool  Int                   @default(0)
+  config     String?               @db.Text
+  roundData  String?               @db.Text
+  startedAt  DateTime?
+  endedAt    DateTime?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  players MultiplayerPlayer[]
+  events  MultiplayerEvent2[]
+  results MultiplayerResult[]
+
+  @@map("multiplayer_rooms")
+  @@index([status])
+  @@index([code])
+  @@index([gameType])
+  @@index([createdAt])
+}
+
+model MultiplayerPlayer {
+  id          String   @id @default(cuid())
+  roomId      String
+  userId      String
+  displayName String
+  avatarUrl   String?
+  score       Int      @default(0)
+  isReady     Boolean  @default(false)
+  isAlive     Boolean  @default(true)
+  joinedAt    DateTime @default(now())
+  lastPingAt  DateTime @default(now())
+
+  room MultiplayerRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("multiplayer_players")
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+}
+
+model MultiplayerEvent2 {
+  id        String   @id @default(cuid())
+  roomId    String
+  type      String
+  payload   String   @db.Text
+  createdAt DateTime @default(now())
+
+  room MultiplayerRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("multiplayer_events2")
+  @@index([roomId, createdAt])
+}
+
+model MultiplayerResult {
+  id           String   @id @default(cuid())
+  roomId       String
+  userId       String
+  displayName  String
+  finalScore   Int
+  rank         Int
+  tokensEarned Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  room MultiplayerRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("multiplayer_results")
+  @@index([roomId])
+  @@index([userId])
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+enum GameType {
+  CLICK_HUNT
+  TOKEN_RAIN
+  QUIZ
+  MYSTERY_BOX
+  REACTION
+  MULTIPLAYER
+  FLASH_EVENT
+  MEMORY_MATCH
+  BUBBLE_BURST
+  SPEED_TYPER
+  DODGE_RUSH
+  NUMBER_PULSE
+  COLOUR_TAP
+  MOLE_MASH
+  GRAVITY_FLIP
+  MATH_BLITZ
+  SHADOW_TRACE
+  TILE_FLIP
+  PIXEL_PAINT
+  SIGNAL_CHAIN
+  RHYTHM_PULSE
+  STAR_CONNECT
+  PRECISION_STOP
+  CHAIN_REACTION
+  MIRROR_PAINTER
+  WORD_HUNT
+  NEON_TRAIL
+  FREQUENCY_MATCH
+  ICE_SLIDE
+  SONAR_SWEEP
+  AUCTION_BLITZ
+
+
+}
+
+enum TriggerType {
+  SCHEDULED
+  RANDOM
+  AI_DRIVEN
+  BEHAVIORAL
+  USER_ACTION
+  PEAK_TIME
+}
+
+enum TransactionType {
+  GAME_REWARD
+  STREAK_BONUS
+  ACHIEVEMENT
+  DAILY_LOGIN
+  REFERRAL
+  REDEMPTION
+  ADMIN_ADJUST
+  SPEND
+  PURCHASE
+}
+
+// ─── New Enums ───────────────────────────────────────────────────────────────
+enum LeaderboardType {
+  WEEKLY_TOKENS
+  MONTHLY_TOKENS
+  ALL_TIME_TOKENS
+  WEEKLY_GAMES
+  MONTHLY_STREAK
+  GAME_MASTER
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+enum AchievementRarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+  MYTHIC
+}
+
+enum MultiplayerGameType {
+  TOKEN_RACE
+  CLICK_WARS
+  REACTION_TOURNAMENT
+  QUIZ_BATTLE
+}
+
+enum MultiplayerStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantStatus {
+  REGISTERED
+  PLAYING
+  COMPLETED
+  DISQUALIFIED
+}
+
+enum StoreItemType {
+  TOOL_ACCESS
+  FEATURE_UNLOCK
+  CUSTOM_THEME
+  BADGE
+  BOOSTER
+  MYSTERY_BOX
+}
+
+enum RedemptionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
+
+enum MultiplayerRoomStatus {
+  WAITING
+  COUNTDOWN
+  PLAYING
+  RESULTS
+  CLOSED
+}

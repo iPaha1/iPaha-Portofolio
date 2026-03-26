@@ -1,0 +1,167 @@
+// =============================================================================
+// AI DEBT RECOVERY PLANNER
+// Stores debt profiles, repayment plans, payment logs, and coach conversations.
+// =============================================================================
+
+// ─── Debt Profile ─────────────────────────────────────────────────────────────
+// The core financial snapshot — income, expenses, debts, goals.
+
+model DebtProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+
+  // Income
+  monthlyIncome     Float
+  currency          String   @default("GBP")
+
+  // Fixed expenses (JSON: [{label, amount}])
+  fixedExpenses     String   @db.Text
+  // Variable expenses (JSON: [{label, amount}])
+  variableExpenses  String   @db.Text
+
+  // Debts (JSON: DebtItem[])
+  debts             String   @db.LongText
+
+  // Goals
+  targetMonths      Int?     // desired months to debt-free (null = let AI decide)
+  strategy          RepaymentStrategy @default(AVALANCHE)
+
+  // Computed snapshot (updated when plan is generated)
+  totalDebt         Float    @default(0)
+  monthlyMinimums   Float    @default(0)
+  monthlySurplus    Float    @default(0)
+  riskLevel         RiskLevel @default(MEDIUM)
+  estimatedMonths   Int?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  toolId        String?
+  tool          Tool?     @relation(fields: [toolId], references: [id], onDelete: SetNull)
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plans             RepaymentPlan[]
+  coachMessages     DebtCoachMessage[]
+
+  @@map("debt_profiles")
+}
+
+// ─── Repayment Plan ───────────────────────────────────────────────────────────
+// A generated plan — can have multiple over time as user's situation changes.
+
+model RepaymentPlan {
+  id              String         @id @default(cuid())
+  profileId       String
+  userId          String
+
+  label           String                        // e.g. "Plan A — Avalanche, Jan 2025"
+  strategy        RepaymentStrategy
+  status          PlanStatus     @default(ACTIVE)
+
+  // Plan data (JSON: MonthlyPlanItem[])
+  planJson        String         @db.LongText   // full month-by-month breakdown
+  // Action plan (JSON: string[])
+  weeklyActions   String         @db.Text       // weekly habits + actions
+  // AI insights (JSON: string[])
+  insights        String         @db.Text
+
+  // Key metrics
+  totalDebtAtStart   Float
+  estimatedMonths    Int
+  estimatedPayoffDate DateTime?
+  monthlyPayment     Float       // recommended monthly debt payment
+  totalInterest      Float       @default(0)   // estimated total interest paid
+
+  // Progress
+  paidToDate        Float        @default(0)
+  remainingDebt     Float
+  isCompleted       Boolean      @default(false)
+  completedAt       DateTime?
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  profile           DebtProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId],    references: [id], onDelete: Cascade)
+  payments          PaymentLog[]
+
+  @@map("repayment_plans")
+  @@index([profileId])
+  @@index([userId])
+  @@index([status])
+}
+
+// ─── Payment Log ──────────────────────────────────────────────────────────────
+// User logs payments against their plan to track progress.
+
+model PaymentLog {
+  id          String        @id @default(cuid())
+  planId      String
+  userId      String
+
+  amount      Float
+  debtLabel   String?       // which specific debt this payment was for
+  note        String?
+  paidAt      DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+
+  plan        RepaymentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_logs")
+  @@index([planId])
+  @@index([userId])
+}
+
+// ─── AI Financial Coach Messages ──────────────────────────────────────────────
+// Stores chat history with the AI coach (linked to a debt profile).
+
+model DebtCoachMessage {
+  id          String      @id @default(cuid())
+  profileId   String
+  userId      String
+
+  role        String      // "user" | "assistant"
+  content     String      @db.Text
+  createdAt   DateTime    @default(now())
+
+  profile     DebtProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId],    references: [id], onDelete: Cascade)
+
+  @@map("debt_coach_messages")
+  @@index([profileId])
+  @@index([userId])
+}
+
+enum RepaymentStrategy {
+  SNOWBALL    // smallest balance first — psychological wins
+  AVALANCHE   // highest interest first — mathematically optimal
+  HYBRID      // AI-suggested blend
+}
+
+enum DebtType {
+  CREDIT_CARD
+  PERSONAL_LOAN
+  STUDENT_LOAN
+  CAR_LOAN
+  MORTGAGE
+  OVERDRAFT
+  BUY_NOW_PAY_LATER
+  MEDICAL
+  FAMILY_OR_FRIEND
+  OTHER
+}
+
+enum RiskLevel {
+  LOW         // manageable — surplus each month
+  MEDIUM      // tight — small surplus or near break-even
+  HIGH        // under pressure — deficit or very low surplus
+  CRITICAL    // urgent — cannot meet minimums
+}
+
+enum PlanStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}

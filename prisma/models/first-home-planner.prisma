@@ -1,0 +1,114 @@
+// =============================================================================
+// FIRST HOME PLANNER
+// Stores the user's home ownership plan, progress milestones, and savings log.
+// =============================================================================
+
+// ─── Home Ownership Plan ──────────────────────────────────────────────────────
+
+model HomeOwnershipPlan {
+  id     String @id @default(cuid())
+  userId String
+
+  // Plan label
+  label  String // e.g. "2-bed flat — Manchester"
+
+  // Input snapshot (stored to allow re-running simulations)
+  monthlyIncome    Int
+  currentSavings   Int
+  monthlyExpenses  Int
+  existingDebt     Int    @default(0)    // monthly debt repayment total
+  targetPrice      Int
+  depositPercent   Int    @default(10)   // 5, 10, or 20
+  timeframeMonths  Int    @default(36)
+  propertyType     HomePropertyType @default(FLAT)
+  location         String?
+  currency         String @default("GBP")
+  creditScore      HomeCreditScore? @default(UNKNOWN)
+  isFirstTimeBuyer Boolean @default(true)
+
+  // Readiness scores (denormalised from planJson for dashboard queries)
+  overallReadinessScore   Int @default(0)
+  depositReadinessScore   Int @default(0)
+  incomeReadinessScore    Int @default(0)
+  creditReadinessScore    Int @default(0)
+  realisticTimelineMonths Int @default(0)
+  realisticTargetDate     String?  // e.g. "March 2028"
+
+  // Full AI plan JSON
+  planJson String @db.LongText
+
+  // User notes
+  notes    String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  toolId        String?
+  tool          Tool?     @relation(fields: [toolId], references: [id], onDelete: SetNull)
+
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  milestones HomeMilestone[]
+  savingsLogs HomeSavingsLog[]
+
+  @@map("home_ownership_plans")
+  @@unique([userId])   // one active plan per user — replace on re-generate
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─── Deposit Milestones ───────────────────────────────────────────────────────
+
+model HomeMilestone {
+  id           String   @id @default(cuid())
+  planId       String
+
+  label        String   // e.g. "25% of deposit saved"
+  targetAmount Int      // £ amount at this milestone
+  targetMonth  Int      // months from plan creation
+  isAchieved   Boolean  @default(false)
+  achievedAt   DateTime?
+
+  createdAt    DateTime @default(now())
+
+  plan         HomeOwnershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("home_milestones")
+  @@index([planId])
+}
+
+// ─── Savings Log ──────────────────────────────────────────────────────────────
+// User can log each deposit to their house fund — builds a progress picture.
+
+model HomeSavingsLog {
+  id        String   @id @default(cuid())
+  planId    String
+
+  amount    Int              // amount saved this entry (can be negative for corrections)
+  note      String?          // e.g. "Tax refund windfall", "Regular monthly save"
+  savedAt   DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  plan      HomeOwnershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("home_savings_logs")
+  @@index([planId])
+  @@index([savedAt])
+}
+
+enum HomePropertyType {
+  FLAT
+  HOUSE
+  SHARED_OWNERSHIP
+  NEW_BUILD
+  BUNGALOW
+  OTHER
+}
+
+enum HomeCreditScore {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  UNKNOWN
+}

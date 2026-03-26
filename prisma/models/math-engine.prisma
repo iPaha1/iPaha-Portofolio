@@ -1,0 +1,130 @@
+// =============================================================================
+// MATH UNDERSTANDING ENGINE
+// Stores saved explanations, practice sessions, and learning progress
+// for signed-in users.
+// =============================================================================
+
+// ─── Saved Math Explanation ───────────────────────────────────────────────────
+
+model MathQuery {
+  id            String    @id @default(cuid())
+  userId        String?   // null = anonymous (not saved, just for analytics)
+
+  // Input
+  question      String    @db.Text         // the original question/topic
+  level         MathLevel @default(GCSE)
+
+  // Extracted metadata
+  topic         String?                    // e.g. "Algebra"
+  conceptName   String?                    // e.g. "Quadratic Equations"
+  difficulty    String?                    // Easy | Medium | Hard | Very Hard
+
+  // Full result (JSON)
+  resultJson    String?   @db.LongText     // JSON.stringify(MathExplanation)
+
+  // Visualisation snapshot
+  hasVisualisation Boolean @default(false)
+  visualisationType MathVisualisationType? @default(NONE)
+
+  // User engagement
+  isStarred     Boolean  @default(false)
+  isSaved       Boolean  @default(false)
+  notes         String?  @db.Text          // user's personal notes
+  viewCount     Int      @default(1)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  practiceSessions MathPracticeSession[]
+
+  toolId        String?
+  tool          Tool?     @relation(fields: [toolId], references: [id], onDelete: SetNull)
+
+  @@map("math_queries")
+  @@index([userId])
+  @@index([topic])
+  @@index([conceptName])
+  @@index([createdAt])
+}
+
+// ─── Practice Session ─────────────────────────────────────────────────────────
+// Stores the practice questions generated for a query,
+// plus the user's answers and progress.
+
+model MathPracticeSession {
+  id          String    @id @default(cuid())
+  queryId     String
+  userId      String?
+
+  topic       String?
+  conceptName String?
+  level       MathLevel @default(GCSE)
+
+  // Questions (JSON array of PracticeQuestion)
+  questionsJson String   @db.LongText
+
+  // Progress tracking
+  attemptedIds  String?  @db.Text   // JSON: number[] of question ids attempted
+  correctIds    String?  @db.Text   // JSON: number[] of question ids marked correct
+  score         Int?                // percentage correct (0-100)
+
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  query         MathQuery  @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  user          User?      @relation(fields: [userId],  references: [id], onDelete: SetNull)
+
+  @@map("math_practice_sessions")
+  @@index([queryId])
+  @@index([userId])
+}
+
+// ─── Learning Progress ────────────────────────────────────────────────────────
+// Per-user summary of topics studied — powers the learning path feature.
+
+model MathLearningProgress {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+
+  // Topics covered (JSON: { topic: string, count: number, lastStudied: string }[])
+  topicsJson      String    @db.Text  
+
+  // Totals
+  totalQueries    Int       @default(0)
+  totalPractice   Int       @default(0)
+  avgPracticeScore Int?                // average score across all practice sessions
+
+  // Gamification
+  streakDays      Int       @default(0)
+  lastActivityDate DateTime?
+  xpPoints        Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("math_learning_progress")
+}
+
+enum MathLevel {
+  GCSE
+  ALEVEL
+  UNIVERSITY
+  MIDDLE_SCHOOL
+  HIGH_SCHOOL
+  COLLEGE
+}
+
+enum MathVisualisationType {
+  FUNCTION_GRAPH
+  LINEAR_GRAPH
+  GEOMETRIC
+  STATISTICAL
+  VECTOR
+  SEQUENCE
+  RATIO
+  NONE
+}

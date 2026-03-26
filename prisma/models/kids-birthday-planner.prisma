@@ -1,0 +1,151 @@
+// =============================================================================
+// AI KIDS BIRTHDAY PLANNER
+// Core entities: Party → Guest, ChecklistItem, SongSuggestion
+// =============================================================================
+
+// ─── Party ────────────────────────────────────────────────────────────────────
+
+model Party {
+  id     String @id @default(cuid())
+  userId String            // organiser (must be signed in)
+
+  // Basic info
+  childName     String
+  childAge      Int
+  partyDate     DateTime
+  partyEndTime  DateTime?
+  locationName  String?
+  locationAddress String?
+  country       String   @default("GB")
+  city          String?
+
+  // Plan inputs
+  theme         String
+  customTheme   String?
+  ageGroup      String            // "3-5" | "6-8" | "9-12"
+  numKids       Int
+  budgetRange   String            // "low" | "medium" | "high"
+  budgetAmount  Float?
+  indoor        Boolean  @default(true)
+  restrictions  String?  @db.Text  // JSON array: ["no nuts", "quiet activities"]
+  specialNotes  String?  @db.Text
+
+  // AI-generated plan (full JSON stored)
+  planJson      String?  @db.LongText  // PartyPlan JSON
+  planGenerated Boolean  @default(false)
+
+  // Invite system
+  inviteToken   String   @unique @default(cuid())  // used in /invite/[token]
+  inviteMessage String?  @db.Text
+  inviteSentAt  DateTime?
+
+  // Status
+  status   PartyStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guests    Guest[]
+  checklist ChecklistItem[]
+  songs     SongSuggestion[]
+
+  @@index([userId])
+  @@index([inviteToken])
+  @@index([userId, status])
+}
+
+// ─── Guest ────────────────────────────────────────────────────────────────────
+
+model Guest {
+  id      String @id @default(cuid())
+  partyId String
+
+  // Child info
+  childName    String
+  parentName   String?
+  parentEmail  String?
+  parentPhone  String?
+
+  // Guest identity (set when RSVP is submitted via the authenticated /my-rsvp endpoint)
+  guestClerkId  String?    // Clerk user ID of the guest who RSVPd — null for organiser-added guests
+
+  // RSVP
+  status       GuestStatus @default(PENDING)
+  rsvpAt       DateTime?
+  rsvpNote     String?     @db.Text   // "My child has allergies"
+  allergies    String?
+  arrivalNote  String?                // "Will arrive late" | "Running late"
+
+  // Photo consent
+  photoConsent       Boolean @default(false)
+  photoShareConsent  Boolean @default(false)
+
+  // Party day
+  checkedInAt   DateTime?
+  checkedOutAt  DateTime?
+  digitalTag    String?    // "Hi, I'm Jake! 🎉"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@index([partyId])
+  @@index([partyId, status])
+}
+
+// ─── Checklist Item ───────────────────────────────────────────────────────────
+
+model ChecklistItem {
+  id      String @id @default(cuid())
+  partyId String
+
+  text      String
+  category  String   @default("general")  // "invites" | "food" | "decorations" | "activities" | "general"
+  isDone    Boolean  @default(false)
+  dueDate   DateTime?
+  sortOrder Int      @default(0)
+  isAI      Boolean  @default(true)       // true = AI generated, false = user added
+
+  createdAt DateTime @default(now())
+
+  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@index([partyId])
+}
+
+// ─── Song Suggestion ──────────────────────────────────────────────────────────
+
+model SongSuggestion {
+  id      String @id @default(cuid())
+  partyId String
+
+  title      String
+  artist     String?
+  suggestedBy String   @default("AI")  // "AI" | guest name
+  guestId    String?
+  isApproved Boolean  @default(false)
+  upvotes    Int      @default(0)
+
+  createdAt DateTime @default(now())
+
+  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@index([partyId])
+}
+
+enum PartyStatus {
+  DRAFT      // Plan generated, no invites sent yet
+  ACTIVE     // Invites sent, accepting RSVPs
+  DAY_OF     // Party day — check-in mode active
+  COMPLETED  // Party finished
+}
+
+enum GuestStatus {
+  PENDING    // Invited, no response
+  ACCEPTED   // RSVP accepted
+  DECLINED   // RSVP declined
+  CHECKED_IN // Arrived on party day
+  CHECKED_OUT// Picked up and gone
+}

@@ -1,0 +1,160 @@
+// =============================================================================
+// SMART SHARED SHOPPING LIST
+// Real-time collaborative shopping list with sharing, budgeting, and AI suggestions.
+// =============================================================================
+
+// ─── Shopping List ────────────────────────────────────────────────────────────
+
+model ShoppingList {
+  id            String          @id @default(cuid())
+  userId        String?                               // null for anonymous lists
+
+  name          String
+  emoji         String          @default("🛒")
+  description   String?
+  visibility    ListVisibility  @default(PRIVATE)
+  shareId       String          @unique @default(cuid()) // the URL-safe share token
+
+  // Store / layout context
+  storeName     String?                               // e.g. "Tesco", "ASDA"
+  storeMode     Boolean         @default(false)       // optimise by supermarket layout
+
+  // Budget tracking
+  budgetEnabled Boolean         @default(false)
+  budgetAmount  Decimal?        @db.Decimal(10, 2)
+  currency      String          @default("GBP")
+  actualSpend   Decimal?        @db.Decimal(10, 2)    // filled in after shopping
+
+  // Status
+  isArchived    Boolean         @default(false)
+  isTemplate    Boolean         @default(false)       // user-made reusable template
+  completedAt   DateTime?                             // when all items bought
+
+  // Metadata
+  itemCount     Int             @default(0)           // denormalised for performance
+  boughtCount   Int             @default(0)
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  lastActivityAt DateTime       @default(now())       // any edit by anyone
+
+  toolId        String?
+  tool          Tool?     @relation(fields: [toolId], references: [id], onDelete: SetNull)
+
+  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items         ListItem[]
+  collaborators ListCollaborator[]
+  history       ListSnapshot[]
+
+  @@map("shopping_lists")
+  @@index([userId])
+  @@index([shareId])
+  @@index([isArchived])
+  @@index([lastActivityAt])
+}
+
+// ─── List Items ───────────────────────────────────────────────────────────────
+
+model ListItem {
+  id          String           @id @default(cuid())
+  listId      String
+  addedBy     String?                                 // userId or null (anonymous / guest)
+
+  name        String
+  quantity    Decimal?         @db.Decimal(10, 3)     // e.g. 2.5 (kg), 1 (unit)
+  unit        String?                                 // "kg", "g", "l", "ml", "pack", ""
+  category    ListItemCategory @default(OTHER)
+  brand       String?                                 // optional brand preference
+  notes       String?                                 // e.g. "get the organic one"
+
+  estimatedPrice Decimal?      @db.Decimal(10, 2)
+  actualPrice    Decimal?      @db.Decimal(10, 2)     // filled when bought
+
+  status      ListItemStatus   @default(PENDING)
+  boughtAt    DateTime?
+  boughtBy    String?          // userId or name of who bought it
+  sortOrder   Int              @default(0)            // for custom ordering
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  list        ShoppingList     @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@map("list_items")
+  @@index([listId])
+  @@index([status])
+  @@index([category])
+}
+
+// ─── Collaborators ────────────────────────────────────────────────────────────
+// Tracks registered users who have accessed a shared list.
+// Anonymous guests are tracked by session — not stored in DB.
+
+model ListCollaborator {
+  id        String       @id @default(cuid())
+  listId    String
+  userId    String
+  role      ListRole     @default(EDITOR)
+  joinedAt  DateTime     @default(now())
+  lastSeen  DateTime     @default(now())
+
+  list      ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("list_collaborators")
+  @@unique([listId, userId])
+  @@index([listId])
+  @@index([userId])
+}
+
+// ─── List Snapshots (history / templates) ────────────────────────────────────
+
+model ListSnapshot {
+  id         String       @id @default(cuid())
+  listId     String
+  userId     String?
+  name       String                                   // snapshot name / label
+  itemsJson  String       @db.LongText               // JSON snapshot of items at this point
+  createdAt  DateTime     @default(now())
+
+  list       ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@map("list_snapshots")
+  @@index([listId])
+}
+
+enum ListVisibility {
+  PRIVATE     // only the owner can see
+  SHARED      // anyone with the link can view + edit
+  PUBLIC      // discoverable (future)
+}
+
+enum ListItemStatus {
+  PENDING     // not yet bought
+  BOUGHT      // ticked off
+  SKIPPED     // consciously skipped
+}
+
+enum ListItemCategory {
+  PRODUCE        // fruit & veg
+  DAIRY          // milk, cheese, yoghurt
+  MEAT_FISH      // meat & seafood
+  BAKERY         // bread, pastries
+  FROZEN         // frozen items
+  PANTRY         // tins, pasta, rice, sauces
+  DRINKS         // water, juice, alcohol
+  SNACKS         // crisps, chocolate, etc.
+  HOUSEHOLD      // cleaning, toiletries
+  PERSONAL_CARE  // cosmetics, hygiene
+  BABY           // baby items
+  PET            // pet food & accessories
+  PHARMACY       // medicine, vitamins
+  ELECTRONICS    // batteries, cables
+  OTHER
+}
+
+enum ListRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
