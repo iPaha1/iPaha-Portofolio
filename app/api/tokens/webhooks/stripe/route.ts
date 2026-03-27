@@ -100,4 +100,4 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-export const config = { api: { bodyParser: false } };
+// export const config = { api: { bodyParser: false } };
