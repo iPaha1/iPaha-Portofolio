@@ -74,6 +74,16 @@ const GAME_ACCENT: Record<GameType, string> = {
   ICE_SLIDE:   "#14b8a6",
   SONAR_SWEEP: "#f97316",
   AUCTION_BLITZ: "#e879f9",
+  LASER_GRID: "#22c55e",
+  SEQUENCE_MEMORY: "#8b5cf6",
+  VAULT_CRACKER: "#3b82f6",
+  NEON_TYPERACE: "#ef4444",
+  ORBIT_SLINGSHOT: "#f59e0b",
+  COLOR_FLOOD: "#ec4899",
+  PULSE_CATCHER: "#14b8a6",
+  SHADOW_MATCH: "#f97316",
+  WARP_SPEED: "#e879f9",
+  MIND_THE_GAP: "#22c55e",
 };
 
 const GAME_TIPS: Record<GameType, string> = {
@@ -105,6 +115,16 @@ const GAME_TIPS: Record<GameType, string> = {
   ICE_SLIDE:    "Slide on the ice without crashing. The longer you slide, the more points you earn!",
   SONAR_SWEEP:  "Navigate the maze using sonar. The faster you find the exit, the higher your score!",
   AUCTION_BLITZ: "Bid on items quickly. The more you win, the higher your score!",
+  LASER_GRID: "Hit the targets with the laser grid. The faster you clear them, the higher your score!",
+  SEQUENCE_MEMORY: "Remember the sequence of lights. The longer you remember, the higher your score!",
+  VAULT_CRACKER: "Crack the vault by solving the puzzles. The faster you solve them, the higher your score!",
+  NEON_TYPERACE: "Type the words as fast as you can. The faster you type, the higher your score!",
+  ORBIT_SLINGSHOT: "Launch objects into orbit. The more you launch, the higher your score!",
+  COLOR_FLOOD: "Flood the board with colors. The more you flood, the higher your score!",
+  PULSE_CATCHER: "Catch the pulses as they come. The more you catch, the higher your score!",
+  SHADOW_MATCH: "Match the shadows accurately. The closer to the original, the higher your score!",
+  WARP_SPEED: "Navigate through warp zones at high speed. The faster you go, the higher your score!",
+  MIND_THE_GAP: "Fill in the gaps in your memory. The more you fill, the higher your score!",
 };
 
 export function FloatingGame({ game, onClose, onComplete }: FloatingGameProps) {
