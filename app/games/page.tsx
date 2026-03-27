@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     title: "Game Center — 30 Browser Games | Isaac Paha",
     description:
       "30 addictive mini-games in one place. Reflex, memory, logic, rhythm, drawing, physics and more. Earn tokens and compete on the leaderboard.",
-    url: "https://www.isaacpaha.com/game",
+    url: "https://www.isaacpaha.com/games",
     type: "website",
     images: [
       {
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
   },
 
   alternates: {
-    canonical: "https://www.isaacpaha.com/game",
+    canonical: "https://www.isaacpaha.com/games",
   },
 
   keywords: [

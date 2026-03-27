@@ -34,7 +34,7 @@ const sora = Sora({
 // ── Shared constants ──────────────────────────────────────────────────────────
 const SITE_URL  = "https://www.isaacpaha.com";
 const SITE_NAME = "Isaac Paha";
-const OG_IMAGE  = "https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png";
+const OG_IMAGE  = "https://res.cloudinary.com/dprxr852x/image/upload/v1774575042/isaacpaha/image/isaacpahaplatform-og-1774575042747.png";
 
 // ── Viewport ─────────────────────────────────────────────────────────────────
 export const viewport: Viewport = {
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default:  "Isaac Paha | Technologist, Entrepreneur & Builder",
+    default:  "Isaac Paha | Technologist, Entrepreneur & Thinker",
     template: "%s | Isaac Paha",
   },
   description:
@@ -126,7 +126,7 @@ export const metadata: Metadata = {
     locale:    "en_GB",
     url:       SITE_URL,
     siteName:  SITE_NAME,
-    title:     "Isaac Paha | Technologist, Entrepreneur & Builder",
+    title:     "Isaac Paha | Technologist, Entrepreneur & Thinker",
     description:
       "Building companies, products, and ideas that matter — impacting the UK and Africa through technology.",
     images: [
@@ -145,7 +145,7 @@ export const metadata: Metadata = {
     card:        "summary_large_image",
     site:        "@iPaha3",
     creator:     "@iPaha3",
-    title:       "Isaac Paha | Technologist, Entrepreneur & Builder",
+    title:       "Isaac Paha | Technologist, Entrepreneur & Thinker",
     description: "Building technology that solves real problems — across the UK and Africa.",
     images:      [OG_IMAGE],
   },
@@ -161,7 +161,7 @@ export const metadata: Metadata = {
 
   // ── App / PWA meta ────────────────────────────────────────────────────────
   applicationName: SITE_NAME,
-  manifest:        "/manifest.webmanifest",
+  manifest:        "/manifest.ts",
   appleWebApp: {
     capable:        true,
     title:          SITE_NAME,

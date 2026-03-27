@@ -1,41 +1,19 @@
 // =============================================================================
 // scripts/generate-icons-sharp.ts
-//
-// Generates every icon, favicon, splash screen and asset referenced anywhere
-// in the isaacpaha.com codebase:
-//
-//   layout.tsx           → /favicon-*.png, /favicon.ico, /apple-touch-icon.png,
-//                          /safari-pinned-tab.svg (via logo SVG if present),
-//                          /logo.png (512px, for JSON-LD WebSite schema)
-//
-//   manifest-route.ts    → /icons/icon-*.png, /icons/android-icon-*.png,
-//                          /icons/shortcut-blog.png, /icons/shortcut-tools.png,
-//                          /icons/shortcut-games.png, /icons/shortcut-now.png
-//
-//   next.config.ts /     → /icons/mstile-*.png, /browserconfig.xml
-//   Windows tiles
-//
-//   iOS Safari           → /splash/*.png (9 device sizes, #08080f background)
-//
-//   Apple meta tags      → /apple-touch-icon.png (180×180 at root)
-//
-// Usage:
-//   npx ts-node --esm scripts/generate-icons-sharp.ts
-//   OR add to package.json: "generate-icons": "npx ts-node --esm scripts/generate-icons-sharp.ts"
-//
-// Requires:  npm install --save-dev sharp @types/sharp ts-node typescript
+// Fixed: "Cannot use same file for input and output" — generateLogoAsset now
+// reads into a buffer first before writing back to public/logo.png
 // =============================================================================
-
 import sharp from "sharp";
-import { mkdir, writeFile, copyFile, access } from "fs/promises";
+import { mkdir, writeFile, copyFile, access, readFile } from "fs/promises";
 import path from "path";
+import { existsSync } from "fs";
 
-// ── Site brand colours ────────────────────────────────────────────────────────
-const BG_HEX  = "#08080f";                        // Site background
-const BG_RGB  = { r: 8,  g: 8,  b: 15, alpha: 1 };// Parsed for sharp
-const AMBER   = { r: 245, g: 158, b: 11 };        // #f59e0b accent
+// ── Brand colours ─────────────────────────────────────────────────────────────
+const BG_HEX = "#08080f";
+const BG_RGB = { r: 8, g: 8, b: 15, alpha: 1 };
+const AMBER  = { r: 245, g: 158, b: 11, alpha: 1 };
 
-// ── Logo search paths (tried in order) ───────────────────────────────────────
+// ── Logo search order ─────────────────────────────────────────────────────────
 const LOGO_CANDIDATES = [
   "public/logo.png",
   "public/logo.svg",
@@ -49,14 +27,10 @@ const LOGO_CANDIDATES = [
 
 // ── Output directories ────────────────────────────────────────────────────────
 const DIRS = {
-  root:      "public",           // favicon.ico, apple-touch-icon.png, logo.png
-  icons:     "public/icons",     // PWA icons, Android, Windows tiles, shortcuts
-  splash:    "public/splash",    // iOS splash screens
+  root:   "public",
+  icons:  "public/icons",
+  splash: "public/splash",
 } as const;
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-interface SizeSpec  { size: number }
-interface RectSpec  { w: number; h: number; name: string }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -64,200 +38,244 @@ interface RectSpec  { w: number; h: number; name: string }
 
 async function findLogo(): Promise<string> {
   for (const p of LOGO_CANDIDATES) {
-    try {
-      await access(p);
-      return p;
-    } catch {
-      /* keep trying */
-    }
+    try { await access(p); return p; } catch { /* keep trying */ }
   }
   throw new Error(
-    `❌  Logo not found. Place your logo at one of:\n${LOGO_CANDIDATES.map(p => `   ${p}`).join("\n")}`
+    `Logo not found. Place your logo at one of:\n${LOGO_CANDIDATES.map(p => `   ${p}`).join("\n")}`
   );
 }
 
-async function ensureDirs(): Promise<void> {
-  for (const dir of Object.values(DIRS)) {
-    await mkdir(dir, { recursive: true });
-  }
+async function ensureDirs() {
+  for (const dir of Object.values(DIRS)) await mkdir(dir, { recursive: true });
 }
 
-function log(file: string): void {
-  console.log(`  ✓  ${file}`);
+function log(file: string) { console.log(`  ✓  ${file}`); }
+
+// ── Key fix: always read into a Buffer first ──────────────────────────────────
+// Sharp refuses to write to the same path it reads from.
+// By reading the file into memory first, the output path is free regardless
+// of whether it matches the input path.
+async function srcBuffer(logoPath: string): Promise<Buffer> {
+  return readFile(logoPath);
 }
 
-// Create a Sharp instance from the source — re-used per icon to avoid re-reading
-function src(logoPath: string) {
-  return sharp(logoPath, { density: 300 }); // density=300 for SVG rasterisation
+function fromBuffer(buf: Buffer, isSvg = false) {
+  return sharp(buf, isSvg ? { density: 300 } : undefined);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FAVICON GENERATION
-// Files referenced in layout.tsx icons array + browser defaults
+// 1. FAVICONS  →  public/
 // ─────────────────────────────────────────────────────────────────────────────
-async function generateFavicons(logoPath: string): Promise<void> {
-  console.log("\n🏁  Favicons (referenced in layout.tsx)");
+async function generateFavicons(logoPath: string) {
+  console.log("\n🏁  Favicons");
+  const isSvg = logoPath.endsWith(".svg");
+  const buf   = await srcBuffer(logoPath);
 
-  // Standard favicon sizes — output to public/ root so /favicon-32x32.png works
   for (const size of [16, 32, 96]) {
     const file = path.join(DIRS.root, `favicon-${size}x${size}.png`);
-    await src(logoPath)
+    await fromBuffer(buf, isSvg)
       .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toFile(file);
+      .png().toFile(file);
     log(file);
   }
 
-  // favicon.ico — browsers expect this at the root.
-  // Sharp can't write true multi-size ICO; we output a 32×32 PNG with .ico extension.
-  // For a real multi-size ICO, use `ico-endec` or `toIco` npm package after this step.
-  // Most modern browsers are happy with a PNG served as favicon.ico.
-  const icoFile = path.join(DIRS.root, "favicon.ico");
-  await src(logoPath)
+  // favicon.ico (32px PNG — works in all modern browsers)
+  const ico = path.join(DIRS.root, "favicon.ico");
+  await fromBuffer(buf, isSvg)
     .resize(32, 32, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toFile(icoFile);
-  log(icoFile);
+    .png().toFile(ico);
+  log(ico);
 
-  // Apple touch icon — must be at /apple-touch-icon.png (root)
-  const appleFile = path.join(DIRS.root, "apple-touch-icon.png");
-  await src(logoPath)
+  // Apple touch icon 180×180
+  const apple = path.join(DIRS.root, "apple-touch-icon.png");
+  await fromBuffer(buf, isSvg)
     .resize(180, 180, { fit: "contain", background: BG_RGB })
-    .png()
-    .toFile(appleFile);
-  log(appleFile);
+    .png().toFile(apple);
+  log(apple);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOGO COPY
-// /logo.png (512px) — referenced in JSON-LD WebSite schema
+// 2. LOGO ASSET  →  public/logo.png  (512px for JSON-LD schema)
+//    FIX: read into buffer BEFORE writing — prevents "same file" error
+//    when source is already public/logo.png
 // ─────────────────────────────────────────────────────────────────────────────
-async function generateLogoAsset(logoPath: string): Promise<void> {
-  console.log("\n🖼️   Logo asset (for JSON-LD schema)");
+async function generateLogoAsset(logoPath: string) {
+  console.log("\n🖼️   Logo asset (512×512 for JSON-LD schema)");
+  const isSvg   = logoPath.endsWith(".svg");
+  const outFile = path.join(DIRS.root, "logo.png");
 
-  const file = path.join(DIRS.root, "logo.png");
-  await src(logoPath)
+  // If source IS public/logo.png (PNG), skip resize and just confirm it exists.
+  // Only regenerate if source is SVG or a non-root PNG (different path).
+  const resolvedSrc = path.resolve(logoPath);
+  const resolvedOut = path.resolve(outFile);
+
+  if (resolvedSrc === resolvedOut && !isSvg) {
+    // Source and destination are the same PNG file — nothing to do
+    log(`${outFile}  (already exists as source — skipped resize to avoid overwrite)`);
+    return;
+  }
+
+  // Read source into memory first — safe for all cases
+  const buf = await srcBuffer(logoPath);
+  await fromBuffer(buf, isSvg)
     .resize(512, 512, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toFile(file);
+    .png().toFile(outFile);
+  log(outFile);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. OG IMAGE  →  public/og.png  (1200×630 for social sharing)
+//    This is the static fallback used in layout.tsx og:image
+// ─────────────────────────────────────────────────────────────────────────────
+async function generateOgImage(logoPath: string) {
+  console.log("\n📸  OG image (1200×630 for og:image in layout.tsx)");
+  const isSvg  = logoPath.endsWith(".svg");
+  const W = 1200, H = 630;
+  const logoSz = 140, pad = 52;
+
+  // Dark canvas
+  const bgBuf = await sharp({
+    create: { width: W, height: H, channels: 4, background: BG_RGB }
+  }).png().toBuffer();
+
+  // Logo watermark (bottom-right)
+  const logoBuf = await fromBuffer(await srcBuffer(logoPath), isSvg)
+    .resize(logoSz, logoSz, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png().toBuffer();
+
+  const file = path.join(DIRS.root, "og.png");
+  await sharp(bgBuf)
+    .composite([{ input: logoBuf, left: W - logoSz - pad, top: H - logoSz - pad }])
+    .png().toFile(file);
   log(file);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PWA ICONS  /icons/icon-*.png
-// Sizes listed in manifest-route.ts icons array
+// 4. OG BASE  →  public/og-base.png  (for Cloudinary text overlays)
 // ─────────────────────────────────────────────────────────────────────────────
-async function generatePwaIcons(logoPath: string): Promise<void> {
-  console.log("\n📱  PWA icons (manifest-route.ts icons array)");
+async function generateOgBase(logoPath: string) {
+  console.log("\n🎨  OG base (for Cloudinary overlays)");
+  const isSvg  = logoPath.endsWith(".svg");
+  const W = 1200, H = 630;
+  const logoSz = 120, pad = 48;
 
-  const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
-  for (const size of sizes) {
+  const bgBuf = await sharp({
+    create: { width: W, height: H, channels: 4, background: BG_RGB }
+  }).png().toBuffer();
+
+  const logoBuf = await fromBuffer(await srcBuffer(logoPath), isSvg)
+    .resize(logoSz, logoSz, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png().toBuffer();
+
+  const file = path.join(DIRS.root, "og-base.png");
+  await sharp(bgBuf)
+    .composite([{ input: logoBuf, left: W - logoSz - pad, top: H - logoSz - pad }])
+    .png().toFile(file);
+  log(file);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. PWA ICONS  →  public/icons/icon-*.png
+// ─────────────────────────────────────────────────────────────────────────────
+async function generatePwaIcons(logoPath: string) {
+  console.log("\n📱  PWA icons");
+  const isSvg = logoPath.endsWith(".svg");
+  const buf   = await srcBuffer(logoPath);
+
+  for (const size of [72, 96, 128, 144, 152, 192, 384, 512]) {
     const file = path.join(DIRS.icons, `icon-${size}x${size}.png`);
-    await src(logoPath)
+    await fromBuffer(buf, isSvg)
       .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toFile(file);
+      .png().toFile(file);
     log(file);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ANDROID ADAPTIVE ICONS  /icons/android-icon-*.png
+// 6. ANDROID ICONS  →  public/icons/android-icon-*.png
 // ─────────────────────────────────────────────────────────────────────────────
-async function generateAndroidIcons(logoPath: string): Promise<void> {
+async function generateAndroidIcons(logoPath: string) {
   console.log("\n🤖  Android adaptive icons");
-
-  // Use amber background for maskable (fills the safe zone)
-  const maskableBg = { r: AMBER.r, g: AMBER.g, b: AMBER.b, alpha: 1 };
+  const isSvg = logoPath.endsWith(".svg");
 
   for (const size of [48, 72, 96, 144, 192, 512]) {
-    // Standard (transparent background)
+    const buf = await srcBuffer(logoPath);
+
+    // Standard
     const std = path.join(DIRS.icons, `android-icon-${size}x${size}.png`);
-    await src(logoPath)
+    await fromBuffer(buf, isSvg)
       .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toFile(std);
+      .png().toFile(std);
     log(std);
 
-    // Maskable version (amber bg, logo at ~80% to respect safe zone padding)
-    const padded    = Math.round(size * 0.1);      // 10% padding each side
-    const logoSize  = size - padded * 2;
-    const maskable  = path.join(DIRS.icons, `android-icon-${size}x${size}-maskable.png`);
-    await src(logoPath)
-      .resize(logoSize, logoSize, { fit: "contain", background: maskableBg })
-      .extend({ top: padded, bottom: padded, left: padded, right: padded, background: maskableBg })
-      .png()
-      .toFile(maskable);
-    log(maskable);
+    // Maskable (amber bg + 10% safe-zone padding)
+    const pad    = Math.round(size * 0.1);
+    const inner  = size - pad * 2;
+    const buf2   = await srcBuffer(logoPath);
+    const mask   = path.join(DIRS.icons, `android-icon-${size}x${size}-maskable.png`);
+    await fromBuffer(buf2, isSvg)
+      .resize(inner, inner, { fit: "contain", background: AMBER })
+      .extend({ top: pad, bottom: pad, left: pad, right: pad, background: AMBER })
+      .png().toFile(mask);
+    log(mask);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SHORTCUT ICONS — exact names referenced in manifest-route.ts
-// /icons/shortcut-blog.png
-// /icons/shortcut-tools.png
-// /icons/shortcut-games.png
-// /icons/shortcut-now.png
+// 7. SHORTCUT ICONS  →  public/icons/shortcut-*.png
 // ─────────────────────────────────────────────────────────────────────────────
-async function generateShortcutIcons(logoPath: string): Promise<void> {
-  console.log("\n⚡  PWA shortcut icons (manifest-route.ts shortcuts array)");
+async function generateShortcutIcons(logoPath: string) {
+  console.log("\n⚡  Shortcut icons");
+  const isSvg = logoPath.endsWith(".svg");
 
-  // Each shortcut gets its own amber-background tile with an emoji overlay
-  // We composite a coloured background + centred logo for each shortcut
-  const shortcuts: { name: string; bg: sharp.RGBA; label: string }[] = [
-    { name: "shortcut-blog.png",       bg: { r: 59,  g: 130, b: 246, alpha: 1 }, label: "blog"       },
-    { name: "shortcut-tools.png",      bg: { r: 16,  g: 185, b: 129, alpha: 1 }, label: "tools"      },
-    { name: "shortcut-games.png",      bg: { r: 245, g: 158, b: 11,  alpha: 1 }, label: "games"      },
-    { name: "shortcut-now.png",        bg: { r: 139, g: 92,  b: 246, alpha: 1 }, label: "now"        },
-    { name: "shortcut-apps.png",       bg: { r: 249, g: 115, b: 22,  alpha: 1 }, label: "apps"       },
-    { name: "shortcut-newsletter.png", bg: { r: 236, g: 72,  b: 153, alpha: 1 }, label: "newsletter" },
-  ];
+  const shortcuts = [
+    { name: "shortcut-blog.png",       bg: { r: 59,  g: 130, b: 246, alpha: 1 } },
+    { name: "shortcut-tools.png",      bg: { r: 16,  g: 185, b: 129, alpha: 1 } },
+    { name: "shortcut-games.png",      bg: { r: 245, g: 158, b: 11,  alpha: 1 } },
+    { name: "shortcut-now.png",        bg: { r: 139, g: 92,  b: 246, alpha: 1 } },
+    { name: "shortcut-apps.png",       bg: { r: 249, g: 115, b: 22,  alpha: 1 } },
+    { name: "shortcut-newsletter.png", bg: { r: 236, g: 72,  b: 153, alpha: 1 } },
+  ] as const;
 
   for (const { name, bg } of shortcuts) {
-    const size    = 96;
-    const padding = 18;
-    const logoSz  = size - padding * 2;
-    const file    = path.join(DIRS.icons, name);
-
-    await src(logoPath)
-      .resize(logoSz, logoSz, { fit: "contain", background: bg })
-      .extend({ top: padding, bottom: padding, left: padding, right: padding, background: bg })
-      .png()
-      .toFile(file);
+    const size = 96, padding = 18, inner = size - padding * 2;
+    const buf  = await srcBuffer(logoPath);
+    const file = path.join(DIRS.icons, name);
+    await fromBuffer(buf, isSvg)
+      .resize(inner, inner, { fit: "contain", background: { ...bg } })
+      .extend({ top: padding, bottom: padding, left: padding, right: padding, background: { ...bg } })
+      .png().toFile(file);
     log(file);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WINDOWS TILES — /icons/mstile-*.png + /browserconfig.xml
+// 8. WINDOWS TILES  →  public/icons/mstile-*.png + browserconfig.xml
 // ─────────────────────────────────────────────────────────────────────────────
-async function generateWindowsTiles(logoPath: string): Promise<void> {
-  console.log("\n🪟  Windows / Microsoft tiles");
+async function generateWindowsTiles(logoPath: string) {
+  console.log("\n🪟  Windows tiles");
+  const isSvg = logoPath.endsWith(".svg");
 
-  const tiles: { w: number; h: number; name: string }[] = [
-    { w: 70,  h: 70,  name: "mstile-70x70.png"   },
-    { w: 144, h: 144, name: "mstile-144x144.png"  },
-    { w: 150, h: 150, name: "mstile-150x150.png"  },
-    { w: 310, h: 150, name: "mstile-310x150.png"  },
-    { w: 310, h: 310, name: "mstile-310x310.png"  },
+  const tiles = [
+    { w: 70,  h: 70,  name: "mstile-70x70.png"  },
+    { w: 144, h: 144, name: "mstile-144x144.png" },
+    { w: 150, h: 150, name: "mstile-150x150.png" },
+    { w: 310, h: 150, name: "mstile-310x150.png" },
+    { w: 310, h: 310, name: "mstile-310x310.png" },
   ];
 
   for (const { w, h, name } of tiles) {
-    const file    = path.join(DIRS.icons, name);
-    const padding = Math.floor(Math.min(w, h) * 0.15);
-    const logoW   = w - padding * 2;
-    const logoH   = h - padding * 2;
-
-    await src(logoPath)
-      .resize(logoW, logoH, { fit: "contain", background: BG_RGB })
-      .extend({ top: padding, bottom: padding, left: padding, right: padding, background: BG_RGB })
-      .png()
-      .toFile(file);
+    const pad   = Math.floor(Math.min(w, h) * 0.15);
+    const buf   = await srcBuffer(logoPath);
+    const file  = path.join(DIRS.icons, name);
+    await fromBuffer(buf, isSvg)
+      .resize(w - pad * 2, h - pad * 2, { fit: "contain", background: BG_RGB })
+      .extend({ top: pad, bottom: pad, left: pad, right: pad, background: BG_RGB })
+      .png().toFile(file);
     log(file);
   }
 
-  // browserconfig.xml — tells IE/Edge about the tiles
-  const browserconfig = `<?xml version="1.0" encoding="utf-8"?>
+  const xml = `<?xml version="1.0" encoding="utf-8"?>
 <browserconfig>
   <msapplication>
     <tile>
@@ -269,201 +287,593 @@ async function generateWindowsTiles(logoPath: string): Promise<void> {
     </tile>
   </msapplication>
 </browserconfig>`;
-
   const bcFile = path.join(DIRS.root, "browserconfig.xml");
-  await writeFile(bcFile, browserconfig, "utf-8");
+  await writeFile(bcFile, xml, "utf-8");
   log(bcFile);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SAFARI PINNED TAB SVG  /safari-pinned-tab.svg
-// Referenced in layout.tsx: <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#f59e0b">
-// Safari needs a single-colour SVG (black shapes on transparent).
-// If source logo is SVG, we copy it and strip colours → make it black.
-// If source is PNG, we generate a minimal circle-with-IP monogram as fallback.
+// 9. SAFARI PINNED TAB  →  public/safari-pinned-tab.svg
 // ─────────────────────────────────────────────────────────────────────────────
-async function generateSafariPinnedTab(logoPath: string): Promise<void> {
+async function generateSafariPinnedTab(logoPath: string) {
   console.log("\n🧭  Safari pinned tab SVG");
+  const outFile = path.join(DIRS.root, "safari-pinned-tab.svg");
 
-  const isSourceSvg = logoPath.toLowerCase().endsWith(".svg");
-  const outFile     = path.join(DIRS.root, "safari-pinned-tab.svg");
-
-  if (isSourceSvg) {
-    // Copy the SVG — Safari will use the alpha channel (shapes must be black)
+  if (logoPath.endsWith(".svg")) {
     await copyFile(logoPath, outFile);
-    log(`${outFile}  (copied from ${logoPath} — ensure shapes are black/opaque for Safari)`);
+    log(`${outFile}  (copied — ensure shapes are black for Safari)`);
   } else {
-    // Generate a minimal monogram SVG as a safe fallback
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <circle cx="50" cy="50" r="48" fill="black"/>
   <text x="50" y="67" font-family="Georgia,serif" font-size="52" font-weight="bold"
         fill="white" text-anchor="middle">IP</text>
 </svg>`;
     await writeFile(outFile, svg, "utf-8");
-    log(`${outFile}  (monogram fallback — replace with your actual SVG logo)`);
+    log(`${outFile}  (monogram fallback — swap for your real SVG)`);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// iOS SPLASH SCREENS  /splash/*.png
-// background: #08080f · logo centred at 1/3 screen size
+// 10. iOS SPLASH SCREENS  →  public/splash/*.png
 // ─────────────────────────────────────────────────────────────────────────────
-async function generateSplashScreens(logoPath: string): Promise<void> {
+async function generateSplashScreens(logoPath: string) {
   console.log("\n🌅  iOS splash screens");
+  const isSvg = logoPath.endsWith(".svg");
 
-  const splashSizes: { w: number; h: number; name: string; device: string }[] = [
-    { w: 640,  h: 1136, name: "iphone5.png",       device: "iPhone 5/SE 1st gen"  },
-    { w: 750,  h: 1334, name: "iphone6.png",        device: "iPhone 6/7/8/SE 2nd" },
-    { w: 828,  h: 1792, name: "iphonexr.png",       device: "iPhone XR/11"        },
-    { w: 1125, h: 2436, name: "iphonex.png",        device: "iPhone X/XS/11 Pro"  },
-    { w: 1170, h: 2532, name: "iphone12.png",       device: "iPhone 12/13/14"     },
-    { w: 1284, h: 2778, name: "iphone12promax.png", device: "iPhone 12/13/14 Pro Max" },
-    { w: 1290, h: 2796, name: "iphone14pro.png",    device: "iPhone 14/15 Pro Max"},
-    { w: 1536, h: 2048, name: "ipad.png",           device: "iPad"                },
-    { w: 1668, h: 2388, name: "ipadpro11.png",      device: "iPad Pro 11\""       },
-    { w: 2048, h: 2732, name: "ipadpro12.png",      device: "iPad Pro 12.9\""     },
+  const screens = [
+    { w: 640,  h: 1136, name: "iphone5.png",       device: "iPhone 5 / SE 1st"      },
+    { w: 750,  h: 1334, name: "iphone6.png",        device: "iPhone 6/7/8 / SE 2nd"  },
+    { w: 828,  h: 1792, name: "iphonexr.png",       device: "iPhone XR / 11"          },
+    { w: 1125, h: 2436, name: "iphonex.png",        device: "iPhone X / XS / 11 Pro"  },
+    { w: 1170, h: 2532, name: "iphone12.png",       device: "iPhone 12 / 13 / 14"     },
+    { w: 1284, h: 2778, name: "iphone12promax.png", device: "iPhone 12/13/14 Pro Max"  },
+    { w: 1290, h: 2796, name: "iphone14pro.png",    device: "iPhone 14/15 Pro Max"     },
+    { w: 1536, h: 2048, name: "ipad.png",           device: "iPad"                     },
+    { w: 1668, h: 2388, name: "ipadpro11.png",      device: "iPad Pro 11\""            },
+    { w: 2048, h: 2732, name: "ipadpro12.png",      device: "iPad Pro 12.9\""          },
   ];
 
-  for (const { w, h, name, device } of splashSizes) {
-    const logoSize = Math.floor(Math.min(w, h) / 3.2);
-    const padTop   = Math.floor((h - logoSize) / 2);
-    const padBot   = h - logoSize - padTop;
-    const padLeft  = Math.floor((w - logoSize) / 2);
-    const padRight = w - logoSize - padLeft;
+  for (const { w, h, name, device } of screens) {
+    const logoSz  = Math.floor(Math.min(w, h) / 3.2);
+    const padTop  = Math.floor((h - logoSz) / 2);
+    const padBot  = h - logoSz - padTop;
+    const padLeft = Math.floor((w - logoSz) / 2);
+    const padRight= w - logoSz - padLeft;
+    const buf     = await srcBuffer(logoPath);
+    const file    = path.join(DIRS.splash, name);
 
-    const file = path.join(DIRS.splash, name);
-    await src(logoPath)
-      .resize(logoSize, logoSize, { fit: "contain", background: BG_RGB })
+    await fromBuffer(buf, isSvg)
+      .resize(logoSz, logoSz, { fit: "contain", background: BG_RGB })
       .extend({ top: padTop, bottom: padBot, left: padLeft, right: padRight, background: BG_RGB })
-      .png()
-      .toFile(file);
+      .png().toFile(file);
     log(`${file}  (${device} · ${w}×${h})`);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OG BASE IMAGE  /public/og-base.png  (for Cloudinary text-overlay OG)
-// Referenced in lib/seo/metadata.ts cloudinaryOgImage()
-// ─────────────────────────────────────────────────────────────────────────────
-async function generateOgBase(logoPath: string): Promise<void> {
-  console.log("\n📸  Open Graph base image (/public/og-base.png)");
-
-  // 1200×630 dark background — we place the logo bottom-right as a watermark
-  const W = 1200, H = 630;
-  const logoSize   = 120;
-  const padding    = 48;
-
-  // Build a dark canvas via compositing
-  const bg = await sharp({
-    create: { width: W, height: H, channels: 4, background: BG_RGB }
-  }).png().toBuffer();
-
-  const logoBuffer = await src(logoPath)
-    .resize(logoSize, logoSize, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer();
-
-  const file = path.join(DIRS.root, "og-base.png");
-  await sharp(bg)
-    .composite([{
-      input:     logoBuffer,
-      left:      W - logoSize - padding,
-      top:       H - logoSize - padding,
-      blend:     "over",
-    }])
-    .png()
-    .toFile(file);
-  log(file);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SUMMARY
-// ─────────────────────────────────────────────────────────────────────────────
-function printSummary(counts: Record<string, number>): void {
-  const total = Object.values(counts).reduce((a, b) => a + b, 0);
-
-  console.log("\n" + "─".repeat(60));
-  console.log("✅  All assets generated successfully!\n");
-  console.log("📁  Output structure:");
-  console.log("    public/");
-  console.log(`    ├── favicon-16x16.png, favicon-32x32.png, favicon-96x96.png, favicon.ico`);
-  console.log(`    ├── apple-touch-icon.png  (180×180)`);
-  console.log(`    ├── logo.png              (512×512, for JSON-LD schema)`);
-  console.log(`    ├── safari-pinned-tab.svg (for Safari mask-icon)`);
-  console.log(`    ├── og-base.png           (1200×630, for Cloudinary OG overlays)`);
-  console.log(`    ├── browserconfig.xml     (Windows tile config)`);
-  console.log("    ├── 📁 icons/");
-  console.log(`    │   ├── icon-*.png            (${counts.pwa} PWA icons)`);
-  console.log(`    │   ├── android-icon-*.png     (${counts.android} standard + maskable)`);
-  console.log(`    │   ├── shortcut-*.png         (${counts.shortcuts} PWA shortcuts)`);
-  console.log(`    │   └── mstile-*.png           (${counts.windows} Windows tiles)`);
-  console.log("    └── 📁 splash/");
-  console.log(`        └── *.png                 (${counts.splash} iOS device sizes)`);
-  console.log(`\n🎯  Total: ${total} files\n`);
-  console.log("💡  Next steps:");
-  console.log("    1. Add /public/icons/* to .gitignore if you prefer to generate at build time");
-  console.log("    2. Replace safari-pinned-tab.svg with your actual SVG logo (must be single-colour black)");
-  console.log("    3. Upload og-base.png to Cloudinary as isaacpaha/og-base.png");
-  console.log("    4. Add splash screen <link> tags in layout.tsx <head> for iOS standalone mode");
-  console.log("    5. Run: npx lighthouse https://www.isaacpaha.com --view  to verify PWA score");
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // MAIN
 // ─────────────────────────────────────────────────────────────────────────────
-async function main(): Promise<void> {
+async function main() {
   console.log("🎨  isaacpaha.com — Icon & Asset Generator");
   console.log("═".repeat(60));
 
-  // 1. Find logo
   let logoPath: string;
   try {
     logoPath = await findLogo();
-    console.log(`\n✓  Logo found: ${logoPath}`);
+    console.log(`\n✓  Logo: ${logoPath}`);
   } catch (err) {
     console.error((err as Error).message);
     process.exit(1);
   }
 
-  // 2. Create directory structure
   await ensureDirs();
-  console.log("✓  Output directories ready");
+  console.log("✓  Directories ready");
 
-  // 3. Generate everything in logical order
   try {
-    await generateFavicons(logoPath);            // 4 files → public/
-    await generateLogoAsset(logoPath);           // 1 file  → public/
-    await generateSafariPinnedTab(logoPath);     // 1 file  → public/
-    await generatePwaIcons(logoPath);            // 8 files → public/icons/
-    await generateAndroidIcons(logoPath);        // 12 files → public/icons/ (6 std + 6 maskable)
-    await generateShortcutIcons(logoPath);       // 6 files → public/icons/
-    await generateWindowsTiles(logoPath);        // 5 files → public/icons/ + browserconfig.xml
-    await generateSplashScreens(logoPath);       // 10 files → public/splash/
-    await generateOgBase(logoPath);              // 1 file  → public/
+    await generateFavicons(logoPath);
+    await generateLogoAsset(logoPath);       // ← fixed: buffer-first approach
+    await generateOgImage(logoPath);         // ← new: public/og.png for og:image
+    await generateOgBase(logoPath);
+    await generateSafariPinnedTab(logoPath);
+    await generatePwaIcons(logoPath);
+    await generateAndroidIcons(logoPath);
+    await generateShortcutIcons(logoPath);
+    await generateWindowsTiles(logoPath);
+    await generateSplashScreens(logoPath);
   } catch (err) {
     console.error("\n❌  Generation failed:", (err as Error).message);
     console.error((err as Error).stack);
     process.exit(1);
   }
 
-  // 4. Summary
-  printSummary({
-    favicons:  4,
-    logo:      1,
-    safari:    1,
-    ogBase:    1,
-    pwa:       8,
-    android:   12,
-    shortcuts: 6,
-    windows:   5 + 1,  // +1 for browserconfig.xml
-    splash:    10,
-  });
+  const total = 4 + 1 + 1 + 1 + 1 + 1 + 8 + 12 + 6 + 6 + 10;
+  console.log("\n" + "─".repeat(60));
+  console.log(`✅  Done — ${total} files generated\n`);
+  console.log("📁  public/");
+  console.log("    ├── favicon-{16,32,96}x*.png · favicon.ico · apple-touch-icon.png");
+  console.log("    ├── logo.png (512×512) · og.png (1200×630) · og-base.png (1200×630)");
+  console.log("    ├── safari-pinned-tab.svg · browserconfig.xml");
+  console.log("    ├── icons/  →  icon-*.png · android-icon-*.png · shortcut-*.png · mstile-*.png");
+  console.log("    └── splash/ →  10 iOS device sizes");
+  console.log("\n💡  Action items:");
+  console.log("    1. og.png is now your static og:image — already wired in layout.tsx");
+  console.log("    2. Upload og-base.png to Cloudinary as isaacpaha/og-base.png");
+  console.log("    3. Replace safari-pinned-tab.svg with a real single-colour SVG if you have one");
+  console.log("    4. Run: npx tsx scripts/generate-icons-sharp.ts   to regenerate anytime");
 }
 
-main().catch(err => {
-  console.error("Fatal:", err);
-  process.exit(1);
-});
+main().catch(err => { console.error("Fatal:", err); process.exit(1); });
+
+
+
+
+
+// // =============================================================================
+// // scripts/generate-icons-sharp.ts
+// //
+// // Generates every icon, favicon, splash screen and asset referenced anywhere
+// // in the isaacpaha.com codebase:
+// //
+// //   layout.tsx           → /favicon-*.png, /favicon.ico, /apple-touch-icon.png,
+// //                          /safari-pinned-tab.svg (via logo SVG if present),
+// //                          /logo.png (512px, for JSON-LD WebSite schema)
+// //
+// //   manifest-route.ts    → /icons/icon-*.png, /icons/android-icon-*.png,
+// //                          /icons/shortcut-blog.png, /icons/shortcut-tools.png,
+// //                          /icons/shortcut-games.png, /icons/shortcut-now.png
+// //
+// //   next.config.ts /     → /icons/mstile-*.png, /browserconfig.xml
+// //   Windows tiles
+// //
+// //   iOS Safari           → /splash/*.png (9 device sizes, #08080f background)
+// //
+// //   Apple meta tags      → /apple-touch-icon.png (180×180 at root)
+// //
+// // Usage:
+// //   npx ts-node --esm scripts/generate-icons-sharp.ts
+// //   OR add to package.json: "generate-icons": "npx ts-node --esm scripts/generate-icons-sharp.ts"
+// //
+// // Requires:  npm install --save-dev sharp @types/sharp ts-node typescript
+// // =============================================================================
+
+// import sharp from "sharp";
+// import { mkdir, writeFile, copyFile, access } from "fs/promises";
+// import path from "path";
+
+// // ── Site brand colours ────────────────────────────────────────────────────────
+// const BG_HEX  = "#08080f";                        // Site background
+// const BG_RGB  = { r: 8,  g: 8,  b: 15, alpha: 1 };// Parsed for sharp
+// const AMBER   = { r: 245, g: 158, b: 11 };        // #f59e0b accent
+
+// // ── Logo search paths (tried in order) ───────────────────────────────────────
+// const LOGO_CANDIDATES = [
+//   "public/logo.png",
+//   "public/logo.svg",
+//   "public/images/logo.png",
+//   "public/images/logo.svg",
+//   "logo.png",
+//   "logo.svg",
+//   "assets/logo.png",
+//   "src/assets/logo.png",
+// ];
+
+// // ── Output directories ────────────────────────────────────────────────────────
+// const DIRS = {
+//   root:      "public",           // favicon.ico, apple-touch-icon.png, logo.png
+//   icons:     "public/icons",     // PWA icons, Android, Windows tiles, shortcuts
+//   splash:    "public/splash",    // iOS splash screens
+// } as const;
+
+// // ── Types ─────────────────────────────────────────────────────────────────────
+// interface SizeSpec  { size: number }
+// interface RectSpec  { w: number; h: number; name: string }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // HELPERS
+// // ─────────────────────────────────────────────────────────────────────────────
+
+// async function findLogo(): Promise<string> {
+//   for (const p of LOGO_CANDIDATES) {
+//     try {
+//       await access(p);
+//       return p;
+//     } catch {
+//       /* keep trying */
+//     }
+//   }
+//   throw new Error(
+//     `❌  Logo not found. Place your logo at one of:\n${LOGO_CANDIDATES.map(p => `   ${p}`).join("\n")}`
+//   );
+// }
+
+// async function ensureDirs(): Promise<void> {
+//   for (const dir of Object.values(DIRS)) {
+//     await mkdir(dir, { recursive: true });
+//   }
+// }
+
+// function log(file: string): void {
+//   console.log(`  ✓  ${file}`);
+// }
+
+// // Create a Sharp instance from the source — re-used per icon to avoid re-reading
+// function src(logoPath: string) {
+//   return sharp(logoPath, { density: 300 }); // density=300 for SVG rasterisation
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // FAVICON GENERATION
+// // Files referenced in layout.tsx icons array + browser defaults
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generateFavicons(logoPath: string): Promise<void> {
+//   console.log("\n🏁  Favicons (referenced in layout.tsx)");
+
+//   // Standard favicon sizes — output to public/ root so /favicon-32x32.png works
+//   for (const size of [16, 32, 96]) {
+//     const file = path.join(DIRS.root, `favicon-${size}x${size}.png`);
+//     await src(logoPath)
+//       .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+//       .png()
+//       .toFile(file);
+//     log(file);
+//   }
+
+//   // favicon.ico — browsers expect this at the root.
+//   // Sharp can't write true multi-size ICO; we output a 32×32 PNG with .ico extension.
+//   // For a real multi-size ICO, use `ico-endec` or `toIco` npm package after this step.
+//   // Most modern browsers are happy with a PNG served as favicon.ico.
+//   const icoFile = path.join(DIRS.root, "favicon.ico");
+//   await src(logoPath)
+//     .resize(32, 32, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+//     .png()
+//     .toFile(icoFile);
+//   log(icoFile);
+
+//   // Apple touch icon — must be at /apple-touch-icon.png (root)
+//   const appleFile = path.join(DIRS.root, "apple-touch-icon.png");
+//   await src(logoPath)
+//     .resize(180, 180, { fit: "contain", background: BG_RGB })
+//     .png()
+//     .toFile(appleFile);
+//   log(appleFile);
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // LOGO COPY
+// // /logo.png (512px) — referenced in JSON-LD WebSite schema
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generateLogoAsset(logoPath: string): Promise<void> {
+//   console.log("\n🖼️   Logo asset (for JSON-LD schema)");
+
+//   const file = path.join(DIRS.root, "logo.png");
+//   await src(logoPath)
+//     .resize(512, 512, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+//     .png()
+//     .toFile(file);
+//   log(file);
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // PWA ICONS  /icons/icon-*.png
+// // Sizes listed in manifest-route.ts icons array
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generatePwaIcons(logoPath: string): Promise<void> {
+//   console.log("\n📱  PWA icons (manifest-route.ts icons array)");
+
+//   const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+//   for (const size of sizes) {
+//     const file = path.join(DIRS.icons, `icon-${size}x${size}.png`);
+//     await src(logoPath)
+//       .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+//       .png()
+//       .toFile(file);
+//     log(file);
+//   }
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // ANDROID ADAPTIVE ICONS  /icons/android-icon-*.png
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generateAndroidIcons(logoPath: string): Promise<void> {
+//   console.log("\n🤖  Android adaptive icons");
+
+//   // Use amber background for maskable (fills the safe zone)
+//   const maskableBg = { r: AMBER.r, g: AMBER.g, b: AMBER.b, alpha: 1 };
+
+//   for (const size of [48, 72, 96, 144, 192, 512]) {
+//     // Standard (transparent background)
+//     const std = path.join(DIRS.icons, `android-icon-${size}x${size}.png`);
+//     await src(logoPath)
+//       .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+//       .png()
+//       .toFile(std);
+//     log(std);
+
+//     // Maskable version (amber bg, logo at ~80% to respect safe zone padding)
+//     const padded    = Math.round(size * 0.1);      // 10% padding each side
+//     const logoSize  = size - padded * 2;
+//     const maskable  = path.join(DIRS.icons, `android-icon-${size}x${size}-maskable.png`);
+//     await src(logoPath)
+//       .resize(logoSize, logoSize, { fit: "contain", background: maskableBg })
+//       .extend({ top: padded, bottom: padded, left: padded, right: padded, background: maskableBg })
+//       .png()
+//       .toFile(maskable);
+//     log(maskable);
+//   }
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // SHORTCUT ICONS — exact names referenced in manifest-route.ts
+// // /icons/shortcut-blog.png
+// // /icons/shortcut-tools.png
+// // /icons/shortcut-games.png
+// // /icons/shortcut-now.png
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generateShortcutIcons(logoPath: string): Promise<void> {
+//   console.log("\n⚡  PWA shortcut icons (manifest-route.ts shortcuts array)");
+
+//   // Each shortcut gets its own amber-background tile with an emoji overlay
+//   // We composite a coloured background + centred logo for each shortcut
+//   const shortcuts: { name: string; bg: sharp.RGBA; label: string }[] = [
+//     { name: "shortcut-blog.png",       bg: { r: 59,  g: 130, b: 246, alpha: 1 }, label: "blog"       },
+//     { name: "shortcut-tools.png",      bg: { r: 16,  g: 185, b: 129, alpha: 1 }, label: "tools"      },
+//     { name: "shortcut-games.png",      bg: { r: 245, g: 158, b: 11,  alpha: 1 }, label: "games"      },
+//     { name: "shortcut-now.png",        bg: { r: 139, g: 92,  b: 246, alpha: 1 }, label: "now"        },
+//     { name: "shortcut-apps.png",       bg: { r: 249, g: 115, b: 22,  alpha: 1 }, label: "apps"       },
+//     { name: "shortcut-newsletter.png", bg: { r: 236, g: 72,  b: 153, alpha: 1 }, label: "newsletter" },
+//   ];
+
+//   for (const { name, bg } of shortcuts) {
+//     const size    = 96;
+//     const padding = 18;
+//     const logoSz  = size - padding * 2;
+//     const file    = path.join(DIRS.icons, name);
+
+//     await src(logoPath)
+//       .resize(logoSz, logoSz, { fit: "contain", background: bg })
+//       .extend({ top: padding, bottom: padding, left: padding, right: padding, background: bg })
+//       .png()
+//       .toFile(file);
+//     log(file);
+//   }
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // WINDOWS TILES — /icons/mstile-*.png + /browserconfig.xml
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generateWindowsTiles(logoPath: string): Promise<void> {
+//   console.log("\n🪟  Windows / Microsoft tiles");
+
+//   const tiles: { w: number; h: number; name: string }[] = [
+//     { w: 70,  h: 70,  name: "mstile-70x70.png"   },
+//     { w: 144, h: 144, name: "mstile-144x144.png"  },
+//     { w: 150, h: 150, name: "mstile-150x150.png"  },
+//     { w: 310, h: 150, name: "mstile-310x150.png"  },
+//     { w: 310, h: 310, name: "mstile-310x310.png"  },
+//   ];
+
+//   for (const { w, h, name } of tiles) {
+//     const file    = path.join(DIRS.icons, name);
+//     const padding = Math.floor(Math.min(w, h) * 0.15);
+//     const logoW   = w - padding * 2;
+//     const logoH   = h - padding * 2;
+
+//     await src(logoPath)
+//       .resize(logoW, logoH, { fit: "contain", background: BG_RGB })
+//       .extend({ top: padding, bottom: padding, left: padding, right: padding, background: BG_RGB })
+//       .png()
+//       .toFile(file);
+//     log(file);
+//   }
+
+//   // browserconfig.xml — tells IE/Edge about the tiles
+//   const browserconfig = `<?xml version="1.0" encoding="utf-8"?>
+// <browserconfig>
+//   <msapplication>
+//     <tile>
+//       <square70x70logo   src="/icons/mstile-70x70.png"/>
+//       <square150x150logo src="/icons/mstile-150x150.png"/>
+//       <square310x310logo src="/icons/mstile-310x310.png"/>
+//       <wide310x150logo   src="/icons/mstile-310x150.png"/>
+//       <TileColor>${BG_HEX}</TileColor>
+//     </tile>
+//   </msapplication>
+// </browserconfig>`;
+
+//   const bcFile = path.join(DIRS.root, "browserconfig.xml");
+//   await writeFile(bcFile, browserconfig, "utf-8");
+//   log(bcFile);
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // SAFARI PINNED TAB SVG  /safari-pinned-tab.svg
+// // Referenced in layout.tsx: <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#f59e0b">
+// // Safari needs a single-colour SVG (black shapes on transparent).
+// // If source logo is SVG, we copy it and strip colours → make it black.
+// // If source is PNG, we generate a minimal circle-with-IP monogram as fallback.
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generateSafariPinnedTab(logoPath: string): Promise<void> {
+//   console.log("\n🧭  Safari pinned tab SVG");
+
+//   const isSourceSvg = logoPath.toLowerCase().endsWith(".svg");
+//   const outFile     = path.join(DIRS.root, "safari-pinned-tab.svg");
+
+//   if (isSourceSvg) {
+//     // Copy the SVG — Safari will use the alpha channel (shapes must be black)
+//     await copyFile(logoPath, outFile);
+//     log(`${outFile}  (copied from ${logoPath} — ensure shapes are black/opaque for Safari)`);
+//   } else {
+//     // Generate a minimal monogram SVG as a safe fallback
+//     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+//   <circle cx="50" cy="50" r="48" fill="black"/>
+//   <text x="50" y="67" font-family="Georgia,serif" font-size="52" font-weight="bold"
+//         fill="white" text-anchor="middle">IP</text>
+// </svg>`;
+//     await writeFile(outFile, svg, "utf-8");
+//     log(`${outFile}  (monogram fallback — replace with your actual SVG logo)`);
+//   }
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // iOS SPLASH SCREENS  /splash/*.png
+// // background: #08080f · logo centred at 1/3 screen size
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generateSplashScreens(logoPath: string): Promise<void> {
+//   console.log("\n🌅  iOS splash screens");
+
+//   const splashSizes: { w: number; h: number; name: string; device: string }[] = [
+//     { w: 640,  h: 1136, name: "iphone5.png",       device: "iPhone 5/SE 1st gen"  },
+//     { w: 750,  h: 1334, name: "iphone6.png",        device: "iPhone 6/7/8/SE 2nd" },
+//     { w: 828,  h: 1792, name: "iphonexr.png",       device: "iPhone XR/11"        },
+//     { w: 1125, h: 2436, name: "iphonex.png",        device: "iPhone X/XS/11 Pro"  },
+//     { w: 1170, h: 2532, name: "iphone12.png",       device: "iPhone 12/13/14"     },
+//     { w: 1284, h: 2778, name: "iphone12promax.png", device: "iPhone 12/13/14 Pro Max" },
+//     { w: 1290, h: 2796, name: "iphone14pro.png",    device: "iPhone 14/15 Pro Max"},
+//     { w: 1536, h: 2048, name: "ipad.png",           device: "iPad"                },
+//     { w: 1668, h: 2388, name: "ipadpro11.png",      device: "iPad Pro 11\""       },
+//     { w: 2048, h: 2732, name: "ipadpro12.png",      device: "iPad Pro 12.9\""     },
+//   ];
+
+//   for (const { w, h, name, device } of splashSizes) {
+//     const logoSize = Math.floor(Math.min(w, h) / 3.2);
+//     const padTop   = Math.floor((h - logoSize) / 2);
+//     const padBot   = h - logoSize - padTop;
+//     const padLeft  = Math.floor((w - logoSize) / 2);
+//     const padRight = w - logoSize - padLeft;
+
+//     const file = path.join(DIRS.splash, name);
+//     await src(logoPath)
+//       .resize(logoSize, logoSize, { fit: "contain", background: BG_RGB })
+//       .extend({ top: padTop, bottom: padBot, left: padLeft, right: padRight, background: BG_RGB })
+//       .png()
+//       .toFile(file);
+//     log(`${file}  (${device} · ${w}×${h})`);
+//   }
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // OG BASE IMAGE  /public/og-base.png  (for Cloudinary text-overlay OG)
+// // Referenced in lib/seo/metadata.ts cloudinaryOgImage()
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function generateOgBase(logoPath: string): Promise<void> {
+//   console.log("\n📸  Open Graph base image (/public/og-base.png)");
+
+//   // 1200×630 dark background — we place the logo bottom-right as a watermark
+//   const W = 1200, H = 630;
+//   const logoSize   = 120;
+//   const padding    = 48;
+
+//   // Build a dark canvas via compositing
+//   const bg = await sharp({
+//     create: { width: W, height: H, channels: 4, background: BG_RGB }
+//   }).png().toBuffer();
+
+//   const logoBuffer = await src(logoPath)
+//     .resize(logoSize, logoSize, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+//     .png()
+//     .toBuffer();
+
+//   const file = path.join(DIRS.root, "og-base.png");
+//   await sharp(bg)
+//     .composite([{
+//       input:     logoBuffer,
+//       left:      W - logoSize - padding,
+//       top:       H - logoSize - padding,
+//       blend:     "over",
+//     }])
+//     .png()
+//     .toFile(file);
+//   log(file);
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // SUMMARY
+// // ─────────────────────────────────────────────────────────────────────────────
+// function printSummary(counts: Record<string, number>): void {
+//   const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+//   console.log("\n" + "─".repeat(60));
+//   console.log("✅  All assets generated successfully!\n");
+//   console.log("📁  Output structure:");
+//   console.log("    public/");
+//   console.log(`    ├── favicon-16x16.png, favicon-32x32.png, favicon-96x96.png, favicon.ico`);
+//   console.log(`    ├── apple-touch-icon.png  (180×180)`);
+//   console.log(`    ├── logo.png              (512×512, for JSON-LD schema)`);
+//   console.log(`    ├── safari-pinned-tab.svg (for Safari mask-icon)`);
+//   console.log(`    ├── og-base.png           (1200×630, for Cloudinary OG overlays)`);
+//   console.log(`    ├── browserconfig.xml     (Windows tile config)`);
+//   console.log("    ├── 📁 icons/");
+//   console.log(`    │   ├── icon-*.png            (${counts.pwa} PWA icons)`);
+//   console.log(`    │   ├── android-icon-*.png     (${counts.android} standard + maskable)`);
+//   console.log(`    │   ├── shortcut-*.png         (${counts.shortcuts} PWA shortcuts)`);
+//   console.log(`    │   └── mstile-*.png           (${counts.windows} Windows tiles)`);
+//   console.log("    └── 📁 splash/");
+//   console.log(`        └── *.png                 (${counts.splash} iOS device sizes)`);
+//   console.log(`\n🎯  Total: ${total} files\n`);
+//   console.log("💡  Next steps:");
+//   console.log("    1. Add /public/icons/* to .gitignore if you prefer to generate at build time");
+//   console.log("    2. Replace safari-pinned-tab.svg with your actual SVG logo (must be single-colour black)");
+//   console.log("    3. Upload og-base.png to Cloudinary as isaacpaha/og-base.png");
+//   console.log("    4. Add splash screen <link> tags in layout.tsx <head> for iOS standalone mode");
+//   console.log("    5. Run: npx lighthouse https://www.isaacpaha.com --view  to verify PWA score");
+// }
+
+// // ─────────────────────────────────────────────────────────────────────────────
+// // MAIN
+// // ─────────────────────────────────────────────────────────────────────────────
+// async function main(): Promise<void> {
+//   console.log("🎨  isaacpaha.com — Icon & Asset Generator");
+//   console.log("═".repeat(60));
+
+//   // 1. Find logo
+//   let logoPath: string;
+//   try {
+//     logoPath = await findLogo();
+//     console.log(`\n✓  Logo found: ${logoPath}`);
+//   } catch (err) {
+//     console.error((err as Error).message);
+//     process.exit(1);
+//   }
+
+//   // 2. Create directory structure
+//   await ensureDirs();
+//   console.log("✓  Output directories ready");
+
+//   // 3. Generate everything in logical order
+//   try {
+//     await generateFavicons(logoPath);            // 4 files → public/
+//     await generateLogoAsset(logoPath);           // 1 file  → public/
+//     await generateSafariPinnedTab(logoPath);     // 1 file  → public/
+//     await generatePwaIcons(logoPath);            // 8 files → public/icons/
+//     await generateAndroidIcons(logoPath);        // 12 files → public/icons/ (6 std + 6 maskable)
+//     await generateShortcutIcons(logoPath);       // 6 files → public/icons/
+//     await generateWindowsTiles(logoPath);        // 5 files → public/icons/ + browserconfig.xml
+//     await generateSplashScreens(logoPath);       // 10 files → public/splash/
+//     await generateOgBase(logoPath);              // 1 file  → public/
+//   } catch (err) {
+//     console.error("\n❌  Generation failed:", (err as Error).message);
+//     console.error((err as Error).stack);
+//     process.exit(1);
+//   }
+
+//   // 4. Summary
+//   printSummary({
+//     favicons:  4,
+//     logo:      1,
+//     safari:    1,
+//     ogBase:    1,
+//     pwa:       8,
+//     android:   12,
+//     shortcuts: 6,
+//     windows:   5 + 1,  // +1 for browserconfig.xml
+//     splash:    10,
+//   });
+// }
+
+// main().catch(err => {
+//   console.error("Fatal:", err);
+//   process.exit(1);
+// });
 
 
 
