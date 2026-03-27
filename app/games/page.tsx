@@ -12,14 +12,15 @@ import type { Metadata } from "next";
 import { GameClient } from "./_games/game-client";
 
 const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
-// ── All 30 games listed for keyword + structured-data coverage ──────────────
+// ── All 50+ games listed for keyword + structured-data coverage ──────────────
 const GAME_NAMES = [
   "Click Hunt", "Token Rain", "Mystery Box", "Reaction Test", "Memory Match",
   "Bubble Burst", "Speed Typer", "Dodge Rush", "Number Pulse", "Colour Tap",
   "Mole Mash", "Gravity Flip", "Math Blitz", "Shadow Trace", "Tile Flip",
   "Pixel Paint", "Signal Chain", "Rhythm Pulse", "Star Connect", "Precision Stop",
   "Chain Reaction", "Mirror Painter", "Word Hunt", "Neon Trail", "Frequency Match",
-  "Ice Slide", "Sonar Sweep", "Auction Blitz",
+  "Ice Slide", "Sonar Sweep", "Auction Blitz", "Laser Grid", "Sequence Memory", 
+  "Vault Cracker", "Neon Typerace",
 ];
 
 const GAME_DESCRIPTIONS: Record<string, string> = {
@@ -51,6 +52,16 @@ const GAME_DESCRIPTIONS: Record<string, string> = {
   "Ice Slide":       "Slide a puck across ice — it glides until hitting a wall. Reach the star.",
   "Sonar Sweep":     "Ping the ocean grid to triangulate hidden fish schools, then catch them.",
   "Auction Blitz":   "Bid on items with a limited token budget. Outsmart the AI auctioneer.",
+  "laser Grid":       "Navigate a laser through a shifting grid of mirrors and blockers to reach the goal.",
+  "Sequence Memory":  "Memorise and repeat an increasingly long sequence of flashing colours and sounds.",
+  "Vault Cracker":    "Crack the 3-digit code by testing combinations and using clues before time runs out.",
+  "Neon Typerace":    "Type the scrolling words to speed up your neon car and outrun your rivals!",
+  "Orbit Slingshot":  "Slingshot the spaceship around planets to reach the target orbit. Time your moves!",
+  "Color Flood":      "Fill the board with one colour by spreading from the top-left! Plan your moves to flood the board in limited turns.",
+  "Pulse Catcher":    "Catch the pulses as they hit the ring — feel the rhythm and score big!",
+  "Shadow Match":     "Match the shadows to the objects — test your memory and attention to detail!",
+  "Warp Speed":       "Navigate through warp zones at high speed — test your reflexes and timing!",
+  "Mind The Gap":     "Jump through gaps in the neon platform — test your timing and precision!",
 };
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
@@ -60,14 +71,14 @@ export const metadata: Metadata = {
     "Play 30 unique browser mini-games on isaacpaha.com — reaction tests, memory challenges, logic puzzles, rhythm games, word hunts, physics games and more. Earn tokens, climb the leaderboard, and unlock rewards. No download required.",
 
   openGraph: {
-    title: "Game Center — 30 Browser Games | Isaac Paha",
+    title: "Game Center — 50+ Browser Games | Isaac Paha",
     description:
-      "30 addictive mini-games in one place. Reflex, memory, logic, rhythm, drawing, physics and more. Earn tokens and compete on the leaderboard.",
+      "50+ addictive mini-games in one place. Reflex, memory, logic, rhythm, drawing, physics and more. Earn tokens and compete on the leaderboard.",
     url: "https://www.isaacpaha.com/games",
     type: "website",
     images: [
       {
-        url: "https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png",
+        url: "https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png",
         width: 1200,
         height: 630,
         alt: "Game Center — Isaac Paha",
@@ -79,11 +90,11 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@iPaha3",
     creator: "@iPaha3",
-    title: "Game Center — 30 Browser Games | Isaac Paha",
+    title: "Game Center — 50+ Browser Games | Isaac Paha",
     description:
-      "30 addictive mini-games. Earn tokens, climb the leaderboard, unlock rewards. Reaction, memory, logic, rhythm and more.",
+      "50+ addictive mini-games. Earn tokens, climb the leaderboard, unlock rewards. Reaction, memory, logic, rhythm and more.",
     images: [
-      "https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png",
+      "https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png",
     ],
   },
 
@@ -129,7 +140,7 @@ export const metadata: Metadata = {
 };
 
 // ── Structured Data ───────────────────────────────────────────────────────────
-// WebApplication + ItemList of all 30 games so Google can show rich results.
+// WebApplication + ItemList of all 50+ games so Google can show rich results.
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -139,7 +150,7 @@ const structuredData = {
       name:    "Isaac Paha Game Center",
       url:     "https://www.isaacpaha.com/game",
       description:
-        "A collection of 30 unique browser mini-games. Earn tokens, compete on leaderboards, and unlock rewards.",
+        "A collection of 50+ unique browser mini-games. Earn tokens, compete on leaderboards, and unlock rewards.",
       applicationCategory: "GameApplication",
       operatingSystem: "Web Browser",
       offers: {
@@ -159,7 +170,7 @@ const structuredData = {
         url:     "https://ipahait.com",
       },
       featureList: [
-        "30 unique mini-games",
+        "50+ unique mini-games",
         "Token reward system",
         "Global leaderboard",
         "Daily streak bonuses",
@@ -173,7 +184,7 @@ const structuredData = {
     {
       "@type": "ItemList",
       "@id":   "https://www.isaacpaha.com/game#gamelist",
-      name:    "30 Mini-Games — Isaac Paha Game Center",
+      name:    "50+ Mini-Games — Isaac Paha Game Center",
       url:     "https://www.isaacpaha.com/game",
       numberOfItems: GAME_NAMES.length,
       itemListElement: GAME_NAMES.map((name, i) => ({

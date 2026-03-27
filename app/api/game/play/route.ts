@@ -35,6 +35,19 @@ const GAME_CONFIG: Record<string, { base: number; duration: number; title: strin
     ICE_SLIDE:       { base: 9,  duration: 40, title: "❄️ Ice Slide",      description: "Slide the ice blocks to clear a path and reach the goal!", category: "brain"   },
     SONAR_SWEEP:     { base: 8,  duration: 30, title: "📡 Sonar Sweep",     description: "Use sonar pings to locate hidden objects in the grid!", category: "brain"   },
     AUCTION_BLITZ:   { base: 10, duration: 60, title: "💸 Auction Blitz",   description: "Bid on mystery items with your tokens — some are rare!", category: "luck" },
+    LASER_GRID:      { base: 10, duration: 60, title: "🔫 Laser Grid",      description: "Navigate the laser grid without breaking the beams!",          category: "skill"   },
+    SEQUENCE_MEMORY: { base: 8,  duration: 45, title: "🔢 Sequence Memory",  description: "Watch a sequence light up, then tap it back perfectly!",       category: "memory", },
+    VAULT_CRACKER:   { base: 10, duration: 60, title: "🔒 Vault Cracker",    description: "Crack the 3-digit code before time runs out!",            category: "memory"   },
+    NEON_TYPERACE:   { base: 9,  duration: 30, title: "🌈 Neon Typerace",    description: "Type the scrolling words to speed up your neon car.",         category: "skill"   }  ,
+    ORBIT_SLINGSHOT: { base: 10, duration: 60, title: "🪐 Orbit Slingshot",   description: "Slingshot the spaceship around planets to reach the target.", category: "skill"   } ,
+    COLOR_FLOOD:     { base: 10, duration: 60, title: "🎨 Color Flood",       description: "Flood the board with your colour before the timer runs out!", category: "skill"   },
+    PULSE_CATCHER:   { base: 9,  duration: 30, title: "⚡ Pulse Catcher",     description: "Catch the pulses as they hit the ring — feel the rhythm!", category: "skill"   },
+    SHADOW_MATCH:    { base: 8,  duration: 45, title: "👤 Shadow Match",      description: "Match the shadows to the objects — test your memory!", category: "memory"  },
+    WARP_SPEED:      { base: 10, duration: 60, title: "🌀 Warp Speed",        description: "Navigate through warp zones at high speed — test your reflexes!", category: "skill"   },
+    MIND_THE_GAP:    { base: 9,  duration: 30, title: "🤔 Mind The Gap",      description: "Jump through gaps in the neon platform — test your timing!", category: "skill"   }
+    // NEON_TYPERACE:   { base: 9,  duration: 30, title: "霓虹打字赛车",    description: "快速打字以加速你的霓虹赛车！",         category: "skill",  difficulty: 3, duration: 30, baseReward: 9,  accent: "#8b5cf6", tip: "更快的打字 = 更快的赛车。注意红色的单词！" },
+    // ORBIT_SLINGSHOT: { base: 10, duration: 60, title: "轨道弹弓",   emoji: "🪐", description: "用弹弓发射宇宙飞船绕过行星到达目标。", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#6366f1", tip: "规划一条绕过行星引力井的路线。" }
+
 };
 
 export async function POST(req: NextRequest) {

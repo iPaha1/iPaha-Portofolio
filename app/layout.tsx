@@ -423,13 +423,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //     siteName: "Isaac Paha",
 //     title: "Isaac Paha | Technologist, Entrepreneur & Thinker",
 //     description: "Building companies, products, and ideas that matter — impacting the world around me",
-//     images: [{ url: "https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png", width: 1200, height: 630, alt: "Isaac Paha" }],
+//     images: [{ url: "https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png", width: 1200, height: 630, alt: "Isaac Paha" }],
 //   },
 //   twitter: {
 //     card: "summary_large_image", site: "@iPaha3", creator: "@iPaha3",
 //     title: "Isaac Paha | Technologist, Entrepreneur & Thinker",
 //     description: "Building technology that solves real problems.",
-//     images: ["https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png"],
+//     images: ["https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png"],
 //   },
 //   robots: {
 //     index: true, follow: true,
@@ -456,7 +456,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //               "@type": "Person",
 //               name: "Isaac Paha",
 //               url: "https://www.isaacpaha.com",
-//               image: "https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png",
+//               image: "https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png",
 //               sameAs: [
 //                 "https://github.com/iPaha1",
 //                 "https://www.linkedin.com/in/isaac-paha-578911a9/",
@@ -575,13 +575,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //     siteName: "Isaac Paha",
 //     title: "Isaac Paha | Technologist, Entrepreneur & Thinker",
 //     description: "Building companies, products, and ideas that matter — impacting the world around me",
-//     images: [{ url: "https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png", width: 1200, height: 630, alt: "Isaac Paha" }],
+//     images: [{ url: "https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png", width: 1200, height: 630, alt: "Isaac Paha" }],
 //   },
 //   twitter: {
 //     card: "summary_large_image", site: "@iPaha3", creator: "@iPaha3",
 //     title: "Isaac Paha | Technologist, Entrepreneur & Thinker",
 //     description: "Building technology that solves real problems.",
-//     images: ["https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png"],
+//     images: ["https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png"],
 //   },
 //   robots: {
 //     index: true, follow: true,
@@ -608,7 +608,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //               "@type": "Person",
 //               name: "Isaac Paha",
 //               url: "https://www.isaacpaha.com",
-//               image: "https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png",
+//               image: "https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png",
 //               sameAs: [
 //                 "https://github.com/iPaha1",
 //                 "https://www.linkedin.com/in/isaac-paha-578911a9/",
@@ -747,7 +747,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //       "Building companies, products, and ideas that matter — from the UK to Ghana and beyond.",
 //     images: [
 //       {
-//         url: "https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png",
+//         url: "https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png",
 //         width: 1200,
 //         height: 630,
 //         alt: "Isaac Paha",
@@ -760,7 +760,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //     creator: "@iPaha3",
 //     title: "Isaac Paha | Technologist, Entrepreneur & Thinker",
 //     description: "Building technology that solves real problems.",
-//     images: ["https://res.cloudinary.com/dprxr852x/image/upload/v1773922665/isaacpaha/image/isaacpahaplatform-og-1773922665075.png"],
+//     images: ["https://res.cloudinary.com/dprxr852x/image/upload/v1774612989/isaacpaha/image/isaacpahaplatformog-1774612988459.png"],
 //   },
 //   robots: {
 //     index: true,

@@ -1,15 +1,16 @@
 // =============================================================================
 // isaacpaha.com — Stripe Webhook — Credit tokens on payment success
-// app/api/tokens/webhook/route.ts
+// app/api/tokens/webhooks/stripe/route.ts
 //
-// Set in Stripe dashboard: https://isaacpaha.com/api/tokens/webhook
+// Set in Stripe dashboard: https://isaacpaha.com/api/tokens/webhooks/stripe
+// Events to listen for: checkout.session.completed
+// =============================================================================
 // Events to listen for: checkout.session.completed
 // =============================================================================
 
-import { prismadb } from "@/lib/db";
+import { prismadb }          from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe                        from "stripe";
-
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-02-25.clover",
@@ -20,7 +21,6 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("stripe-signature")!;
 
   let event: Stripe.Event;
-
   try {
     event = stripe.webhooks.constructEvent(
       body,
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === "checkout.session.completed") {
-    const session  = event.data.object as Stripe.Checkout.Session;
+    const session = event.data.object as Stripe.Checkout.Session;
     const { dbUserId, tokens, packageId } = session.metadata ?? {};
 
     if (!dbUserId || !tokens) {
@@ -42,10 +42,11 @@ export async function POST(req: NextRequest) {
     }
 
     const tokenAmount = parseInt(tokens, 10);
+    console.log(`[tokens/webhook] checkout.session.completed — user: ${dbUserId}, package: ${packageId}, tokens: ${tokenAmount}`);
 
     try {
       await prismadb.$transaction(async (tx) => {
-        // Upsert wallet
+        // 1. Upsert wallet
         let wallet = await tx.tokenWallet.findUnique({
           where:  { userId: dbUserId },
           select: { id: true },
@@ -58,16 +59,20 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Credit tokens
+        // 2. Credit tokens
         await tx.tokenWallet.update({
           where: { userId: dbUserId },
-          data:  { balance: { increment: tokenAmount } },
+          data:  {
+            balance:     { increment: tokenAmount },
+            totalEarned: { increment: tokenAmount },
+          },
         });
 
-        // Record transaction
+        // 3. Record transaction
+        //    ✅ No `id` field — let Prisma generate a fresh cuid()
+        //    ✅ Connect via relation (tokenWallet TokenWallet[]) not a scalar walletId
         await tx.tokenTransaction.create({
           data: {
-            id:    wallet.id,
             userId:      dbUserId,
             amount:      tokenAmount,
             type:        "PURCHASE",
@@ -78,11 +83,14 @@ export async function POST(req: NextRequest) {
               amountPaid:      session.amount_total,
               currency:        session.currency,
             }),
+            tokenWallet: {
+              connect: { id: wallet.id },
+            },
           },
         });
       });
 
-      console.log(`[tokens/webhook] Credited ${tokenAmount} tokens → user ${dbUserId}`);
+      console.log(`[tokens/webhook] ✅ Credited ${tokenAmount} tokens → user ${dbUserId}`);
     } catch (err: any) {
       console.error("[tokens/webhook] DB error:", err);
       return NextResponse.json({ error: "db_error" }, { status: 500 });
@@ -92,5 +100,4 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-// Disable body parsing — Stripe needs raw body for signature verification
 export const config = { api: { bodyParser: false } };

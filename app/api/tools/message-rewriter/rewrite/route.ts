@@ -4,12 +4,24 @@
 //
 // POST { message, tone, platform, mode, context }
 // Returns: { rewrites: RewriteResult[], detectedContext: ContextDetection }
+
+// Token cost: 100 tokens per rewrite (matches tools-data.ts tokenCost)
+// ─── Changes from original ────────────────────────────────────────────────────
+//   1. Import tokenGate + deductTokens
+//   2. Call tokenGate(req, 100) at the top — returns 402 if wallet is short
+//   3. Call deductTokens() after successful AI response
+//   Everything else is identical to the original route.
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+// Tool token cost is 100 tokens per rewrite request, which includes 3 variations and context detection.
+const TOKEN_COST = 100000000; 
 
 // ─── Tone definitions ─────────────────────────────────────────────────────────
 
@@ -172,6 +184,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Message too long — keep it under 3000 characters" }, { status: 400 });
     }
 
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Message Rewriter" });
+    console.log("[message-rewriter] Token gate check result:", gate);
+    // console.log(`[message-rewriter] Token gate check for user ${gate.dbUserId} — required: ${TOKEN_COST}, balance: ${gate.balance}`);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[message-rewriter] Token gate passed for user ${gate.dbUserId} — proceeding with rewrite`);
+
     const toneCfg       = TONE_PROMPTS[tone] ?? TONE_PROMPTS.professional;
     const platformNote  = PLATFORM_ADJUSTMENTS[platform] ?? "";
     const modeNote      = MODE_INSTRUCTIONS[mode]        ?? "";
@@ -235,6 +254,12 @@ ${message.trim()}
     const raw  = response.content[0].type === "text" ? response.content[0].text.trim() : "{}";
     const clean = raw.replace(/```json|```/g, "").trim();
     const data  = JSON.parse(clean);
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "message-rewriter/rewrite", {
+      tone, platform, mode, count: numVariations,
+    });
+    console.log(`[message-rewriter] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} — new balance: ${gate.balance - TOKEN_COST}`);
 
     return NextResponse.json({
       ok:              true,

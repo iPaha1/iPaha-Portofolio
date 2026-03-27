@@ -33,6 +33,16 @@ import { FrequencyMatchGame } from "./(games)/frequency-match-game";
 import { IceSlideGame } from "./(games)/ice-slide-game";
 import { SonarSweepGame } from "./(games)/sonar-sweep-game";
 import { AuctionBlitzGame } from "./(games)/auction-blitz-game";
+import { LaserGridGame } from "./(games)/laser-grid-game";
+import { SequenceMemoryGame } from "./(games)/sequence-memory-game";
+import { VaultCrackerGame } from "./(games)/vault-cracker-game";
+import { NeonTyperaceGame } from "./(games)/neon-type-racer-game";
+import { OrbitSlingshotGame } from "./(games)/orbit-slingshot-game";
+import { ColorFloodGame } from "./(games)/color-floor-game";
+import { PulseCatcherGame } from "./(games)/pulse-catcher-game";
+import { ShadowMatchGame } from "./(games)/shadow-match-game";
+import { WarpSpeedGame } from "./(games)/warp-speed-game";
+import { MindTheGapGame } from "./(games)/mind-the-gap-game";
 
 
 export type GameType =
@@ -42,7 +52,10 @@ export type GameType =
   | "MATH_BLITZ"      | "SHADOW_TRACE"   | "TILE_FLIP"      | "PIXEL_PAINT"
   | "SIGNAL_CHAIN"    | "RHYTHM_PULSE"   | "STAR_CONNECT"   | "PRECISION_STOP"
   | "CHAIN_REACTION"  | "MIRROR_PAINTER" | "WORD_HUNT"       | "NEON_TRAIL"
-  | "FREQUENCY_MATCH" | "ICE_SLIDE"       | "SONAR_SWEEP"     | "AUCTION_BLITZ"; 
+  | "FREQUENCY_MATCH" | "ICE_SLIDE"       | "SONAR_SWEEP"     | "AUCTION_BLITZ"
+  | "LASER_GRID"      | "SEQUENCE_MEMORY" | "VAULT_CRACKER"   | "NEON_TYPERACE"
+  | "ORBIT_SLINGSHOT" | "COLOR_FLOOD"     | "PULSE_CATCHER"  | "SHADOW_MATCH"
+  | "WARP_SPEED"      | "MIND_THE_GAP"; 
 
 
 interface GameFactoryProps extends GameProps {
@@ -81,6 +94,16 @@ export const GameFactory: React.FC<GameFactoryProps> = ({ gameType, ...props }) 
     case "ICE_SLIDE":        return <IceSlideGame         {...props} />;
     case "SONAR_SWEEP":      return <SonarSweepGame       {...props} />;
     case "AUCTION_BLITZ":    return <AuctionBlitzGame     {...props} />;
+    case "LASER_GRID":      return <LaserGridGame       {...props} />;
+    case "SEQUENCE_MEMORY": return <SequenceMemoryGame  {...props} />;
+    case "VAULT_CRACKER":   return <VaultCrackerGame    {...props} />;
+    case "NEON_TYPERACE":    return <NeonTyperaceGame    {...props} />;
+    case "ORBIT_SLINGSHOT":  return <OrbitSlingshotGame  {...props} />;
+    case "COLOR_FLOOD":      return <ColorFloodGame      {...props} />;
+    case "PULSE_CATCHER":    return <PulseCatcherGame    {...props} />;
+    case "SHADOW_MATCH":     return <ShadowMatchGame     {...props} />;
+    case "WARP_SPEED":       return <WarpSpeedGame       {...props} />;
+    case "MIND_THE_GAP":     return <MindTheGapGame      {...props} />;
     default:
       return <ClickHuntGame {...props} />;
   }
@@ -95,4 +118,7 @@ export {
   SignalChainGame,  RhythmPulseGame,  StarConnectGame,  PrecisionStopGame,
   ChainReactionGame,MirrorPainterGame,WordHuntGame,     NeonTrailGame,
   FrequencyMatchGame,IceSlideGame,   SonarSweepGame,   AuctionBlitzGame,
+  LaserGridGame,    SequenceMemoryGame, VaultCrackerGame, 
+  NeonTyperaceGame, OrbitSlingshotGame, ColorFloodGame, 
+  PulseCatcherGame, ShadowMatchGame, WarpSpeedGame, MindTheGapGame
 };

@@ -14,6 +14,11 @@
 //   - Before/After shareable card
 //   - One-click copy
 //   - Keyboard shortcut (Cmd+Enter)
+
+// ─── Changes from original ────────────────────────────────────────────────────
+//   1. Accept optional onInsufficientTokens prop (called by page shell)
+//   2. Wrap fetch in handleGateResponse — stops execution on 402
+//   Everything else (UI, logic) is pixel-identical to the original.
 // =============================================================================
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
@@ -39,6 +44,20 @@ interface DetectedContext {
   recommendedToneLabel:string;
   reason:              string;
 }
+
+// ─── NEW: token gate prop ─────────────────────────────────────────────────────
+ 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+ 
+export interface MessageRewriterToolProps {
+  /** Called when the API returns 402 — parent page shows the modal */
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
+}
+
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -201,7 +220,7 @@ function RewriteCard({
 
 // ─── MAIN TOOL ────────────────────────────────────────────────────────────────
 
-export function MessageRewriterTool() {
+export function MessageRewriterTool({ onInsufficientTokens }: MessageRewriterToolProps) {
   const [message,         setMessage]         = useState("");
   const [activeTone,      setActiveTone]       = useState<ToneId>("professional");
   const [activePlatform,  setActivePlatform]   = useState<string>("general");
@@ -255,6 +274,19 @@ export function MessageRewriterTool() {
           count:    variations,
         }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Message Rewriter",
+        });
+        setLoading(false);
+        return; // stop here — modal is shown by parent
+      }
+
       const data = await res.json();
       if (!res.ok || data.error) { setError(data.error ?? "Rewrite failed"); setLoading(false); return; }
       setRewrites(data.rewrites ?? []);

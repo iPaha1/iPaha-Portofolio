@@ -54,6 +54,7 @@ export async function tokenGate(
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const { userId: clerkId } = await auth();
+  console.log(`[tokenGate] Auth check — Clerk user ID: ${clerkId}`);
 
   if (!clerkId) {
     if (requireAuth) {
@@ -74,6 +75,7 @@ export async function tokenGate(
     where:  { clerkId },
     select: { id: true },
   });
+  console.log(`[tokenGate] Authenticated user ${clerkId} — DB lookup result:`, dbUser);
 
   if (!dbUser) {
     // Lazy-create in case syncUser hasn't run yet
@@ -81,6 +83,7 @@ export async function tokenGate(
       data:   { clerkId, email: "", displayName: "" },
       select: { id: true },
     });
+    console.log(`[tokenGate] No DB user for Clerk ID ${clerkId} — created new DB user with ID ${dbUser.id}`);
   }
 
   // ── Wallet ────────────────────────────────────────────────────────────────
@@ -88,6 +91,7 @@ export async function tokenGate(
     where:  { userId: dbUser.id },
     select: { balance: true },
   });
+  console.log(`[tokenGate] User ${dbUser.id} — Wallet lookup result:`, wallet);
 
   if (!wallet) {
     // Bootstrap wallet with 100 welcome tokens
@@ -98,6 +102,7 @@ export async function tokenGate(
   }
 
   const balance = wallet.balance;
+  console.log(`[tokenGate] User ${dbUser.id} — Wallet balance: ${balance} tokens, Required: ${requiredTokens} tokens`);
 
   // ── Insufficient tokens ───────────────────────────────────────────────────
   if (balance < requiredTokens) {
@@ -116,6 +121,8 @@ export async function tokenGate(
       ),
     };
   }
+
+  console.log(`[tokenGate] User ${dbUser.id} — Token gate passed — proceeding`);
 
   return {
     ok:       true,

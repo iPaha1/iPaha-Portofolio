@@ -41,17 +41,17 @@ export const COMPANIES = [
     href: "https://ipahastore.com",
     year: "2021",
   },
-//   {
-//     id: "okPah-ltd",
-//     name: "OkPah Ltd",
-//     flag: "🇬🇭",
-//     location: "Ghana",
-//     description:
-//       "Innovation-driven startup building homegrown digital platforms for the Ghanaian market.",
-//     website: "okpah.com",
-//     href: "https://okpah.com",
-//     year: "2022",
-//   },
+  {
+    id: "okPah-ltd",
+    name: "OkPah Ltd",
+    flag: "🇬🇭",
+    location: "Ghana",
+    description:
+      "Innovation-driven startup building homegrown digital platforms for the Ghanaian market.",
+    website: "okpah.com",
+    href: "https://okpah.com",
+    year: "2022",
+  },
 ];
 
 export const PRODUCTS = [

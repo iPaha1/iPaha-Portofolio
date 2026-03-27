@@ -36,6 +36,17 @@ const GAME_TYPES = [
   "ICE_SLIDE",
   "SONAR_SWEEP",
   "AUCTION_BLITZ",
+  "LASER_GRID",
+  "SEQUENCE_MEMORY",
+  "VAULT_CRACKER",
+  "NEON_TYPERACE",
+  "ORBIT_SLINGSHOT",
+  "COLOR_FLOOD",
+  "PULSE_CATCHER",
+  "SHADOW_MATCH",
+  "WARP_SPEED",
+  "MIND_THE_GAP",
+
 ] as const;
 
 type GameType = typeof GAME_TYPES[number];
@@ -68,7 +79,17 @@ const GAME_CONFIG: Record<GameType, { base: number; duration: number; title: str
   FREQUENCY_MATCH: { base: 10, duration: 30, title: "📡 Frequency Match", description: "Tune the dials to match the target frequency before time runs out!" },
   ICE_SLIDE:       { base: 9,  duration: 40, title: "❄️ Ice Slide",      description: "Slide the ice blocks to clear a path and reach the goal!" },
   SONAR_SWEEP:     { base: 8,  duration: 30, title: "📡 Sonar Sweep",     description: "Use sonar pings to locate hidden objects in the grid!" },
-  AUCTION_BLITZ:   { base: 10, duration: 60, title: "💸 Auction Blitz",   description: "Bid on mystery items with your tokens — some are rare!" }
+  AUCTION_BLITZ:   { base: 10, duration: 60, title: "💸 Auction Blitz",   description: "Bid on mystery items with your tokens — some are rare!" },
+  LASER_GRID:      { base: 10, duration: 60, title: "🔫 Laser Grid",      description: "Navigate the laser grid without breaking the beams!" },
+  SEQUENCE_MEMORY: { base: 8,  duration: 45, title: "🔢 Sequence Memory",  description: "Watch a sequence light up, then tap it back perfectly!"},
+  VAULT_CRACKER:   { base: 10, duration: 60, title: "🔒 Vault Cracker",    description: "Crack the 3-digit code before time runs out!"},
+  NEON_TYPERACE:    { base: 9,  duration: 30, title: "🏁 Neon Typerace",    description: "Type the scrolling words to speed up your neon car!" },
+  ORBIT_SLINGSHOT: { base: 10, duration: 60, title: "🪐 Orbit Slingshot",   description: "Slingshot the spaceship around planets to reach the target."  } ,
+  COLOR_FLOOD:     { base: 9,  duration: 60, title: "🎨 Color Flood",      description: "Fill the board with one colour by spreading from the top-left!" },
+  PULSE_CATCHER:   { base: 9,  duration: 30, title: "⚡ Pulse Catcher",     description: "Catch the pulses as they hit the ring — feel the rhythm!"},
+  SHADOW_MATCH:    { base: 8,  duration: 45, title: "👤 Shadow Match",      description: "Match the shadows to the objects — test your memory!" },
+  WARP_SPEED:      { base: 10, duration: 60, title: "🌀 Warp Speed",        description: "Navigate through warp zones at high speed — test your reflexes!"},
+  MIND_THE_GAP:    { base: 9,  duration: 30, title: "🤔 Mind The Gap",      description: "Jump through gaps in the neon platform — test your timing!"}
 };
 
 // Picks a random game type, optionally excluding the last played

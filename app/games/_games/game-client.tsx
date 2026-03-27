@@ -77,6 +77,9 @@ const GAMES: GameDef[] = [
   { type: "PIXEL_PAINT",     title: "Pixel Paint",      emoji: "🖼️", description: "Memorise pixel art then recreate it with flood-fill colour.",  category: "memory", difficulty: 3, duration: 90, baseReward: 10, accent: "#10b981", tip: "Focus on one region at a time. Every pixel counts." },
   { type: "STAR_CONNECT",    title: "Star Connect",     emoji: "✨", description: "Memorise a constellation then draw the edges from memory.",    category: "memory", difficulty: 3, duration: 60, baseReward: 9,  accent: "#818cf8", tip: "Stars are numbered during reveal. Use them." },
   { type: "FREQUENCY_MATCH", title: "Frequency Match",  emoji: "🎛️", description: "Memorise an EQ waveform then recreate it with the sliders.",  category: "memory", difficulty: 3, duration: 75, baseReward: 9,  accent: "#8b5cf6", tip: "Focus on the shape — peaks, valleys, and slope." },
+  { type: "SEQUENCE_MEMORY", title: "Sequence Memory",  emoji: "🔢", description: "Watch a sequence light up, then tap it back perfectly.",       category: "memory", difficulty: 3, duration: 45, baseReward: 8,  accent: "#a855f7", tip: "Each round adds one step. 3 lives to use wisely." },
+  { type: "VAULT_CRACKER",   title: "Vault Cracker",    emoji: "🔒", description: "Crack the 3-digit code before time runs out.",            category: "memory", difficulty: 3, duration: 60, baseReward: 10, accent: "#10b981", tip: "Each guess shows HOT / WARM / COLD per digit." },
+
 
   // ── Brain ───────────────────────────────────────────────────────────────────
   { type: "COLOUR_TAP",      title: "Colour Tap",       emoji: "🎨", description: "Tap the ink colour — ignore what the word says.",             category: "brain",  difficulty: 3, duration: 30, baseReward: 7,  accent: "#ec4899", tip: "Classic Stroop effect. Streak bonus at 3+ correct." },
@@ -90,6 +93,15 @@ const GAMES: GameDef[] = [
   { type: "NEON_TRAIL",      title: "Neon Trail",       emoji: "🐍", description: "Grow your glowing trail collecting orbs. Never cross yourself.", category: "skill", difficulty: 3, duration: 40, baseReward: 9,  accent: "#10b981", tip: "Purple orb = ghost mode. Gold orb = speed boost." },
   { type: "ICE_SLIDE",       title: "Ice Slide",        emoji: "❄️", description: "Slide the puck to the star — it glides until hitting a wall.", category: "skill",  difficulty: 3, duration: 60, baseReward: 9,  accent: "#06b6d4", tip: "Hover buttons to preview where the puck will land." },
   { type: "PRECISION_STOP",  title: "Precision Stop",   emoji: "🎯", description: "Stop the needle exactly inside the shrinking target zone.",    category: "skill",  difficulty: 3, duration: 45, baseReward: 9,  accent: "#f43f5e", tip: "Anticipate, don't react. The zone shrinks each round." },
+  { type: "LASER_GRID",      title: "Laser Grid",       emoji: "🔫", description: "Navigate the laser grid without breaking the beams.",          category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#ef4444", tip: "Lasers have a pattern. Study it, then time your moves." },
+  { type: "ORBIT_SLINGSHOT",  title: "Orbit Slingshot",   emoji: "🪐", description: "Slingshot the spaceship around planets to reach the target.", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#6366f1", tip: "Plan a route around the planets' gravity wells." },
+  { type: "NEON_TYPERACE",    title: "Neon Typerace",    emoji: "🏁", description: "Type the scrolling words to speed up your neon car.",         category: "skill",  difficulty: 3, duration: 30, baseReward: 9,  accent: "#8b5cf6", tip: "Faster typing = faster car. Watch out for red words!" },
+  { type: "COLOR_FLOOD",      title: "Color Flood",      emoji: "🎨", description: "Fill the board with one colour by spreading from the top-left!", category: "skill",  difficulty: 3, duration: 60, baseReward: 9,  accent: "#ec4899", tip: "Each tap floods adjacent tiles. Plan your moves." },
+  { type: "PULSE_CATCHER",    title: "Pulse Catcher",     emoji: "⚡", description: "Catch the pulses as they hit the ring — feel the rhythm!", category: "skill",  difficulty: 3, duration: 30, baseReward: 9,  accent: "#f59e0b", tip: "A S D F keys or tap buttons. Combos = big bonus." },
+  { type: "SHADOW_MATCH",     title: "Shadow Match",      emoji: "👤", description: "Match the shadows to the objects — test your memory!", category: "memory", difficulty: 3, duration: 45, baseReward: 8,  accent: "#e879f9", tip: "Study the shapes carefully during reveal. Use process of elimination." },
+  { type: "WARP_SPEED",       title: "Warp Speed",        emoji: "🌀", description: "Navigate through warp zones at high speed — test your reflexes!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#10b981", tip: "Time your moves carefully. The zones shift quickly." },
+  { type: "MIND_THE_GAP",     title: "Mind The Gap",      emoji: "🤔", description: "Jump through gaps in the neon platform — test your timing!", category: "skill",  difficulty: 3, duration: 30, baseReward: 9,  accent: "#f59e0b", tip: "Anticipate the gaps. Timing is everything." },
+
 
   // ── Logic ───────────────────────────────────────────────────────────────────
   { type: "TILE_FLIP",       title: "Tile Flip",        emoji: "💡", description: "Flip tiles so the whole board becomes one colour.",            category: "brain",  difficulty: 3, duration: 60, baseReward: 9,  accent: "#f59e0b", tip: "Corner tiles have fewer neighbours — start there." },
@@ -824,6 +836,9 @@ export function GameClient() {
     { v: "luck",   l: "Luck"     },
   ];
 
+  const totalGames = filteredGames.length;
+  
+
   return (
     <div className="fixed inset-0 overflow-hidden"
       style={{ background: "#050508", fontFamily: "'Sora', system-ui, sans-serif" }}>
@@ -917,7 +932,7 @@ export function GameClient() {
           Game Center
         </h1>
         <p className="text-[9px] sm:text-[10px] hidden xs:block" style={{ color: "rgba(255,255,255,0.3)" }}>
-          30 games · earn tokens · climb ranks
+          {totalGames}+ games · earn tokens · climb ranks
         </p>
       </div>
     </div>

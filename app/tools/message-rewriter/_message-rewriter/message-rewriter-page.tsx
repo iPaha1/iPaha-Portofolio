@@ -6,6 +6,12 @@
 //
 // Full page with hero, tabs (Tool / How It Works / Reviews), sidebar,
 // and the MessageRewriterTool embedded.
+// ─── Changes from original ────────────────────────────────────────────────────
+//   1. Import InsufficientTokensModal
+//   2. useState for tokenModal
+//   3. Pass onInsufficientTokens to MessageRewriterTool
+//   4. Render <InsufficientTokensModal> at the bottom of JSX
+//   Everything else is pixel-identical to the original.
 // =============================================================================
 
 import React, { useState }          from "react";
@@ -18,7 +24,9 @@ import {
   Heart, Briefcase, CornerDownLeft,
 } from "lucide-react";
 import { TOOLS }                   from "@/lib/data/tools-data";
-import { MessageRewriterTool } from "./message-rewriter-tool";
+import { MessageRewriterTool, TokenGateInfo } from "./message-rewriter-tool";
+import { InsufficientTokensModal } from "@/components/(tokens)/insufficient-tokens-model";
+import { useRouter } from "next/navigation";
 
 
 const TOOL = TOOLS.find(t => t.slug === "message-rewriter")!;
@@ -104,6 +112,10 @@ export function MessageRewriterPage() {
   const [activeTab, setActiveTab] = useState<"tool" | "guide" | "reviews">("tool");
   const [copied,    setCopied]    = useState(false);
   const [openFAQ,   setOpenFAQ]   = useState<number | null>(null);
+  const router = useRouter();
+
+  // ── NEW: token modal state ────────────────────────────────────────────────
+  const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
 
   const handleShare = () => {
     navigator.clipboard.writeText("https://isaacpaha.com/tools/message-rewriter");
@@ -243,7 +255,10 @@ export function MessageRewriterPage() {
               {activeTab === "tool" && (
                 <motion.div key="tool" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}>
-                  <MessageRewriterTool />
+                    {/* ── NEW: pass onInsufficientTokens to tool ── */}
+                  <MessageRewriterTool
+                    onInsufficientTokens={(info) => setTokenModal(info)}
+                  />
                 </motion.div>
               )}
 
@@ -395,6 +410,20 @@ export function MessageRewriterPage() {
           </div>
         </div>
       </div>
+
+      {/* ── NEW: Insufficient Tokens Modal ─────────────────────────────────── */}
+      <InsufficientTokensModal
+        open={!!tokenModal}
+        onClose={() => setTokenModal(null)}
+        required={tokenModal?.required ?? 0}
+        balance={tokenModal?.balance   ?? 0}
+        toolName={tokenModal?.toolName ?? undefined}
+        onPlayGame={() => {
+          setTokenModal(null);
+          router.push("/games"); // or open game overlay via context
+        }}
+      />
+
     </div>
   );
 }

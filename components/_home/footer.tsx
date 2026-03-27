@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Github, Linkedin, Twitter, Mail, ArrowUpRight, Pen } from "lucide-react";
 import { COMPANIES, PERSONAL } from "@/lib/data/site-data";
+import Logo from "../global/logo";
 
 const FOOTER_LINKS = {
   Explore: [
@@ -45,14 +46,15 @@ export const Footer = () => (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-14">
         {/* Brand column */}
         <div className="md:col-span-1">
-          <Link href="/" className="flex items-center gap-2 mb-5">
+          {/* <Link href="/" className="flex items-center gap-2 mb-5">
             <div className="w-8 h-8 bg-amber-500 rounded-xs flex items-center justify-center">
               <Pen className="w-4 h-4 text-white" />
             </div>
             <span className="font-black text-white tracking-tight text-lg">
               Isaac<span className="text-amber-400">.</span>
             </span>
-          </Link>
+          </Link> */}
+          <Logo />
           <p className="text-sm text-white/50 leading-relaxed mb-6">
             {PERSONAL.tagline}
           </p>
