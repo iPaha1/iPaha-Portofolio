@@ -8,9 +8,16 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1200; // Adjust based on expected response length and model pricing
+
+// ─── Main handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const {
@@ -24,6 +31,13 @@ export async function POST(req: NextRequest) {
     if (!topic && !originalQuestion) {
       return NextResponse.json({ error: "topic or originalQuestion required" }, { status: 400 });
     }
+
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Physics Understanding Engine" });
+    console.log(`[physics-engine/experiments] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[physics-engine/experiments] Token gate passed for user ${gate.dbUserId} — proceeding with question generation`);
+
 
     if (type === "practice") {
       const prompt = `You are a physics teacher creating exam-style practice questions for ${level.toUpperCase()} students.
@@ -108,6 +122,13 @@ Return ONLY valid JSON:
 
       return NextResponse.json({ ok: true, questions: data.questions ?? [] });
     }
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "physics-engine/experiments", {
+      type, level, topic, conceptName, originalQuestion
+    });
+    console.log(`[physics-engine/experiments] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId}`);
+
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });
   } catch (err: any) {

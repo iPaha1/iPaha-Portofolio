@@ -8,8 +8,16 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+// Tool token costs (in tokens per request) — adjust based on expected response length and model pricing
+const MODE_TOKEN_COST: Record<string, number> = {
+  practice: 3000, // Practice questions with solutions are more complex
+  theory_questions: 2000, // Theory questions with model answers
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +32,13 @@ export async function POST(req: NextRequest) {
     if (!topic && !originalQuestion) {
       return NextResponse.json({ error: "topic or originalQuestion required" }, { status: 400 });
     }
+
+      // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+      const gate = await tokenGate(req, MODE_TOKEN_COST[type], { toolName: "Chemistry Engine" });
+      console.log(`[chemistry-engine/experiments] Token gate result:`, gate);
+      if (!gate.ok) return gate.response; // sends 402 JSON to client
+      console.log(`[chemistry-engine/experiments] Token gate passed for user ${gate.dbUserId}, proceeding with ${type} questions.`);
+
 
     // ── PRACTICE (calculation/application) questions ──────────────────────────
     if (type === "practice") {
@@ -104,6 +119,11 @@ Include at least 2 particle-level questions — this is what sets top-grade answ
       catch { const m = clean.match(/\{[\s\S]+\}/); data = m ? JSON.parse(m[0]) : { questions: [] }; }
       return NextResponse.json({ ok: true, questions: data.questions ?? [] });
     }
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, MODE_TOKEN_COST[type], "chemistry-engine/experiments", { type, level, topic: topic ?? "", concept: conceptName ?? "" });
+    console.log(`[chemistry-engine/experiments] Deducted ${MODE_TOKEN_COST[type]} tokens from user ${gate.dbUserId} for ${type} questions.`);
+
 
     return NextResponse.json({ error: "Invalid type" }, { status: 400 });
   } catch (err: any) {

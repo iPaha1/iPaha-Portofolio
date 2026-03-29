@@ -7,7 +7,7 @@ export const PERSONAL = {
   name: "Isaac Paha",
   title: "Technologist · Entrepreneur · Thinker",
   tagline: "Exploring AI, software, and the future of society.",
-  bio: "Building companies, products, and ideas that matter — impacting the world around me.",
+  bio: "Enhencing human potential through technology. Building products, companies, and ideas that matter.",
   location: "United Kingdom",
   email: "pahaisaac@gmail.com",
   photo: "/images/photo1.png",
@@ -178,7 +178,7 @@ export const BLOG_CATEGORIES = [
 
 export const STATS = [
   { label: "Companies Founded", value: "3", suffix: "" },
-  { label: "Products Launched", value: "6", suffix: "+" },
+  { label: "Products Launched", value: "10", suffix: "+" },
   { label: "Years Building", value: "5", suffix: "+" },
   { label: "Countries Reached", value: "2", suffix: "" },
 ];

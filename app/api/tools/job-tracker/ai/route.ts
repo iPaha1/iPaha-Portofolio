@@ -11,9 +11,14 @@ import { NextRequest, NextResponse }  from "next/server";
 import { auth }                       from "@clerk/nextjs/server";
 import Anthropic                      from "@anthropic-ai/sdk";
 import { getApplicationStats, getOrCreateProfile } from "@/lib/tools/actions/job-tracker-actions";
-
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 800; // Adjust based on expected response length and model pricing
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -29,6 +34,13 @@ export async function POST(req: NextRequest) {
   if (!stats && mode !== "interview") {
     return NextResponse.json({ content: "Log some applications first to get personalised insights!" });
   }
+
+  // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+  const gate = await tokenGate(req, TOKEN_COST, { toolName: "Job Tracker AI" });
+  console.log(`[job-tracker/ai] Token gate result:`, gate);
+  if (!gate.ok) return gate.response; // sends 402 JSON to client
+  console.log(`[job-tracker/ai] Token gate passed for user ${gate.dbUserId}, proceeding with AI request.`);
+
 
   let prompt = "";
 
@@ -107,6 +119,11 @@ Think like a career coach who has 5 minutes with them.`;
       messages:   [{ role: "user", content: prompt }],
     });
     const text = message.content[0].type === "text" ? message.content[0].text : "";
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "job-tracker/ai", { mode, targetRole, sector });
+    console.log(`[job-tracker/ai] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for mode ${mode}.`);
+    
     return NextResponse.json({ content: text });
   } catch (err: any) {
     console.error("[job-tracker/ai]", err);

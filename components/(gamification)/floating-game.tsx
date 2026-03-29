@@ -84,6 +84,18 @@ const GAME_ACCENT: Record<GameType, string> = {
   SHADOW_MATCH: "#f97316",
   WARP_SPEED: "#e879f9",
   MIND_THE_GAP: "#22c55e",
+  PARTICLE_PAINTER: "#8b5cf6",
+  CHAIN_REACTION_PART_TWO: "#3b82f6",
+  FREQUENCY_SURFER: "#ef4444",
+  HEIST_LASER: "#f59e0b",
+  BLACK_HOLE: "#ec4899",
+  PIXEL_STORM: "#14b8a6",
+  PLASMA_SNAKE: "#f97316",
+  MIND_MELD: "#e879f9",
+  NEON_PINBALL: "#22c55e",
+  TIME_FREEZE: "#8b5cf6",
+  ECHO_CHAMBER: "#3b82f6",
+  QUANTUM_COLLAPSE: "#ef4444",
 };
 
 const GAME_TIPS: Record<GameType, string> = {
@@ -125,6 +137,18 @@ const GAME_TIPS: Record<GameType, string> = {
   SHADOW_MATCH: "Match the shadows accurately. The closer to the original, the higher your score!",
   WARP_SPEED: "Navigate through warp zones at high speed. The faster you go, the higher your score!",
   MIND_THE_GAP: "Fill in the gaps in your memory. The more you fill, the higher your score!",
+  PARTICLE_PAINTER: "Paint with particles to create beautiful designs. The more creative, the higher your score!",
+  CHAIN_REACTION_PART_TWO: "Trigger even bigger chain reactions for massive points. Plan your moves carefully!",
+  FREQUENCY_SURFER: "Surf the frequency waves. The longer you surf, the higher your score!",
+  HEIST_LASER: "Navigate the laser maze without breaking the beams. The faster you escape, the higher your score!",
+  BLACK_HOLE: "Avoid the black hole's pull while collecting points. The longer you survive, the higher your score!",
+  PIXEL_STORM: "Survive the pixel storm while collecting points. The longer you survive, the higher your score!",
+  PLASMA_SNAKE: "Control the plasma snake to collect points. The longer you survive, the higher your score!",
+  MIND_MELD: "Meld your mind with the game to predict the next move. The better you predict, the higher your score!",
+  NEON_PINBALL: "Keep the neon ball in play and hit the targets. The longer you play, the higher your score!",
+  TIME_FREEZE: "Freeze time to navigate through obstacles. The more you freeze, the higher your score!",
+  ECHO_CHAMBER: "Navigate the echo chamber by listening to the sounds. The better you navigate, the higher your score!",
+  QUANTUM_COLLAPSE: "Collapse the quantum states to your advantage. The better you collapse, the higher your score!",
 };
 
 export function FloatingGame({ game, onClose, onComplete }: FloatingGameProps) {

@@ -83,7 +83,9 @@ export async function POST(req: NextRequest) {
     const tokenCost = MODE_TOKEN_COST[mode] ?? MODE_TOKEN_COST.full;
 
     const gate = await tokenGate(req, tokenCost, { toolName: "Chemistry Engine" });
+    console.log(`[chemistry-engine/explain] Token gate result:`, gate);
     if (!gate.ok) return gate.response; // Returns 402 JSON to client
+    console.log(`[chemistry-engine/explain] Token gate passed for user ${gate.dbUserId}, proceeding with explanation for question: "${question.slice(0, 80)}" at level ${level} in mode ${mode}.`);
 
     // ─────────────────────────────────────────────────────────────────────────
     // All AI logic below is identical to your original route.

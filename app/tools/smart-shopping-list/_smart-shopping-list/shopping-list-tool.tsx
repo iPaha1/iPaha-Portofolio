@@ -36,6 +36,7 @@ type ItemCategory =
   | "PRODUCE" | "DAIRY" | "MEAT_FISH" | "BAKERY" | "FROZEN"
   | "PANTRY" | "DRINKS" | "SNACKS" | "HOUSEHOLD" | "PERSONAL_CARE"
   | "BABY" | "PET" | "PHARMACY" | "ELECTRONICS" | "OTHER";
+  
 
 interface ShoppingItem {
   id:              string;

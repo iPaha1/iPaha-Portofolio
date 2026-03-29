@@ -43,6 +43,18 @@ import { PulseCatcherGame } from "./(games)/pulse-catcher-game";
 import { ShadowMatchGame } from "./(games)/shadow-match-game";
 import { WarpSpeedGame } from "./(games)/warp-speed-game";
 import { MindTheGapGame } from "./(games)/mind-the-gap-game";
+import { ParticlePainterGame } from "./(games)/particles-painter-games";
+import { FrequencySurferGame } from "./(games)/frequency-suffer-game";
+import { HeistLaserGame } from "./(games)/heist-laser-game";
+import { ChainReactionGamePartTwo } from "./(games)/chain-reaction-game-part-two";
+import { BlackHoleGame } from "./(games)/black-hole-game";
+import { PixelStormGame } from "./(games)/pixel-storm-game";
+import { PlasmaSnakeGame } from "./(games)/plasma-snake-game";
+import { MindMeldGame } from "./(games)/mind-meld-game";
+import { NeonPinballGame } from "./(games)/neon-pinball-game";
+import { TimeFreezeGame } from "./(games)/time-freezer-game";
+import { EchoChamberGame } from "./(games)/echo-chamber-game";
+import { QuantumCollapseGame } from "./(games)/quantum-collapse-game";
 
 
 export type GameType =
@@ -55,7 +67,10 @@ export type GameType =
   | "FREQUENCY_MATCH" | "ICE_SLIDE"       | "SONAR_SWEEP"     | "AUCTION_BLITZ"
   | "LASER_GRID"      | "SEQUENCE_MEMORY" | "VAULT_CRACKER"   | "NEON_TYPERACE"
   | "ORBIT_SLINGSHOT" | "COLOR_FLOOD"     | "PULSE_CATCHER"  | "SHADOW_MATCH"
-  | "WARP_SPEED"      | "MIND_THE_GAP"; 
+  | "WARP_SPEED"      | "MIND_THE_GAP"    | "PARTICLE_PAINTER" | "CHAIN_REACTION_PART_TWO"
+  | "FREQUENCY_SURFER" | "HEIST_LASER"    | "BLACK_HOLE"   | "PIXEL_STORM" 
+  | "PLASMA_SNAKE" | "MIND_MELD" | "NEON_PINBALL" | "TIME_FREEZE"
+  | "ECHO_CHAMBER"  | "QUANTUM_COLLAPSE" ;
 
 
 interface GameFactoryProps extends GameProps {
@@ -104,6 +119,18 @@ export const GameFactory: React.FC<GameFactoryProps> = ({ gameType, ...props }) 
     case "SHADOW_MATCH":     return <ShadowMatchGame     {...props} />;
     case "WARP_SPEED":       return <WarpSpeedGame       {...props} />;
     case "MIND_THE_GAP":     return <MindTheGapGame      {...props} />;
+    case "PARTICLE_PAINTER": return <ParticlePainterGame {...props} />;
+    case "CHAIN_REACTION_PART_TWO": return <ChainReactionGamePartTwo {...props} />;
+    case "FREQUENCY_SURFER": return <FrequencySurferGame {...props} />;
+    case "HEIST_LASER":      return <HeistLaserGame      {...props} />;
+    case "BLACK_HOLE":        return <BlackHoleGame        {...props} />;
+    case "PIXEL_STORM":       return <PixelStormGame       {...props} />;
+    case "PLASMA_SNAKE":      return <PlasmaSnakeGame      {...props} />;
+    case "MIND_MELD":         return <MindMeldGame         {...props} />;
+    case "NEON_PINBALL":      return <NeonPinballGame       {...props} />;
+    case "TIME_FREEZE":       return <TimeFreezeGame        {...props} />;
+    case "ECHO_CHAMBER":      return <EchoChamberGame       {...props} />;
+    case "QUANTUM_COLLAPSE":  return <QuantumCollapseGame   {...props} />;
     default:
       return <ClickHuntGame {...props} />;
   }
@@ -120,5 +147,7 @@ export {
   FrequencyMatchGame,IceSlideGame,   SonarSweepGame,   AuctionBlitzGame,
   LaserGridGame,    SequenceMemoryGame, VaultCrackerGame, 
   NeonTyperaceGame, OrbitSlingshotGame, ColorFloodGame, 
-  PulseCatcherGame, ShadowMatchGame, WarpSpeedGame, MindTheGapGame
+  PulseCatcherGame, ShadowMatchGame, WarpSpeedGame, MindTheGapGame,
+  ParticlePainterGame, FrequencySurferGame, HeistLaserGame, ChainReactionGamePartTwo,
+  BlackHoleGame, PixelStormGame, PlasmaSnakeGame, MindMeldGame,
 };

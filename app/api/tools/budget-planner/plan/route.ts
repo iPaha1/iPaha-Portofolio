@@ -20,9 +20,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 4000; // Adjust based on expected response length and model pricing
 export interface ExpenseItem {
   id:       string;
   label:    string;
@@ -212,6 +216,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Timeframe must be at least 1 day" }, { status: 400 });
     }
 
+      // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+      const gate = await tokenGate(req, TOKEN_COST, { toolName: "Budget Survival Planner" });
+      console.log(`[budget-planner/plan] Token gate result:`, gate);
+      if (!gate.ok) return gate.response; // sends 402 JSON to client
+      console.log(`[budget-planner/plan] Token gate passed for user ${gate.dbUserId}, proceeding with budget plan generation.`);
+
     const message = await anthropic.messages.create({
       model:      "claude-sonnet-4-20250514",
       max_tokens: 4000,
@@ -228,6 +238,11 @@ export async function POST(req: NextRequest) {
       if (!match) return NextResponse.json({ error: "Plan generation failed — invalid response" }, { status: 500 });
       plan = JSON.parse(match[0]);
     }
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "budget-planner/plan", { ...body, userId: gate.dbUserId });
+    console.log(`[budget-planner/plan] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for budget plan generation.`);
+
 
     return NextResponse.json({ ok: true, plan });
   } catch (err: any) {

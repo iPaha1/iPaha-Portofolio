@@ -10,8 +10,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 4000; // Adjust based on expected response length and model pricing
 
 const BUDGET_LABEL: Record<string, string> = {
   low:    "£50–£100 (keep it fun and affordable — lots of DIY ideas)",
@@ -38,6 +44,37 @@ export async function POST(req: NextRequest) {
     if (!childName?.trim() || !theme?.trim()) {
       return NextResponse.json({ error: "childName and theme are required" }, { status: 400 });
     }
+
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+        const gate = await tokenGate(req, TOKEN_COST, { toolName: "Birthday Planner" });
+    console.log(`[birthday-planner/generate] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[birthday-planner/generate] Token gate passed for user ${gate.dbUserId}, proceeding with plan generation.`);
+
+    // if (isNaN(childAge) || childAge < 1 || childAge > 18) {
+    //   return NextResponse.json({ error: "childAge must be a number between 1 and 18" }, { status: 400 });
+    // }
+    // if (isNaN(numKids) || numKids < 1 || numKids > 50) {
+    //   return NextResponse.json({ error: "numKids must be a number between 1 and 50" }, { status: 400 });
+    // }
+    // if (budgetAmount && (isNaN(budgetAmount) || budgetAmount < 10)) {
+    //   return NextResponse.json({ error: "budgetAmount must be a number greater than 10" }, { status: 400 });
+    // }
+    // if (!["low", "medium", "high"].includes(budgetRange)) {
+    //   return NextResponse.json({ error: "budgetRange must be one of low, medium, high" }, { status: 400 });
+    // }
+    // if (typeof indoor !== "boolean") {
+    //   return NextResponse.json({ error: "indoor must be a boolean" }, { status: 400 });
+    // }
+    // if (restrictions && !Array.isArray(restrictions)) {
+    //   return NextResponse.json({ error: "restrictions must be an array of strings" }, { status: 400 });
+    // }
+    // if (specialNotes && typeof specialNotes !== "string") {
+    //   return NextResponse.json({ error: "specialNotes must be a string" }, { status: 400 });
+    // }
+    // if (!ageGroup.match(/^\d{1,2}-\d{1,2}$/)) {
+    //   return NextResponse.json({ error: "ageGroup must be in format 'X-Y' (e.g. '6-8')" }, { status: 400 });
+    // }
 
     const effectiveTheme = customTheme?.trim() || theme;
     const locationStr    = city ? `${city}, ${country}` : country;
@@ -182,6 +219,11 @@ RULES:
       try { plan = JSON.parse(match[0]); }
       catch { return NextResponse.json({ error: "Could not parse plan — please try again" }, { status: 500 }); }
     }
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+        await deductTokens(gate.dbUserId, TOKEN_COST, "birthday-planner/generate", { ...body, userId: gate.dbUserId });
+    console.log(`[birthday-planner/generate] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for plan generation.`);
+    
 
     return NextResponse.json({ ok: true, plan });
   } catch (err: any) {

@@ -9,11 +9,23 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 2000; // Adjust based on expected response length and model pricing
+
 export async function POST(req: NextRequest) {
   try {
+
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+      const gate = await tokenGate(req, TOKEN_COST, { toolName: "QR Code AI Suggest" });
+    console.log(`[qr/ai-suggest] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[qr/ai-suggest] Token gate passed for user ${gate.dbUserId}, proceeding with AI suggestion.`);
+
     const { prompt, type = "url", purpose = "" } = await req.json();
 
     const userIntent = prompt || purpose || type;
@@ -59,6 +71,10 @@ Design principles:
       const match = clean.match(/\{[\s\S]+\}/);
       suggestion  = match ? JSON.parse(match[0]) : {};
     }
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+        await deductTokens(gate.dbUserId, TOKEN_COST, "qr/ai-suggest", { prompt, type, purpose, userId: gate.dbUserId });
+    console.log(`[qr/ai-suggest] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for AI suggestion.`);
 
     return NextResponse.json({ ok: true, suggestion });
   } catch (err: any) {

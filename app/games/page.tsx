@@ -20,7 +20,9 @@ const GAME_NAMES = [
   "Pixel Paint", "Signal Chain", "Rhythm Pulse", "Star Connect", "Precision Stop",
   "Chain Reaction", "Mirror Painter", "Word Hunt", "Neon Trail", "Frequency Match",
   "Ice Slide", "Sonar Sweep", "Auction Blitz", "Laser Grid", "Sequence Memory", 
-  "Vault Cracker", "Neon Typerace",
+  "Vault Cracker", "Neon Typerace", "Orbit Slingshot", "Color Flood", "Pulse Catcher", "Shadow Match",
+  "Warp Speed", "Mind The Gap", "Particle Painter", "Chain Reaction Part Two", "Frequency Surfer", "Heist Laser",
+  "Black Hole", "Pixel Storm", "Plasma Snake", "Mind Meld",
 ];
 
 const GAME_DESCRIPTIONS: Record<string, string> = {
@@ -62,13 +64,21 @@ const GAME_DESCRIPTIONS: Record<string, string> = {
   "Shadow Match":     "Match the shadows to the objects — test your memory and attention to detail!",
   "Warp Speed":       "Navigate through warp zones at high speed — test your reflexes and timing!",
   "Mind The Gap":     "Jump through gaps in the neon platform — test your timing and precision!",
+  "Particle Painter": "Paint with particles to create beautiful designs. The more creative, the higher your score!",
+  "Chain Reaction Part Two": "Trigger even bigger chain reactions for massive points. Plan your moves carefully!",
+  "Frequency Surfer": "Surf the frequency waves. The longer you surf, the higher your score!",
+  "Heist Laser": "Navigate the laser maze without breaking the beams. The faster you escape, the higher your score!",
+  "Black Hole": "Avoid the black hole's pull while collecting points. The longer you survive, the higher your score!",
+  "Pixel Storm": "Survive the pixel storm while collecting points. The longer you survive, the higher your score!",
+  "Plasma Snake": "Control the plasma snake to collect points. The longer you survive, the higher your score!",
+  "Mind Meld": "Connect your mind to the collective consciousness. The longer you stay connected, the higher your score!",
 };
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
 export const metadata: Metadata = {
-  title: "Game Center — 30 Browser Games · Earn Tokens | Isaac Paha",
+  title: "Game Center — 50+ Browser Games · Earn Tokens | Isaac Paha",
   description:
-    "Play 30 unique browser mini-games on isaacpaha.com — reaction tests, memory challenges, logic puzzles, rhythm games, word hunts, physics games and more. Earn tokens, climb the leaderboard, and unlock rewards. No download required.",
+    "Play 50+ unique browser mini-games on isaacpaha.com — reaction tests, memory challenges, logic puzzles, rhythm games, word hunts, physics games and more. Earn tokens, climb the leaderboard, and unlock rewards. No download required.",
 
   openGraph: {
     title: "Game Center — 50+ Browser Games | Isaac Paha",
@@ -146,9 +156,9 @@ const structuredData = {
   "@graph": [
     {
       "@type": "WebApplication",
-      "@id":   "https://www.isaacpaha.com/game#webapp",
+      "@id":   "https://www.isaacpaha.com/games#webapp",
       name:    "Isaac Paha Game Center",
-      url:     "https://www.isaacpaha.com/game",
+      url:     "https://www.isaacpaha.com/games",
       description:
         "A collection of 50+ unique browser mini-games. Earn tokens, compete on leaderboards, and unlock rewards.",
       applicationCategory: "GameApplication",
@@ -183,16 +193,16 @@ const structuredData = {
     // ItemList — one ListItem per game so Google can display each individually
     {
       "@type": "ItemList",
-      "@id":   "https://www.isaacpaha.com/game#gamelist",
+      "@id":   "https://www.isaacpaha.com/games#gamelist",
       name:    "50+ Mini-Games — Isaac Paha Game Center",
-      url:     "https://www.isaacpaha.com/game",
+      url:     "https://www.isaacpaha.com/games",
       numberOfItems: GAME_NAMES.length,
       itemListElement: GAME_NAMES.map((name, i) => ({
         "@type":    "ListItem",
         position:   i + 1,
         name,
         description: GAME_DESCRIPTIONS[name] ?? `Play ${name} in the Isaac Paha Game Center.`,
-        url:        `https://www.isaacpaha.com/game#${name.toLowerCase().replace(/\s+/g, "-")}`,
+        url:        `https://www.isaacpaha.com/games#${name.toLowerCase().replace(/\s+/g, "-")}`,
       })),
     },
 
@@ -201,7 +211,7 @@ const structuredData = {
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home",        item: "https://www.isaacpaha.com" },
-        { "@type": "ListItem", position: 2, name: "Game Center", item: "https://www.isaacpaha.com/game" },
+        { "@type": "ListItem", position: 2, name: "Game Center", item: "https://www.isaacpaha.com/games" },
       ],
     },
   ],

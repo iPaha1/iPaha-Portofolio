@@ -5,6 +5,7 @@
 
 import { BlogPreviewSection } from "@/components/_home/blog-preview-section";
 import Footer from "@/components/_home/footer";
+import { GameTeaserSection } from "@/components/_home/game-teaser-section";
 // import { CompaniesSection } from "@/components/_home/company-section";
 import { HeroSection } from "@/components/_home/hero";
 import Navbar from "@/components/_home/navbar";
@@ -48,6 +49,13 @@ export default async function HomePage() {
       {/* ── Products ──────────────────────── */}
       <SectionDivider />
       <ProductsSection />
+
+       {/* ── Game Teaser ───────────────────────────────────────────────── */}
+      {/*
+        Placed after Products and before Blog — visible, high-intent moment.
+        Users have seen what Isaac builds. Now they see a reason to stay and play.
+      */}
+      <GameTeaserSection />
 
       {/* ── Blog Preview ──────────────────── */}
       <SectionDivider />

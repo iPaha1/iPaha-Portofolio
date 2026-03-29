@@ -101,6 +101,19 @@ const GAMES: GameDef[] = [
   { type: "SHADOW_MATCH",     title: "Shadow Match",      emoji: "👤", description: "Match the shadows to the objects — test your memory!", category: "memory", difficulty: 3, duration: 45, baseReward: 8,  accent: "#e879f9", tip: "Study the shapes carefully during reveal. Use process of elimination." },
   { type: "WARP_SPEED",       title: "Warp Speed",        emoji: "🌀", description: "Navigate through warp zones at high speed — test your reflexes!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#10b981", tip: "Time your moves carefully. The zones shift quickly." },
   { type: "MIND_THE_GAP",     title: "Mind The Gap",      emoji: "🤔", description: "Jump through gaps in the neon platform — test your timing!", category: "skill",  difficulty: 3, duration: 30, baseReward: 9,  accent: "#f59e0b", tip: "Anticipate the gaps. Timing is everything." },
+  { type: "PARTICLE_PAINTER",     title: "Particle Painter",   emoji: "🎨", description: "Paint with particles to create beautiful designs. The more creative, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#8b5cf6", tip: "Experiment with different patterns. Creativity scores big!" },
+    { type: "CHAIN_REACTION_PART_TWO",     title: "Chain Reaction Part Two",   emoji: "💥", description: "Trigger even bigger chain reactions for massive points. Plan your moves carefully!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#a855f7", tip: "Look for clusters that can trigger multiple cascades." },
+    { type: "FREQUENCY_SURFER",     title: "Frequency Surfer",   emoji: "📡", description: "Surf the frequency waves. The longer you surf, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#06b6d4", tip: "Stay in the sweet spot of the wave for maximum points." },
+    { type: "HEIST_LASER",     title: "Heist Laser",   emoji: "🔫", description: "Navigate the laser maze without breaking the beams. The faster you escape, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#ef4444", tip: "Lasers have a pattern. Study it, then time your moves." },
+    { type: "BLACK_HOLE",     title: "Black Hole",   emoji: "🕳️", description: "Avoid the black hole's pull while collecting points. The longer you survive, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#ec4899", tip: "The black hole's pull gets stronger over time. Keep moving!" },
+    { type: "PIXEL_STORM",     title: "Pixel Storm",   emoji: "🌪️", description: "Survive the pixel storm while collecting points. The longer you survive, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#14b8a6", tip: "The pixel storm's intensity increases over time. Stay alert!" },
+    { type: "PLASMA_SNAKE",     title: "Plasma Snake",   emoji: "🐍", description: "Control the plasma snake to collect points. The longer you survive, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#f97316", tip: "The plasma snake grows longer as you collect points. Avoid colliding with yourself!" },
+    { type: "MIND_MELD",     title: "Mind Meld",   emoji: "🧠", description: "Connect your mind to the collective consciousness. The longer you stay connected, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#8b5cf6", tip: "Focus your thoughts and align with the group. The more synchronized, the higher your score!" },
+      { type: "NEON_PINBALL",     title: "Neon Pinball",   emoji: "🕹️", description: "Keep the neon ball in play and hit the targets. The longer you play, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#22c55e", tip: "Hit the bumpers and targets to rack up points. Keep the ball in play!" },
+      { type: "TIME_FREEZE",     title: "Time Freeze",   emoji: "⏰", description: "Freeze time to navigate through obstacles. The more you freeze, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#8b5cf6", tip: "Use your time freeze strategically to avoid tough sections. The more you freeze, the higher your score!" },
+      { type: "ECHO_CHAMBER",     title: "Echo Chamber",   emoji: "🔊", description: "Navigate the echo chamber by listening to the sounds. The better you navigate, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#3b82f6", tip: "Listen carefully to the echoes to find your way through the chamber. The better you navigate, the higher your score!" },
+      { type: "QUANTUM_COLLAPSE",     title: "Quantum Collapse",   emoji: "🔬", description: "Collapse the quantum states to your advantage. The better you collapse, the higher your score!", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#ef4444", tip: "Manipulate the quantum states to create powerful combinations. The better you collapse states, the higher your score!" },
+
 
 
   // ── Logic ───────────────────────────────────────────────────────────────────
@@ -1015,7 +1028,7 @@ export function GameClient() {
                     ? userStats
                       ? `${userStats.stats.totalGames} games played · ${userStats.streak.current}d streak`
                       : "Loading your stats…"
-                    : "30 games. Infinite tokens. One leaderboard."}
+                    : `${totalGames}+ games. Infinite tokens. One leaderboard.`}
                 </h2>
                 {!isSignedIn && (
                   <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.35)" }}>
@@ -1168,6 +1181,52 @@ export function GameClient() {
               </div>
             </div>
           </motion.div>
+
+          {/* Token Rush Banner */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+            className="mt-6 rounded-xs overflow-hidden"
+            style={{ border: "1px solid rgba(245,158,11,0.25)" }}>
+            <div className="h-[2px]" style={{ background: "linear-gradient(90deg, #f59e0b, #f97316 50%, #ec4899 100%)" }} />
+            <div className="px-5 py-4"
+              style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.07) 0%, rgba(249,115,22,0.04) 50%, rgba(236,72,153,0.04) 100%)" }}>
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xs flex items-center justify-center flex-shrink-0"
+                    style={{ background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.3)" }}>
+                    <Zap className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="font-black text-white text-sm" style={{ letterSpacing: "-0.02em" }}>Token Rush</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      Daily challenge · Top 100 leaderboard · Exclusive rewards
+                    </p>
+                  </div>
+                </div>
+                <a href="/games/token-rush"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xs text-xs font-black text-white"
+                  style={{ background: "linear-gradient(135deg,#f59e0b,#f97316)", boxShadow: "0 0 16px rgba(245,158,11,0.4)" }}>
+                  <Zap className="w-3.5 h-3.5" /> Play Now
+                </a>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { emoji: "⏰", name: "Beat the Clock", accent: "#ef4444" },
+                  { emoji: "🎯", name: "Target Master",   accent: "#f97316" },
+                  { emoji: "🧠", name: "Brain Teaser",    accent: "#ec4899" },
+                  { emoji: "🎲", name: "Lucky Roll",      accent: "#6366f1" },
+                  { emoji: "⚡", name: "Speed Runner",     accent: "#10b981" },
+                ].map(g => (
+                  <a key={g.name} href="/games/token-rush"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xs text-[11px] font-bold transition-all"
+                    style={{ background: `${g.accent}12`, border: `1px solid ${g.accent}30`, color: "rgba(255,255,255,0.7)" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${g.accent}22`; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = `${g.accent}12`; }}>
+                    <span>{g.emoji}</span>{g.name}
+                  </a>
+                ))}
+              </div>
+            </div>  
+            </motion.div>
         </div>
       </main>
 

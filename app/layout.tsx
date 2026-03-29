@@ -21,6 +21,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { syncUser } from "@/lib/auth/sync-user";
 import { GameProvider } from "@/components/(gamification)/game-provider";
 import { GameWidget } from "@/components/(gamification)/game-widget";
+import { ChallengeBroadcast } from "./games/token-rush/_token-rush/challenge-broadcast";
+import { BannedUserBanner } from "@/components/global/banned-user-banner";
 
 // ── Font ─────────────────────────────────────────────────────────────────────
 const sora = Sora({
@@ -339,6 +341,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <body className={`${sora.className} antialiased bg-[#08080f] text-white`}>
           <GameProvider>
             <GameWidget />
+            <ChallengeBroadcast /> 
+            <BannedUserBanner />
             <main id="main-content" role="main">
               {children}
             </main>

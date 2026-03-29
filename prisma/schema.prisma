@@ -50,6 +50,9 @@ model User {
   role              UserRole  @default(READER)
   isActive          Boolean   @default(true)
   isBanned          Boolean   @default(false)
+  isGameTermsAccepted Boolean   @default(false)
+  isGameBanned         Boolean   @default(false)
+  isToolsTermsAccepted Boolean   @default(false)
   bannedAt          DateTime?
   banReason         String?
 
@@ -158,6 +161,10 @@ model User {
   referralsAsReferrer   Referral[]          @relation("Referrer")
   referralsAsReferred   Referral?           @relation("Referred")
   referralCode          ReferralCode?
+
+  // Token Rush Challenge relations
+  rushChallengesCreated     TokenRushChallenge[] @relation("ChallengeCreator")
+  tokenRushCashouts         TokenRushCashout[]
 
 
   @@map("users")

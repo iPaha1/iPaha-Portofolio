@@ -9,8 +9,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 2000; // Adjust based on expected response length and model pricing
 
 const STYLE_PROMPTS = {
   professional: {
@@ -57,6 +63,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "CV text required" }, { status: 400 });
     }
 
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+        const gate = await tokenGate(req, TOKEN_COST, { toolName: "CV Cover Letter Generator" });
+    console.log(`[cv-analyser/cover-letter] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[cv-analyser/cover-letter] Token gate passed for user ${gate.dbUserId}, proceeding with cover letter generation.`);
+
     const cfg = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] ?? STYLE_PROMPTS.professional;
 
     const prompt = `You are an expert career coach and professional writer. Write a compelling cover letter for this candidate.
@@ -90,6 +102,14 @@ Start directly with the opening line of the letter.`;
 
     const coverLetter = message.content[0].type === "text" ? message.content[0].text.trim() : "";
 
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "cv-analyser/cover-letter", {
+      messageLength: prompt.length,
+      cvLength: cvText.length,
+      jobDescriptionLength: jobDescription.length,
+    });
+    console.log(`[cv-analyser/cover-letter] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for cover letter generation.`);
+    
     return NextResponse.json({ ok: true, coverLetter });
   } catch (err: any) {
     console.error("[cv-analyser/cover-letter]", err);

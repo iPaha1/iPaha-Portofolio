@@ -506,6 +506,41 @@ enum GameType {
   SHADOW_MATCH
   WARP_SPEED
   MIND_THE_GAP
+  PARTICLE_PAINTER
+  CHAIN_REACTION_PART_TWO
+  FREQUENCY_SURFER
+  HEIST_LASER
+  BLACK_HOLE
+  PIXEL_STORM
+  PLASMA_SNAKE
+  MIND_MELD
+  NEON_PINBALL
+  TIME_FREEZE
+  // ECHO_CHAMBER
+  QUANTUM_COLLAPSE
+
+  // Token Rush Game Types
+  NEURAL_DOMINANCE
+  PHANTOM_GRID
+  ECHO_CHAMBER
+  CIPHER_DUEL
+  GRAVITY_MIND
+  MIRAGE_AUCTION
+  TEMPORAL_DUEL
+  MIND_MIRROR
+  PRESSURE_COOKER
+  PHANTOM_WORD
+  RORSCHACH_DUEL
+  SIGNAL_THIEF
+  COLOUR_COURT
+  LAST_WORD
+  FREQUENCY
+  DEAD_RECKONING
+  CONTRABAND
+  PULSE
+  CARTOGRAPHER
+  VOLTAGE
+
 }
 
 enum TriggerType {
@@ -527,6 +562,10 @@ enum TransactionType {
   ADMIN_ADJUST
   SPEND
   PURCHASE
+
+  RUSH_WAGER    // token deducted when creating or accepting a challenge
+  RUSH_WIN      // net prize credited to winner
+  RUSH_REFUND   // wager returned if challenge expires or is cancelled
 }
 
 // ─── New Enums ───────────────────────────────────────────────────────────────

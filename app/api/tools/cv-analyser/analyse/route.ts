@@ -15,8 +15,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 2000; // Adjust based on expected response length and model pricing
 
 const ROLE_MODES: Record<string, string> = {
   tech:       "software engineering, data science, cybersecurity, or product management",
@@ -146,6 +152,20 @@ export async function POST(req: NextRequest) {
       if (!jsonMatch) return NextResponse.json({ error: "Analysis failed — invalid JSON from AI" }, { status: 500 });
       analysis = JSON.parse(jsonMatch[0]);
     }
+
+    // ── ② TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "CV Analyser" });
+    console.log(`[cv-analyser/analyse] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[cv-analyser/analyse] Token gate passed for user ${gate.dbUserId} — proceeding with analysis`);
+
+    // ── ③ DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "cv-analyser/analyse", {
+      messageLength: cvText.length,
+      jobDescriptionLength: jobDescription.length,
+    });
+    console.log(`[cv-analyser/analyse] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for analysis.`);
+
 
     return NextResponse.json({ ok: true, analysis });
   } catch (err: any) {

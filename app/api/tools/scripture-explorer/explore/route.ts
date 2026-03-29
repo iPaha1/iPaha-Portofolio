@@ -15,8 +15,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1500; // Adjust based on expected response length and model pricing
 
 // ─── IMMUTABLE SYSTEM PROMPT ──────────────────────────────────────────────────
 // This is not configurable. It is the ethical backbone of the tool.
@@ -173,6 +179,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Please enter a topic or question to explore" }, { status: 400 });
     }
 
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Scripture Explorer" });
+    console.log(`[scripture-explorer/explore] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[scripture-explorer/explore] Token gate passed for user ${gate.dbUserId} — proceeding with exploration`);
+
+
     const cleanQuery = query.trim().slice(0, 500); // cap at 500 chars
 
     let prompt: string;
@@ -204,6 +217,14 @@ export async function POST(req: NextRequest) {
     if (!result.disclaimer) {
       result.disclaimer = "This exploration is an educational summary for comparative study. It does not represent all interpretations within each tradition and should not be taken as theological authority.";
     }
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "scripture-explorer/explore", {
+      query,
+      traditions,
+      mode,
+    });
+    console.log(`[scripture-explorer/explore] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId}`);
 
     return NextResponse.json({ ok: true, result, mode });
   } catch (err: any) {

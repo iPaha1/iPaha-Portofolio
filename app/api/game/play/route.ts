@@ -44,7 +44,19 @@ const GAME_CONFIG: Record<string, { base: number; duration: number; title: strin
     PULSE_CATCHER:   { base: 9,  duration: 30, title: "⚡ Pulse Catcher",     description: "Catch the pulses as they hit the ring — feel the rhythm!", category: "skill"   },
     SHADOW_MATCH:    { base: 8,  duration: 45, title: "👤 Shadow Match",      description: "Match the shadows to the objects — test your memory!", category: "memory"  },
     WARP_SPEED:      { base: 10, duration: 60, title: "🌀 Warp Speed",        description: "Navigate through warp zones at high speed — test your reflexes!", category: "skill"   },
-    MIND_THE_GAP:    { base: 9,  duration: 30, title: "🤔 Mind The Gap",      description: "Jump through gaps in the neon platform — test your timing!", category: "skill"   }
+    MIND_THE_GAP:    { base: 9,  duration: 30, title: "🤔 Mind The Gap",      description: "Jump through gaps in the neon platform — test your timing!", category: "skill"   },
+    PARTICLE_PAINTER: { base: 10, duration: 60, title: "🎨 Particle Painter", description: "Paint with particles to create beautiful designs. The more creative, the higher your score!", category: "skill"   },
+    CHAIN_REACTION_PART_TWO: { base: 10, duration: 60, title: "💥 Chain Reaction Part Two", description: "Trigger even bigger chain reactions for massive points. Plan your moves carefully!", category: "skill"   },
+    FREQUENCY_SURFER: { base: 10, duration: 60, title: "📡 Frequency Surfer", description: "Surf the frequency waves. The longer you surf, the higher your score!", category: "skill"   },
+    HEIST_LASER: { base: 10, duration: 60, title: "🔫 Heist Laser", description: "Navigate the laser maze without breaking the beams. The faster you escape, the higher your score!", category: "skill"   },
+    BLACK_HOLE: { base: 10, duration: 60, title: "🕳️ Black Hole", description: "Avoid the black hole's pull while collecting points. The longer you survive, the higher your score!", category: "skill"   },
+    PIXEL_STORM: { base: 10, duration: 60, title: "🎨 Pixel Storm", description: "Survive the pixel storm while collecting points. The longer you survive, the higher your score!", category: "skill"   },
+    PLASMA_SNAKE: { base: 10, duration: 60, title: "⚡ Plasma Snake", description: "Control the plasma snake to collect points. The longer you survive, the higher your score!", category: "skill"   },
+    MIND_MELD: { base: 10, duration: 60, title: "🧠 Mind Meld", description: "Meld your mind with the game to predict the next move. The better you predict, the higher your score!", category: "skill"   },
+    NEON_PINBALL: { base: 9,  duration: 35, title: "🌈 Neon Pinball", description: "Keep the neon ball in play and hit the targets. The longer you play, the higher your score!", category: "skill"   },
+    TIME_FREEZE: { base: 10, duration: 60, title: "⏰ Time Freeze", description: "Freeze time to navigate through obstacles. The more you freeze, the higher your score!", category: "skill"   },
+    ECHO_CHAMBER: { base: 10, duration: 60, title: "🔊 Echo Chamber", description: "Navigate the echo chamber by listening to the sounds. The better you navigate, the higher your score!", category: "skill"   },
+    QUANTUM_COLLAPSE: { base: 10, duration: 60, title: "🔬 Quantum Collapse", description: "Collapse the quantum states to your advantage. The better you collapse, the higher your score!", category: "skill"   },
     // NEON_TYPERACE:   { base: 9,  duration: 30, title: "霓虹打字赛车",    description: "快速打字以加速你的霓虹赛车！",         category: "skill",  difficulty: 3, duration: 30, baseReward: 9,  accent: "#8b5cf6", tip: "更快的打字 = 更快的赛车。注意红色的单词！" },
     // ORBIT_SLINGSHOT: { base: 10, duration: 60, title: "轨道弹弓",   emoji: "🪐", description: "用弹弓发射宇宙飞船绕过行星到达目标。", category: "skill",  difficulty: 3, duration: 60, baseReward: 10, accent: "#6366f1", tip: "规划一条绕过行星引力井的路线。" }
 

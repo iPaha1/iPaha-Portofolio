@@ -8,8 +8,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1500; // Adjust based on expected response length and model pricing
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +24,13 @@ export async function POST(req: NextRequest) {
     if (!content?.trim()) {
       return NextResponse.json({ error: "content required" }, { status: 400 });
     }
+
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+        const gate = await tokenGate(req, TOKEN_COST, { toolName: "CV Rewrite" });
+    console.log(`[cv-analyser/rewrite] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[cv-analyser/rewrite] Token gate passed for user ${gate.dbUserId}, proceeding with rewrite.`);
+
 
     const prompts: Record<string, string> = {
       improve: `You are an expert CV writer. Rewrite this ${section} section to be stronger, more impactful, and professional.
@@ -73,6 +86,15 @@ Return ONLY the tailored CV text.`,
     });
 
     const result = message.content[0].type === "text" ? message.content[0].text : "";
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "cv-analyser/rewrite", {
+      messageLength: prompt.length,
+      contentLength: content.length,
+      jobDescriptionLength: jobDescription?.length ?? 0,
+    });
+    console.log(`[cv-analyser/rewrite] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for CV rewrite.`);
+    
     return NextResponse.json({ ok: true, result });
   } catch (err: any) {
     console.error("[cv-analyser/rewrite]", err);

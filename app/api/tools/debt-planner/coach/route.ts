@@ -10,9 +10,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
 import { auth }                      from "@clerk/nextjs/server";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1500; // Adjust based on expected response length and model pricing
+
+// ─── IMMUTABLE SYSTEM PROMPT ──────────────────────────────────────────────────
+// This is the ethical backbone of the tool. It cannot be changed without a code update.
 const SYSTEM_PROMPT = `You are a warm, practical AI financial planning coach. You help people manage debt, budget more effectively, and build confidence around their finances.
 
 Your personality:
@@ -45,6 +53,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "message required" }, { status: 400 });
     }
 
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+        const gate = await tokenGate(req, TOKEN_COST, { toolName: "Debt Recovery Coach" });
+    console.log(`[debt-planner/coach] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[debt-planner/coach] Token gate passed for user ${gate.dbUserId} — proceeding with coaching`);
+
     // Build messages array - include financial context as first user/assistant exchange
     const messages: { role: "user" | "assistant"; content: string }[] = [];
 
@@ -72,6 +86,13 @@ export async function POST(req: NextRequest) {
       system:     SYSTEM_PROMPT,
       messages,
     });
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "debt-planner/coach", {
+      messageLength: message.length,
+      conversationLength: history.length,
+    });
+    console.log(`[debt-planner/coach] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for coaching.`);
 
     const reply = response.content[0].type === "text" ? response.content[0].text : "";
     return NextResponse.json({ ok: true, reply });

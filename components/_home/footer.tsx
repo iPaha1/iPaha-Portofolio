@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Github, Linkedin, Twitter, Mail, ArrowUpRight, Pen } from "lucide-react";
 import { COMPANIES, PERSONAL } from "@/lib/data/site-data";
-import Logo from "../global/logo";
+import LogoFooter from "../global/logo-footer";
 
 const FOOTER_LINKS = {
   Explore: [
@@ -54,7 +54,7 @@ export const Footer = () => (
               Isaac<span className="text-amber-400">.</span>
             </span>
           </Link> */}
-          <Logo />
+          <LogoFooter />
           <p className="text-sm text-white/50 leading-relaxed mb-6">
             {PERSONAL.tagline}
           </p>

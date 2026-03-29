@@ -1,3 +1,11 @@
+// =============================================================================
+// Isaac Paha - https://www.isaacpaha.com 
+// Multiplayer Room Ready Toggle API Route
+// POST /api/multiplayer/rooms/[code]/ready
+// Toggles the ready state of the current player and checks for auto-start conditions
+// =============================================================================
+
+
 import { prismadb } from "@/lib/db";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";

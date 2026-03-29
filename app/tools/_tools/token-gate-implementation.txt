@@ -1,0 +1,353 @@
+# Token Gate Implementation Guide
+## isaacpaha.com — How to add token checking to every tool
+
+This guide shows you exactly what to add/change in each tool. The token system is already built — you just need to wire it in. **Each tool requires changes to 3 files.**
+
+---
+
+## The 3-file pattern (same for every tool)
+
+```
+app/api/tools/[tool-slug]/route.ts          ← server: 2 changes
+app/tools/[tool-slug]/_components/[tool]-tool.tsx   ← client: 1 prop + 1 if block  
+app/tools/[tool-slug]/_components/[tool]-page.tsx   ← page shell: 3 additions
+```
+
+---
+
+## FILE 1: The API route (server side)
+
+Open your existing route. Make **3 additions**. Nothing else changes.
+
+### Step 1 — Add imports at the top
+
+```typescript
+import { tokenGate }    from "@/lib/token-gate";
+import { deductTokens } from "@/lib/token-deduct";
+```
+
+### Step 2 — Set the token cost
+
+Add this constant just before the `export async function POST`:
+
+```typescript
+const TOKEN_COST = 200; // ← match the tokenCost in tools-data.ts for this tool
+```
+
+### Step 3 — Add the gate check (first thing in the handler, before ANY AI work)
+
+```typescript
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    // ... your existing input parsing ...
+
+    // ── ADD THIS BLOCK — check tokens before AI runs ──────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Your Tool Name" });
+    if (!gate.ok) return gate.response; // sends 402 to client — stop here
+    // ─────────────────────────────────────────────────────────────────────
+
+    // ... rest of your existing AI logic, unchanged ...
+```
+
+### Step 4 — Deduct after the AI responds successfully
+
+Find the `return NextResponse.json(...)` that sends the successful result back. Add the deduct call immediately BEFORE it:
+
+```typescript
+    // ── ADD THIS LINE — deduct after success ─────────────────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "your-tool-slug/action");
+    // ─────────────────────────────────────────────────────────────────────
+
+    return NextResponse.json({ ok: true, result }); // ← your existing return
+```
+
+### Complete example — AI CV Analyser (tokenCost: 500)
+
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { tokenGate }    from "@/lib/token-gate";   // ← ADD
+import { deductTokens } from "@/lib/token-deduct"; // ← ADD
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+const TOKEN_COST = 500; // ← ADD (matches tools-data.ts tokenCost)
+
+export async function POST(req: NextRequest) {
+  try {
+    const { cv, jobDescription } = await req.json();
+
+    // ── ADD: gate check ───────────────────────────────────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "AI CV Analyser" });
+    if (!gate.ok) return gate.response;
+    // ─────────────────────────────────────────────────────────────────────
+
+    // ... your existing CV analysis AI call, unchanged ...
+    const result = await anthropic.messages.create({ ... });
+
+    // ── ADD: deduct after success ─────────────────────────────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "ai-cv-analyser/analyse");
+    // ─────────────────────────────────────────────────────────────────────
+
+    return NextResponse.json({ ok: true, result });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+```
+
+### Tools with multiple AI endpoints
+
+Some tools have multiple API routes (e.g. chemistry-engine has `/explain` and `/experiments`). Apply the same 3-step pattern to **each route separately** with its own token cost:
+
+```typescript
+// chemistry-engine/explain/route.ts — full mode: 50 tokens
+// chemistry-engine/explain/route.ts — simpler mode: 10 tokens
+// chemistry-engine/experiments/route.ts — practice: 20 tokens
+// chemistry-engine/experiments/route.ts — theory: 20 tokens
+```
+
+If you want different costs per mode, define the cost inside the handler based on the mode param:
+
+```typescript
+const TOKEN_COST: Record<string, number> = {
+  full:    50,
+  simpler: 10,
+  deeper:  20,
+  tutor:   15,
+};
+
+// In handler:
+const { mode = "full" } = body;
+const cost = TOKEN_COST[mode] ?? TOKEN_COST.full;
+
+const gate = await tokenGate(req, cost, { toolName: "Chemistry Engine" });
+if (!gate.ok) return gate.response;
+
+// ... AI call ...
+
+await deductTokens(gate.dbUserId, cost, "chemistry-engine/explain", { mode });
+```
+
+---
+
+## FILE 2: The Tool component (client side)
+
+Your tool component is the inner UI component — the one with the form, the AI call, and the results.
+
+### Step 1 — Add the prop interface
+
+Find your existing props interface (or add one). Add `onInsufficientTokens`:
+
+```typescript
+// ADD this interface
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+// ADD onInsufficientTokens to your existing props (or create props if you have none)
+interface YourToolProps {
+  // ... your existing props ...
+  onInsufficientTokens?: (info: TokenGateInfo) => void; // ← ADD
+}
+
+export function YourTool({ /* existing props */, onInsufficientTokens }: YourToolProps) {
+```
+
+### Step 2 — Handle the 402 in your fetch call
+
+Find where you call `fetch(...)` to hit your API route. Add a 402 check immediately after the response arrives, **before** you call `res.json()`:
+
+```typescript
+const res = await fetch("/api/tools/your-tool/your-action", {
+  method:  "POST",
+  headers: { "Content-Type": "application/json" },
+  body:    JSON.stringify({ ...yourPayload }),
+});
+
+// ── ADD THIS BLOCK ────────────────────────────────────────────────────────
+if (res.status === 402) {
+  const data = await res.json();
+  onInsufficientTokens?.({
+    required: data.required ?? 0,
+    balance:  data.balance  ?? 0,
+    toolName: data.toolName ?? "Your Tool Name",
+  });
+  setLoading(false);
+  return; // stop — modal is shown by parent
+}
+// ─────────────────────────────────────────────────────────────────────────
+
+// ... your existing res.ok check and data handling, unchanged ...
+const data = await res.json();
+```
+
+### If your tool has multiple fetch calls (e.g. a "generate more" button, a tutor mode)
+
+Add the same 402 block to every fetch call:
+
+```typescript
+// Main analysis
+const res1 = await fetch("/api/tools/chemistry-engine/explain", { ... });
+if (res1.status === 402) {
+  const d = await res1.json();
+  onInsufficientTokens?.({ required: d.required, balance: d.balance, toolName: d.toolName });
+  setLoading(false); return;
+}
+
+// Practice questions
+const res2 = await fetch("/api/tools/chemistry-engine/experiments", { ... });
+if (res2.status === 402) {
+  const d = await res2.json();
+  onInsufficientTokens?.({ required: d.required, balance: d.balance, toolName: d.toolName });
+  setPracticeLoading(false); return;
+}
+```
+
+---
+
+## FILE 3: The Page shell (client side)
+
+Your page shell is the outer component that wraps the tool — it has the hero header, tabs, sidebar, etc.
+
+### Step 1 — Add imports
+
+```typescript
+import { useRouter }               from "next/navigation";          // ← ADD (if not already imported)
+import { InsufficientTokensModal } from "@/components/(tokens)/insufficient-tokens-modal"; // ← ADD
+import { TokenGateInfo }           from "./{your-tool}-tool";       // ← ADD (from your tool component)
+```
+
+### Step 2 — Add state + router
+
+Inside your page component function, at the top with your other useState declarations:
+
+```typescript
+const router = useRouter(); // ← ADD
+
+// ← ADD this state
+const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
+```
+
+### Step 3 — Pass the prop to your tool
+
+Find where you render your inner tool component and add the prop:
+
+```typescript
+<YourToolComponent
+  // ... your existing props ...
+  onInsufficientTokens={(info) => setTokenModal(info)} // ← ADD
+/>
+```
+
+### Step 4 — Render the modal
+
+At the very bottom of your JSX (just before the closing `</div>` of the root element), add:
+
+```typescript
+{/* ── Token gate modal ── */}
+<InsufficientTokensModal
+  open={!!tokenModal}
+  onClose={() => setTokenModal(null)}
+  required={tokenModal?.required ?? 0}
+  balance={tokenModal?.balance   ?? 0}
+  toolName={tokenModal?.toolName ?? undefined}
+  onPlayGame={() => {
+    setTokenModal(null);
+    router.push("/game"); // sends user to game hub to earn tokens
+    // Or if you want to open the floating game overlay instead:
+    // triggerGame(true); // needs useGameContext() imported
+  }}
+/>
+```
+
+---
+
+## Token cost reference table
+
+Match these to your `tools-data.ts` `tokenCost` values:
+
+| Tool | Token Cost | Route slug |
+|------|-----------|------------|
+| AI CV Analyser | 500 | `ai-cv-analyser/analyse` |
+| Job Application Tracker | 10 | `job-tracker/action` |
+| Startup Idea Generator | 200 | `startup-idea-generator/generate` |
+| Africa Market Explorer | 300 | `africa-market-explorer/research` |
+| Learning Roadmap | 50 | `learning-roadmap/generate` |
+| Productivity Score | 100 | `productivity-score/analyse` |
+| QR Code Generator | 100 | `qr-code-generator/generate` |
+| Random Toolkit | 100 | `random-toolkit/generate` |
+| Smart Shopping List | 100 | `smart-shopping-list/ai-generate` |
+| Reading Time Calculator | 10 | `reading-time-calculator/analyse` |
+| Message Rewriter | 100 | `message-rewriter/rewrite` ✅ Done |
+| Debt Recovery Planner | 150 | `debt-recovery-planner/plan` |
+| Smart Budget Planner | 150 | `smart-budget-planner/plan` |
+| First Home Planner | 200 | `first-home-planner/plan` |
+| Scripture Explorer | 150 | `scripture-explorer/explore` |
+| Math Engine | 100 | `math-engine/explain` |
+| Physics Engine | 100 | `physics-engine/explain` |
+| Chemistry Engine | 50 (full) | `chemistry-engine/explain` |
+| Kids Birthday Planner | 150 | `kids-birthday-planner/plan` |
+
+---
+
+## Free tools (no token gate needed)
+
+Some tools in your data have `tokenCost: 10` but are essentially free/utility tools. For those, you can either:
+
+1. **Keep the gate at 10 tokens** — even a balance of 100 welcome tokens covers 10 rewrites, so it's basically free.
+2. **Skip the gate entirely** for truly free tools (like the Reading Time Calculator which does no AI). Just don't add `tokenGate()` to the route.
+
+For tools with 0 AI (purely client-side like the Random Toolkit), you don't need the gate at all.
+
+---
+
+## Checklist — one tool at a time
+
+```
+□ Open app/api/tools/[slug]/route.ts
+  □ Add import { tokenGate } from "@/lib/token-gate"
+  □ Add import { deductTokens } from "@/lib/token-deduct"  
+  □ Add const TOKEN_COST = X  (X = tokenCost from tools-data.ts)
+  □ Add gate check at top of handler
+  □ Add deductTokens() before return NextResponse.json(...)
+  □ Test: hit the route with 0 tokens → should get 402
+  □ Test: hit the route normally → should succeed and deduct
+
+□ Open app/tools/[slug]/_components/[slug]-tool.tsx
+  □ Add TokenGateInfo interface (or import from shared location)
+  □ Add onInsufficientTokens?: prop
+  □ Add 402 check in every fetch() call
+
+□ Open app/tools/[slug]/_components/[slug]-page.tsx
+  □ Add useRouter() (if not present)
+  □ Import InsufficientTokensModal
+  □ Import TokenGateInfo from tool component
+  □ Add tokenModal state
+  □ Pass onInsufficientTokens to tool component
+  □ Add <InsufficientTokensModal> at bottom of JSX
+  □ Test: trigger 402 → modal appears
+  □ Test: click "Buy Tokens" → redirects to Stripe
+  □ Test: click "Play Games" → goes to /game
+```
+
+---
+
+## Common gotchas
+
+**"gate.dbUserId is empty string"**
+→ The user isn't signed in. `tokenGate` with `requireAuth: true` (default) returns a 401 before this happens. If you're seeing this, the auth middleware isn't running — check your Clerk middleware config.
+
+**"deductTokens silently fails"**
+→ Check the server console. It logs errors but doesn't throw. The user sees their content even if deduction fails — acceptable for UX, worth monitoring.
+
+**"Modal opens but balance is 0"**
+→ The user's wallet doesn't exist yet. `tokenGate` creates it with 100 welcome tokens on first use. Check `token-gate.ts` — the upsert creates the wallet if missing.
+
+**"I have multiple success returns (e.g. one per mode)"**
+→ Add `deductTokens()` before each `return NextResponse.json({ ok: true, ... })`. Do NOT add it before error returns.
+
+**"Route uses streaming / streaming response"**
+→ Call `deductTokens()` at the very start of streaming (before you begin writing chunks), not at the end. The user is consuming the token the moment generation starts.

@@ -8,8 +8,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1000; // Adjust based on expected response length and model pricing
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +30,14 @@ export async function POST(req: NextRequest) {
     if (!topic && !originalQuestion) {
       return NextResponse.json({ error: "topic or originalQuestion required" }, { status: 400 });
     }
+
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Math Practice Generator" });
+    // console.log(`[math-engine/practice] User ${gate.dbUserId} passed token gate for practice generation`);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[math-engine/practice] Token gate passed for user ${gate.dbUserId} — proceeding with practice generation`);
+      
 
     const prompt = `You are a maths teacher creating practice questions for a ${level.toUpperCase()} student.
 
@@ -76,6 +89,17 @@ Rules:
       const match = clean.match(/\{[\s\S]+\}/);
       data = match ? JSON.parse(match[0]) : { questions: [] };
     }
+
+    // ── ③ TOKEN DEDUCTION — deduct tokens after successful AI response ──────────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "math-engine/practice", {
+      topic,
+      conceptName,
+      level,
+      count,
+      difficulty,
+    });
+    console.log(`[math-engine/practice] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId}`);
+
 
     return NextResponse.json({ ok: true, questions: data.questions ?? [] });
   } catch (err: any) {

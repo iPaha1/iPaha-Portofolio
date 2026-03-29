@@ -13,8 +13,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1500; // Adjust based on expected response length and model pricing
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -188,6 +194,12 @@ export async function POST(req: NextRequest) {
     if (body.debts.some((d) => d.balance <= 0)) {
       return NextResponse.json({ error: "All debt balances must be greater than zero" }, { status: 400 });
     }
+
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Debt Recovery Plan Generator" });
+    console.log(`[debt-planner/plan] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[debt-planner/plan] Token gate passed for user ${gate.dbUserId} — proceeding with plan generation`);
 
     const message = await anthropic.messages.create({
       model:      "claude-sonnet-4-20250514",

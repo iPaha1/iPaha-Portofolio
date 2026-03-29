@@ -8,9 +8,17 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1000; // Adjust based on expected response length and model pricing
+
+// ─── IMMUTABLE SYSTEM PROMPT ──────────────────────────────────────────────────
+// This is not configurable. It is the ethical backbone of the tool.
 const SYSTEM_PROMPT = `You are a neutral, scholarly educational assistant specialising in comparative Abrahamic religious studies. Your role is to educate — not to advocate, judge, rank, or persuade.
 
 ABSOLUTE RULES:
@@ -30,6 +38,12 @@ export async function POST(req: NextRequest) {
     if (!question?.trim()) {
       return NextResponse.json({ error: "Question required" }, { status: 400 });
     }
+
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+        const gate = await tokenGate(req, TOKEN_COST, { toolName: "Scripture Study Companion" });
+    console.log(`[scripture-explorer/study-companion] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[scripture-explorer/study-companion] Token gate passed for user ${gate.dbUserId} — proceeding with question answering`);
 
     const contextSummary = context
       ? `The user has been reading about: "${context.topic ?? "a scripture topic"}". `
@@ -72,6 +86,13 @@ Format your response as JSON:
         disclaimer:       "This is an educational response for comparative study only.",
       };
     }
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "scripture-explorer/study-companion", {
+      question,
+      context,
+    });
+    console.log(`[scripture-explorer/study-companion] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId}`);
 
     return NextResponse.json({ ok: true, result });
   } catch (err: any) {

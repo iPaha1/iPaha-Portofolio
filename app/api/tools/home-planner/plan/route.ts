@@ -18,8 +18,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1200; // Adjust based on expected response length and model pricing
 
 export interface PlanRequest {
   monthlyIncome:    number;
@@ -208,6 +213,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Target property price is required" }, { status: 400 });
     }
 
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Home Ownership Plan Generator" });
+    console.log(`[home-planner/plan] Token gate result:`, gate);
+    if (!gate.ok) return gate.response; // sends 402 JSON to client
+    console.log(`[home-planner/plan] Token gate passed for user ${gate.dbUserId} — proceeding with plan generation`);
+
     const message = await anthropic.messages.create({
       model:      "claude-sonnet-4-20250514",
       max_tokens: 5000,
@@ -224,6 +235,16 @@ export async function POST(req: NextRequest) {
       if (!match) return NextResponse.json({ error: "Plan generation failed — invalid AI response" }, { status: 500 });
       plan = JSON.parse(match[0]);
     }
+
+    // ── ② DEDUCT tokens — only after successful plan generation ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "home-planner/plan", {
+      messageLength: data.monthlyIncome.toString().length + data.targetPrice.toString().length, // rough proxy for complexity
+      propertyType: data.propertyType,
+      location: data.location ?? "unspecified",
+    });
+    
+    console.log(`[home-planner/plan] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for plan generation.`);
+
 
     return NextResponse.json({ ok: true, plan });
   } catch (err: any) {

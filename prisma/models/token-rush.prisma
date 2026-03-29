@@ -1,0 +1,173 @@
+// =============================================================================
+// TOKEN RUSH — Prisma Schema Additions
+// Paste into your existing schema.prisma
+// =============================================================================
+
+// ─── Token Rush Challenge ─────────────────────────────────────────────────────
+model TokenRushChallenge {
+  id            String                      @id @default(cuid())
+  creatorId     String
+  acceptorId    String?
+  acceptorName  String?
+  gameId        String                      // matches TokenRushGameId union
+  wagerAmount   Int
+  status        TokenRushStatus             @default(OPEN)
+  winnerId      String?
+  creatorScore  Int?
+  acceptorScore Int?
+  currentRound  Int                         @default(0)
+  roundReadyAt  DateTime?                   // set when both players committed (Neural Dominance)
+  probeCount    Int                         @default(0)  // Phantom Grid probe tracker
+  completedAt   DateTime?
+  expiresAt     DateTime?                   // open challenges expire after 10 min
+  createdAt     DateTime                    @default(now())
+  updatedAt     DateTime                    @updatedAt
+
+  creator       User                        @relation("ChallengeCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  rounds        TokenRushRound[]
+  placements    TokenRushPhantomPlacement[]
+  probes        TokenRushProbe[]
+  scores        TokenRushScore[]
+  cashouts      TokenRushCashout[]
+
+  @@map("token_rush_challenges")
+  @@index([creatorId])
+  @@index([acceptorId])
+  @@index([status])
+  @@index([gameId])
+  @@index([createdAt])
+}
+
+// ─── Neural Dominance rounds ──────────────────────────────────────────────────
+// One row per player per round. Stored before reveal to prevent cheating.
+model TokenRushRound {
+  id          String   @id @default(cuid())
+  challengeId String
+  round       Int
+  userId      String
+  move        String   // "ALPHA" | "BETA" | "GAMMA"
+  prediction  String   // player's prediction of opponent's move
+  moveHash    String   // SHA-256(challengeId:round:userId:move:prediction:secret)
+  committed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  challenge   TokenRushChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@map("token_rush_rounds")
+  @@unique([challengeId, round, userId])
+  @@index([challengeId])
+  @@index([userId])
+}
+
+// ─── Phantom Grid — placement (server-side only, never sent to opponent) ──────
+model TokenRushPhantomPlacement {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  positions   String   @db.Text  // JSON: [[row,col], ...] — exactly 8 positions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  challenge   TokenRushChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@map("token_rush_phantom_placements")
+  @@unique([challengeId, userId])
+  @@index([challengeId])
+}
+
+// ─── Phantom Grid — probe log (streamed to opponent via /poll) ────────────────
+model TokenRushProbe {
+  id          String   @id @default(cuid())
+  challengeId String
+  proberId    String   // user who made the probe
+  row         Int
+  col         Int
+  hit         Boolean
+  turn        Int
+  polledByOpp Boolean  @default(false)  // has the opponent received this result?
+  createdAt   DateTime @default(now())
+
+  challenge   TokenRushChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@map("token_rush_probes")
+  @@index([challengeId])
+  @@index([challengeId, turn])
+}
+
+// ─── Live score (spectators / opponent progress) ──────────────────────────────
+model TokenRushScore {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  score       Int
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  challenge   TokenRushChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@map("token_rush_scores")
+  @@unique([challengeId, userId])
+  @@index([challengeId])
+}
+
+// ─── Cashout requests ─────────────────────────────────────────────────────────
+model TokenRushCashout {
+  id          String         @id @default(cuid())
+  userId      String
+  challengeId String?        // optional — links to the winning game
+  tokenAmount Int
+  gbpAmount   Float
+  paypalEmail String
+  status      CashoutStatus  @default(PENDING)
+  adminNote   String?
+  processedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge   TokenRushChallenge? @relation(fields: [challengeId], references: [id])
+
+  @@map("token_rush_cashouts")
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── New enums ────────────────────────────────────────────────────────────────
+
+enum TokenRushStatus {
+  OPEN        // waiting for opponent
+  PLAYING     // accepted, match in progress
+  COMPLETED   // match finished, winner awarded
+  EXPIRED     // no one accepted within the time limit
+  CANCELLED   // creator cancelled before acceptance
+}
+
+enum CashoutStatus {
+  PENDING     // submitted, awaiting admin action
+  PROCESSING  // payment initiated
+  PAID        // PayPal payment sent
+  FAILED      // payment failed
+  REFUNDED    // tokens returned to wallet
+}
+
+// ─── Additions to your existing User model ───────────────────────────────────
+// Add these lines inside your existing User model block:
+//
+//   lastSeenAt                DateTime?
+//   rushChallengesCreated     TokenRushChallenge[] @relation("ChallengeCreator")
+//   tokenRushCashouts         TokenRushCashout[]
+//
+// ─── Additions to your existing GameType enum ────────────────────────────────
+// Add these values inside your existing GameType enum:
+//
+//   NEURAL_DOMINANCE
+//   PHANTOM_GRID
+//
+// ─── Additions to your existing TransactionType enum ─────────────────────────
+// Add these values inside your existing TransactionType enum:
+//
+//   RUSH_WAGER    // token deducted when creating or accepting a challenge
+//   RUSH_WIN      // net prize credited to winner
+//   RUSH_REFUND   // wager returned if challenge expires or is cancelled

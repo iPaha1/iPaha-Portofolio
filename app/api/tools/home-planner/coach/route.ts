@@ -8,8 +8,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic                     from "@anthropic-ai/sdk";
+import { tokenGate } from "@/lib/tokens/token-gate";
+import { deductTokens } from "@/lib/tokens/token-deduct";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+// Tool token costs (in tokens per request)
+const TOKEN_COST = 1200; // Adjust based on expected response length and model pricing
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +23,13 @@ export async function POST(req: NextRequest) {
     if (!message?.trim()) {
       return NextResponse.json({ error: "Message required" }, { status: 400 });
     }
+
+    // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Home Coach" });
+    console.log(`[home-planner/coach] Token gate result:`, gate);
+    if (!gate.ok) return gate.response;
+    console.log(`[home-planner/coach] Token gate passed for user ${gate.dbUserId} — proceeding with coaching`);
+
 
     const systemPrompt = `You are a warm, knowledgeable, and practical AI home buying coach called "Home Coach".
 
@@ -57,6 +69,14 @@ You can help with questions like:
     });
 
     const reply = response.content[0].type === "text" ? response.content[0].text : "";
+
+    // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+    await deductTokens(gate.dbUserId, TOKEN_COST, "home-planner/coach", {
+      messageLength: message.length,
+      conversationLength: conversationHistory.length,
+    });
+    console.log(`[home-planner/coach] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId} for home coaching.`);
+    
     return NextResponse.json({ ok: true, reply });
   } catch (err: any) {
     console.error("[home-planner/coach]", err);
