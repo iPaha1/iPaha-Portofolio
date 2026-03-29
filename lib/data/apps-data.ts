@@ -211,7 +211,7 @@ export const APPS: App[] = [
     icon: "💼",
     primaryColor: "#10b981",
     accentColor: "#34d399",
-    liveUrl: "https://okpah.com",
+    liveUrl: "https://okadwuma.com",
     isFeatured: true,
     launchedYear: 2022,
     techStack: [
@@ -287,7 +287,7 @@ export const APPS: App[] = [
     icon: "🛒",
     primaryColor: "#f59e0b",
     accentColor: "#fbbf24",
-    liveUrl: "https://okpah.com",
+    liveUrl: "https://okdawa.com",
     launchedYear: 2022,
     techStack: [
       { name: "Next.js 14", category: "frontend" },
@@ -356,7 +356,7 @@ export const APPS: App[] = [
     icon: "💰",
     primaryColor: "#f97316",
     accentColor: "#fb923c",
-    liveUrl: "https://okpah.com",
+    liveUrl: "https://oksika.com",
     isNew: true,
     launchedYear: 2025,
     techStack: [
@@ -545,7 +545,7 @@ export const APPS: App[] = [
     icon: "⚡",
     primaryColor: "#8b5cf6",
     accentColor: "#a78bfa",
-    liveUrl: "https://ipahait.com",
+    liveUrl: "https://paralelme.com",
     isFeatured: true,
     isNew: true,
     launchedYear: 2025,

@@ -4,10 +4,10 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Isaac Paha - Full-Stack Developer & Tech Entrepreneur',
+    name: 'Isaac Paha - Technologist, Entrepreneur, Thinker',
     short_name: 'Isaac Paha',
-    description: 'UK-based Computing & IT graduate from Open University London and full-stack developer. Founder of iPaha Ltd, iPahaStores Ltd, and Okpah Ltd. Building scalable platforms serving 100K+ users.',
-    start_url: '/',
+    description: 'Isaac Paha - exploring AI, software, and the future of society.',
+    start_url: '/games',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#f59e0b',

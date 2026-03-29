@@ -23,6 +23,7 @@ import { GameProvider } from "@/components/(gamification)/game-provider";
 import { GameWidget } from "@/components/(gamification)/game-widget";
 import { ChallengeBroadcast } from "./games/token-rush/_token-rush/challenge-broadcast";
 import { BannedUserBanner } from "@/components/global/banned-user-banner";
+import { Analytics } from '@vercel/analytics/next';
 
 // ── Font ─────────────────────────────────────────────────────────────────────
 const sora = Sora({
@@ -343,6 +344,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <GameWidget />
             <ChallengeBroadcast /> 
             <BannedUserBanner />
+            <Analytics />
             <main id="main-content" role="main">
               {children}
             </main>

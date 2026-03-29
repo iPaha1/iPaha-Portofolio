@@ -35,7 +35,7 @@ const SIGNALS = [
   {
     icon:    Zap,
     label:   "Building",
-    headline: "3 companies. 7 products. 2 countries.",
+    headline: "3 companies. 10+ products. 2 countries.",
     detail:  "From London to Accra — software that solves real problems for real people.",
     accent:  "#f59e0b",
     href:    "/apps",
@@ -549,7 +549,7 @@ export const HeroSection = () => {
                   whileTap={{ scale: 0.97 }}
                   className="group inline-flex items-center gap-2.5 bg-amber-500 hover:bg-amber-400 text-[#0a0a0c] font-black text-sm px-7 py-3.5 rounded-xs transition-all duration-200 shadow-[0_0_32px_rgba(245,158,11,0.28)] hover:shadow-[0_0_52px_rgba(245,158,11,0.5)] cursor-pointer"
                 >
-                  Love to games ? 
+                  Love Games?
                   <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
                 </motion.span>
               </Link>
@@ -560,6 +560,7 @@ export const HeroSection = () => {
                   className="inline-flex items-center gap-2 border border-white/[0.1] hover:border-amber-400/40 bg-white/[0.03] hover:bg-amber-500/[0.05] text-white/50 hover:text-white/80 font-semibold text-sm px-7 py-3.5 rounded-xs transition-all duration-200 cursor-pointer"
                 >
                   Tools that get things done
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
                 </motion.span>
               </Link>
             </motion.div>
