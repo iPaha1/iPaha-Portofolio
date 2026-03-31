@@ -21,10 +21,10 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 // ── Token cost by mode ────────────────────────────────────────────────────────
 const MODE_TOKEN_COST: Record<string, number> = {
-  full:    50,
-  simpler: 10,
-  deeper:  20,
-  tutor:   15,
+  full:    500000000000000000,
+  simpler: 100000000000000000,
+  deeper:  200000000000000000,
+  tutor:   150000000000000000,
 };
 
 // ─── Level config ─────────────────────────────────────────────────────────────

@@ -29,6 +29,18 @@ interface ExpenseItem {
   category: string;
 }
 
+// ─── NEW: token gate prop ─────────────────────────────────────────────────────
+ 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface BudgetPlannerToolProps {
+  /** Called when the API returns 402 — parent page shows the modal */
+     onInsufficientTokens?: (info: TokenGateInfo) => void;
+    }
 interface Snapshot {
   totalBudget:          number;
   timeframeDays:        number;
@@ -435,7 +447,9 @@ function InputStage({ onGenerate }: { onGenerate: (data: any) => void }) {
 
 // ─── AI Coach Panel ───────────────────────────────────────────────────────────
 
-function CoachPanel({ context, sym }: { context: any; sym: string }) {
+function CoachPanel({ context, sym, onInsufficientTokens }: { context: any; sym: string; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
+  // const currencyCode = context?.snapshot ? (context.snapshot.totalBudget > 1000 ? "USD" : "GBP") : "GBP";
+  // const sym = CURRENCIES.find(c => c.code === currencyCode)?.sym ?? "£";
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([
     { role: "assistant", content: `I know your budget inside out. Daily limit: ${sym}${context?.snapshot?.dailyBudgetTotal?.toFixed(2) ?? "?"} — and I can see where every penny is going. Ask me anything: "Can I afford this?", "What should I cut first?", or "How do I make food budget stretch further?"` },
   ]);
@@ -456,6 +470,22 @@ function CoachPanel({ context, sym }: { context: any; sym: string }) {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMsg, context, history: messages.slice(-6) }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) {
+          onInsufficientTokens({
+            required: data.required ?? 0,
+            balance:  data.balance  ?? 0,
+            toolName: data.toolName ?? "Budget Planner AI Coach",
+          });
+        }
+        setMessages(p => [...p, { role: "assistant", content: "You've run out of tokens to use the AI Coach. Please play some games to earn more tokens, then try again." }]);
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
       setMessages(p => [...p, { role: "assistant", content: data.reply ?? "Sorry, I couldn't process that. Try again?" }]);
     } catch {
@@ -540,7 +570,7 @@ function CoachPanel({ context, sym }: { context: any; sym: string }) {
 
 // ─── Results Stage ────────────────────────────────────────────────────────────
 
-function ResultsStage({ plan, inputData, onReset }: { plan: BudgetPlan; inputData: any; onReset: () => void }) {
+function ResultsStage({ plan, inputData, onReset, onInsufficientTokens }: { plan: BudgetPlan; inputData: any; onReset: () => void; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [tab, setTab] = useState<"overview" | "weekly" | "cuts" | "scenarios" | "coach">("overview");
   const [copied, setCopied] = useState(false);
 
@@ -896,7 +926,11 @@ function ResultsStage({ plan, inputData, onReset }: { plan: BudgetPlan; inputDat
 
       {/* ── AI COACH ────────────────────────────────────────────────────── */}
       {tab === "coach" && (
-        <CoachPanel context={{ ...plan, ...inputData, currency: inputData.currency }} sym={sym} />
+        <CoachPanel 
+          context={{ ...plan, ...inputData, currency: inputData.currency }} 
+          sym={sym} 
+          onInsufficientTokens={onInsufficientTokens}
+        />
       )}
     </div>
   );
@@ -904,7 +938,7 @@ function ResultsStage({ plan, inputData, onReset }: { plan: BudgetPlan; inputDat
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 
-export function BudgetPlannerTool({ isSignedIn = false }: { isSignedIn?: boolean }) {
+export function BudgetPlannerTool({ isSignedIn = false, onInsufficientTokens }: { isSignedIn?: boolean; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [stage,    setStage]    = useState<"input" | "loading" | "results">("input");
   const [plan,     setPlan]     = useState<BudgetPlan | null>(null);
   const [inputData, setInputData] = useState<any>(null);
@@ -932,6 +966,21 @@ export function BudgetPlannerTool({ isSignedIn = false }: { isSignedIn?: boolean
       const res  = await fetch("/api/tools/budget-planner/plan", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Budget Planner",
+        });
+        clearInterval(interval);
+        setStage("input");
+        setError("You've run out of tokens to generate a budget plan. Please play some games to earn more tokens, then try again.");
+        return;
+      }
+      
       const body = await res.json();
       clearInterval(interval);
       if (!res.ok || !body.plan) {

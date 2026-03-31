@@ -69,6 +69,17 @@ const INITIAL: FormData = {
   restrictions: [], gender: "", specialNotes: "",
 };
 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface BirthdayPlannerToolProps {
+  /** Called when the API returns 402 — parent page shows the modal */
+     onInsufficientTokens?: (info: TokenGateInfo) => void;
+  }
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const THEMES = [
@@ -258,10 +269,12 @@ export function BirthdayPlannerTool({
   isSignedIn = false,
   reopenData,
   onReopened,
+  onInsufficientTokens,
 }: {
   isSignedIn?:  boolean;
   reopenData?:  BirthdayReopenData | null;
   onReopened?:  () => void;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [step,     setStep]     = useState<1 | 2 | 3 | "generating" | "plan">(1);
   const [form,     setForm]     = useState<FormData>(INITIAL);
@@ -343,6 +356,21 @@ export function BirthdayPlannerTool({
           specialNotes: form.specialNotes,
         }),
       });
+
+       // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Birthday Planner",
+        });
+        clearInterval(interval);
+        setStep(3);
+        setError("You've run out of tokens to generate a party plan. Please play some games to earn more tokens, then try again.");
+        return;
+      }
+
       const data = await res.json();
       clearInterval(interval);
       if (!res.ok || !data.plan) { setError(data.error ?? "Generation failed"); setStep(3); return; }

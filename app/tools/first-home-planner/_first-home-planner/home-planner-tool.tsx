@@ -95,6 +95,17 @@ interface HomePlan {
   disclaimerNote:         string;
 }
 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface HomePlannerToolProps {
+/** Called when the API returns 402 — parent page shows the modal */
+      onInsufficientTokens?: (info: TokenGateInfo) => void;
+    }
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const READINESS_CFG = {
@@ -466,7 +477,7 @@ function InputStage({ onPlan }: { onPlan: (d: PlanInput) => void }) {
 
 // ─── AI Home Coach ────────────────────────────────────────────────────────────
 
-function HomeCoach({ planContext }: { planContext: string }) {
+function HomeCoach({ planContext, onInsufficientTokens }: { planContext: string; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
     { role: "assistant", content: "👋 Hi! I'm your AI Home Coach. I know your plan, so ask me anything — whether it's 'How does stamp duty work?', 'Should I get a Lifetime ISA?', or 'Can I afford this house?'. I'm here to help." },
   ]);
@@ -493,6 +504,20 @@ function HomeCoach({ planContext }: { planContext: string }) {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg, planContext, conversationHistory: newMessages.slice(-8) }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Home Planner AI Coach",
+        });
+        setMessages(p => [...p, { role: "assistant", content: "You've run out of tokens to use the Home Coach. Please play some games to earn more tokens, then try again." }]);
+        setLoading(false);
+        return;
+      }
+      
       const data = await res.json();
       setMessages(p => [...p, { role: "assistant", content: data.reply ?? data.error ?? "Sorry, I couldn't respond. Please try again." }]);
     } catch {
@@ -575,12 +600,13 @@ function HomeCoach({ planContext }: { planContext: string }) {
 // ─── Results Stage ────────────────────────────────────────────────────────────
 
 function ResultsStage({
-  plan, input, onReset, isSignedIn,
+  plan, input, onReset, isSignedIn, onInsufficientTokens
 }: {
   plan:        HomePlan;
   input:       PlanInput;
   onReset:     () => void;
   isSignedIn:  boolean;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [tab,     setTab]     = useState<"snapshot" | "deposit" | "roadmap" | "credit" | "coach">("snapshot");
   const [copied,  setCopied]  = useState(false);
@@ -1072,14 +1098,14 @@ function ResultsStage({
       )}
 
       {/* ── COACH tab ──────────────────────────────────────────────────── */}
-      {tab === "coach" && <HomeCoach planContext={planContext} />}
+      {tab === "coach" && <HomeCoach planContext={planContext} onInsufficientTokens={onInsufficientTokens} />}
     </div>
   );
 }
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 
-export function HomePlannerTool({ isSignedIn = false }: { isSignedIn?: boolean }) {
+export function HomePlannerTool({ isSignedIn = false, onInsufficientTokens }: { isSignedIn?: boolean; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [stage,  setStage]  = useState<"input" | "loading" | "results">("input");
   const [plan,   setPlan]   = useState<HomePlan | null>(null);
   const [input,  setInput]  = useState<PlanInput | null>(null);
@@ -1116,6 +1142,21 @@ export function HomePlannerTool({ isSignedIn = false }: { isSignedIn?: boolean }
           isFirstTimeBuyer: d.isFirstTimeBuyer,
         }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Home Planner",
+        });
+        clearInterval(interval);
+        setStage("input");
+        setError("You've run out of tokens to generate a home plan. Please play some games to earn more tokens, then try again.");
+        return;
+      }
+
       const data = await res.json();
       clearInterval(interval);
       if (!res.ok || !data.plan) { setError(data.error ?? "Plan generation failed"); setStage("input"); return; }

@@ -22,7 +22,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 
 // Tool token costs (in tokens per request)
-const TOKEN_COST = 2000; // Adjust based on expected response length and model pricing
+const TOKEN_COST = 2000000000000; // Adjust based on expected response length and model pricing
 
 const ROLE_MODES: Record<string, string> = {
   tech:       "software engineering, data science, cybersecurity, or product management",

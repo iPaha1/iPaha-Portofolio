@@ -53,6 +53,7 @@ model User {
   isGameTermsAccepted Boolean   @default(false)
   isGameBanned         Boolean   @default(false)
   isToolsTermsAccepted Boolean   @default(false)
+  isToolsBanned         Boolean   @default(false)
   bannedAt          DateTime?
   banReason         String?
 

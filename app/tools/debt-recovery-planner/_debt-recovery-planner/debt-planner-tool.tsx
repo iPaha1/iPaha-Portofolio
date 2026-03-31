@@ -99,6 +99,19 @@ interface DebtPlan {
   disclaimer:          string;
 }
 
+// ─── NEW: token gate prop ─────────────────────────────────────────────────────
+ 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface DebtPlannerToolProps { 
+/** Called when the API returns 402 — parent page shows the modal */
+    onInsufficientTokens?: (info: TokenGateInfo) => void;
+  }
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const CURRENCIES = [
@@ -495,9 +508,9 @@ function InputStage({
 // ─── Results ──────────────────────────────────────────────────────────────────
 
 function ResultsStage({
-  plan, currency, onReset, isSignedIn,
+  plan, currency, onReset, isSignedIn, onInsufficientTokens,
 }: {
-  plan: DebtPlan; currency: string; onReset: () => void; isSignedIn: boolean;
+  plan: DebtPlan; currency: string; onReset: () => void; isSignedIn: boolean; onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [activeTab, setActiveTab] = useState<"snapshot" | "roadmap" | "actions" | "scenarios" | "coach">("snapshot");
   const [saving,    setSaving]    = useState(false);
@@ -795,6 +808,7 @@ function ResultsStage({
           }}
           currency={currency}
           isSignedIn={isSignedIn}
+          onInsufficientTokens={onInsufficientTokens}
         />
       )}
 
@@ -809,9 +823,9 @@ function ResultsStage({
 // ─── AI Coach Panel ───────────────────────────────────────────────────────────
 
 function CoachPanel({
-  financialContext, currency, isSignedIn,
+  financialContext, currency, isSignedIn, onInsufficientTokens,
 }: {
-  financialContext: any; currency: string; isSignedIn: boolean;
+  financialContext: any; currency: string; isSignedIn: boolean; onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [messages,  setMessages]  = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [input,     setInput]     = useState("");
@@ -845,6 +859,20 @@ function CoachPanel({
           financialContext: !initiated ? financialContext : undefined,
         }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Debt Recovery AI Coach",
+        });
+        setMessages((p) => [...p, { role: "assistant", content: "You've run out of tokens to use the Debt Recovery Coach. Please play some games to earn more tokens, then try again." }]);
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
       setMessages((p) => [...p, { role: "assistant", content: data.reply ?? "Sorry, I couldn't respond — please try again." }]);
     } catch {
@@ -934,7 +962,7 @@ function CoachPanel({
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 
-export function DebtPlannerTool({ isSignedIn = false }: { isSignedIn?: boolean }) {
+export function DebtPlannerTool({ isSignedIn = false, onInsufficientTokens }: { isSignedIn?: boolean; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [stage,    setStage]    = useState<"input" | "loading" | "results">("input");
   const [plan,     setPlan]     = useState<DebtPlan | null>(null);
   const [currency, setCurrency] = useState("GBP");
@@ -979,6 +1007,20 @@ export function DebtPlannerTool({ isSignedIn = false }: { isSignedIn?: boolean }
           targetMonths,
         }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Debt Recovery Planner",
+        });
+        clearInterval(interval);
+        setStage("input");
+        setError("You've run out of tokens to generate a debt recovery plan. Please play some games to earn more tokens, then try again.");
+        return;
+      }
 
       clearInterval(interval);
       const data = await res.json();

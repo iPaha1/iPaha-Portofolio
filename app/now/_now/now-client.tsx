@@ -359,7 +359,7 @@ function AiChat() {
   return (
     <>
       {/* Trigger button */}
-      <Magnetic>
+      {/* <Magnetic>
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -376,7 +376,7 @@ function AiChat() {
           Ask Isaac's AI
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
         </motion.button>
-      </Magnetic>
+      </Magnetic> */}
 
       {/* Chat drawer */}
       <AnimatePresence>

@@ -20,7 +20,7 @@ import { deductTokens } from "@/lib/tokens/token-deduct";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 // Tool token costs (in tokens per request)
-const TOKEN_COST = 1000; // Adjust based on expected response length and model pricing
+const TOKEN_COST = 10000000000000000000; // Adjust based on expected response length and model pricing
 
 // ─── Level config ─────────────────────────────────────────────────────────────
 

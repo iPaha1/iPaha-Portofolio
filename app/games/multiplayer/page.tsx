@@ -1,5 +1,5 @@
 // =============================================================================
-// MULTIPLAYER PAGE — app/game/multiplayer/page.tsx
+// MULTIPLAYER PAGE — app/games/multiplayer/page.tsx
 // Dedicated arena for real-time multiplayer gaming.
 // Aesthetic: Deep space dark · electric indigo/cyan accents · war-room energy
 // =============================================================================

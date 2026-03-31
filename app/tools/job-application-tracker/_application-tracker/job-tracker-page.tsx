@@ -19,9 +19,11 @@ import {
 } from "lucide-react";
 import { useUser }               from "@clerk/nextjs";
 import { TOOL_CATEGORIES, TOOLS } from "@/lib/data/tools-data";
-import { JobApplicationTracker } from "./job-application-tracker";
 import { UserDashboard } from "./userdashboard";
 import { ToolCard } from "../../_tools/tools-card";
+import { InsufficientTokensModal } from "@/components/(tokens)/insufficient-tokens-model";
+import { useRouter } from "next/navigation";
+import { JobApplicationTrackerTool, TokenGateInfo } from "./job-application-tracker-tool";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -132,6 +134,10 @@ export function JobTrackerPage({ initialProfile }: JobTrackerPageProps) {
   const { isSignedIn, user } = useUser();
   const [activeTab, setActiveTab]   = useState<"tool" | "dashboard" | "guide" | "reviews">("tool");
   const [copied,    setCopied]      = useState(false);
+  const router = useRouter();
+  
+  // ── NEW: token modal state ────────────────────────────────────────────────
+    const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
 
   const category = TOOL_CATEGORIES.find((c) => c.name === TOOL.category);
   const related  = TOOLS.filter((t) => t.category === TOOL.category && t.slug !== TOOL.slug && t.status !== "COMING_SOON").slice(0, 3);
@@ -333,7 +339,7 @@ export function JobTrackerPage({ initialProfile }: JobTrackerPageProps) {
                     </div>
                   </div>
                   <div className="p-0">
-                    <JobApplicationTracker />
+                    <JobApplicationTrackerTool onInsufficientTokens={(info) => setTokenModal(info)} />
                   </div>
                 </div>
 
@@ -521,6 +527,19 @@ export function JobTrackerPage({ initialProfile }: JobTrackerPageProps) {
           </div>
         )}
       </div>
+
+      {/* ── NEW: Insufficient Tokens Modal ─────────────────────────────────── */}
+          <InsufficientTokensModal
+            open={!!tokenModal}
+            onClose={() => setTokenModal(null)}
+            required={tokenModal?.required ?? 0}
+            balance={tokenModal?.balance   ?? 0}
+            toolName={tokenModal?.toolName ?? undefined}
+            onPlayGame={() => {
+              setTokenModal(null);
+              router.push("/games"); // or open game overlay via context
+            }}
+          />
     </div>
   );
 }

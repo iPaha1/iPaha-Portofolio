@@ -1,6 +1,6 @@
 // =============================================================================
 // TOKEN RUSH — Game 1: Neural Dominance
-// app/token-rush/_games/neural-dominance.tsx
+// app/token-rush/_token-rush-games/neural-dominance-game.tsx
 //
 // 12-round psychological prediction war.
 //

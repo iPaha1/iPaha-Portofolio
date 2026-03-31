@@ -103,6 +103,17 @@ interface PhysicsExplanation {
   difficulty:             string;
   estimatedReadMinutes:   number;
 }
+
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface PhysicsEngineToolProps {
+  /** Called when the API returns 402 — parent page shows the modal */
+     onInsufficientTokens?: (info: TokenGateInfo) => void;
+    }
  
 // ─── Config ───────────────────────────────────────────────────────────────────
  
@@ -315,10 +326,11 @@ function ExperimentCard({ exp }: { exp: PhysicsExplanation["experiments"][0] }) 
  
 // ─── Practice Panel ───────────────────────────────────────────────────────────
  
-function PracticePanel({ result, level, question }: {
+function PracticePanel({ result, level, question, onInsufficientTokens }: {
   result:   PhysicsExplanation;
   level:    string;
   question: string;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [qType,     setQType]     = useState<"practice" | "theory_questions">("practice");
   const [questions, setQuestions] = useState<any[]>([]);
@@ -338,6 +350,19 @@ function PracticePanel({ result, level, question }: {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: result.topic, conceptName: result.conceptName, level, type: qType, originalQuestion: question }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Physics Practice Questions",
+        });
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
       setQuestions(data.questions ?? []);
     } catch {}
@@ -490,7 +515,7 @@ function PracticePanel({ result, level, question }: {
  
 // ─── AI Tutor ─────────────────────────────────────────────────────────────────
  
-function AITutor({ question, level }: { question: string; level: string }) {
+function AITutor({ question, level, onInsufficientTokens }: { question: string; level: string; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
   const [input,    setInput]    = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -505,6 +530,22 @@ function AITutor({ question, level }: { question: string; level: string }) {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, level, mode: "tutor", followUpContext: `Original topic: "${question}". Student asks: "${msg}"` }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) {
+          onInsufficientTokens({
+            required: data.required ?? 0,
+            balance:  data.balance  ?? 0,
+            toolName: data.toolName ?? "Physics Tutor",
+          });
+        }
+        setMessages((p) => [...p, { role: "ai", text: "You've run out of tokens to use the Physics Tutor. Please play some games to earn more tokens, then try again." }]);
+        setLoading(false);
+        return;
+      }
+      
       const data = await res.json();
       const r    = data.result;
       if (r?.response) setMessages((p) => [...p, { role: "ai", text: r.response }]);
@@ -580,10 +621,13 @@ export function PhysicsEngineTool({
   isSignedIn  = false,
   reopenData,
   onReopened,
+  onInsufficientTokens,
 }: {
   isSignedIn?:  boolean;
   reopenData?:  PhysicsReopenData | null;
   onReopened?:  () => void;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
+
 }) {
   const [question,      setQuestion]      = useState("");
   const [level,         setLevel]         = useState("gcse");
@@ -645,6 +689,21 @@ export function PhysicsEngineTool({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, level: lvl, mode: "full", explorerMode: explorer }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Physics Engine",
+        });
+        clearInterval(interval);
+        setStage("input");
+        setError("You've run out of tokens to explore physics concepts. Please play some games to earn more tokens, then try again.");
+        return;
+      }
+
       const data = await res.json();
       clearInterval(interval);
       if (!res.ok || !data.result) {
@@ -669,6 +728,19 @@ export function PhysicsEngineTool({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, level, mode: "simpler" }),
       });
+
+      // ── NEW: handle 402 insufficient tokens for simpler mode ─────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Physics Engine (Simpler)",
+        });
+        setSimplifying(false);
+        return;
+      }
+
       const data = await res.json();
       setSimpleResult(data.result);
     } catch {}
@@ -683,6 +755,19 @@ export function PhysicsEngineTool({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, level, mode: "deeper" }),
       });
+
+      // ── NEW: handle 402 insufficient tokens for deeper mode ──────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Physics Engine (Deeper)",
+        });
+        setDeepening(false);
+        return;
+      }
+      
       const data = await res.json();
       setDeepResult(data.result);
     } catch {}
@@ -1197,13 +1282,24 @@ export function PhysicsEngineTool({
           {/* Practice questions */}
           <div className="border-t border-stone-100 pt-5">
             <p className="text-xs font-black text-stone-400 uppercase tracking-wider mb-3">Practice Questions</p>
-            <PracticePanel result={result} level={level} question={question} />
+            <PracticePanel 
+              result={result} 
+              level={level} 
+              question={question}
+              onInsufficientTokens={onInsufficientTokens || (() => {})}
+               />
           </div>
         </div>
       )}
  
       {/* ── TUTOR tab ─────────────────────────────────────────────────── */}
-      {activeTab === "tutor" && <AITutor question={question} level={level} />}
+      {activeTab === "tutor" && (
+        <AITutor 
+          question={question} 
+          level={level} 
+          onInsufficientTokens={onInsufficientTokens || (() => {})}
+        />
+      )}
  
     </div>
   );

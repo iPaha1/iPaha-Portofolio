@@ -17,7 +17,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 
 // Tool token costs (in tokens per request)
-const TOKEN_COST = 1500; // Adjust based on expected response length and model pricing
+const TOKEN_COST = 1500000000000; // Adjust based on expected response length and model pricing
 
 // ─── IMMUTABLE SYSTEM PROMPT ──────────────────────────────────────────────────
 // This is the ethical backbone of the tool. It cannot be changed without a code update.

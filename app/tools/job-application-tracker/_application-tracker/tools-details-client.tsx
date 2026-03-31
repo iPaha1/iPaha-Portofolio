@@ -28,7 +28,7 @@ import { CVAnalyzerTool } from "../../_tools/cv-analyzer";
 import { StartupIdeaGenerator } from "../../_tools/startup-ideas-generator";
 import { LearningRoadmapGenerator } from "../../_tools/learning-roadmap";
 import { ReadingTimeCalculator } from "../../_tools/reading-time-calculator";
-import { JobApplicationTrackerTool } from "./job-application-tracker";
+import { JobApplicationTrackerTool } from "./job-application-tracker-tool";
 import { StarRating } from "../../_tools/star-rating";
 import { ToolCard } from "../../_tools/tools-card";
 

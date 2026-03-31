@@ -19,11 +19,12 @@ import { deductTokens } from "@/lib/tokens/token-deduct";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 // Tool token cost for shopping list generation is around 200 tokens per request, which is ~£0.10 on the current pricing. Not super cheap but still reasonable for a helpful shopping assistant feature.
-const TOKEN_COST = 200;
+const TOKEN_COST = 2000000000;
 
 // ─── ROUTE ───────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
+    console.log("[shopping/ai] Received request with body:", await req.clone().text());
 
     // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
         const gate = await tokenGate(req, TOKEN_COST, { toolName: "Shopping List AI" });

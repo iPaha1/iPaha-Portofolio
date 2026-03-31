@@ -74,6 +74,19 @@ interface ShoppingList {
   items:        ShoppingItem[];
 }
 
+// ─── NEW: token gate prop ─────────────────────────────────────────────────────
+ 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface ShoppingListToolProps {
+  /** Called when the API returns 402 — parent page shows the modal */
+   onInsufficientTokens?: (info: TokenGateInfo) => void;
+  }
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const CATEGORY_CFG: Record<ItemCategory, { label: string; emoji: string; color: string; bg: string }> = {
@@ -215,7 +228,7 @@ function NewListForm({ onCreate, onCancel }: {
 
 // ─── AI Assistant Panel ───────────────────────────────────────────────────────
 
-function AIAssistant({ list, onItemsAdded }: { list: ShoppingList; onItemsAdded: (items: any[]) => void }) {
+function AIAssistant({ list, onItemsAdded, onInsufficientTokens }: { list: ShoppingList; onItemsAdded: (items: any[]) => void; onInsufficientTokens: (info: TokenGateInfo) => void }) {
   const [mode,    setMode]    = useState<"meal" | "suggest" | "budget">("meal");
   const [input,   setInput]   = useState("");
   const [people,  setPeople]  = useState("2");
@@ -237,6 +250,19 @@ function AIAssistant({ list, onItemsAdded }: { list: ShoppingList; onItemsAdded:
           people:    parseInt(people) || 2,
         }),
       });
+
+        // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({  
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Shopping List AI",
+        });
+        setLoading(false);
+        return; // stop here — modal is shown by parent
+      }
+
       const data = await res.json();
       setResult(data);
     } catch {}
@@ -369,7 +395,7 @@ function AIAssistant({ list, onItemsAdded }: { list: ShoppingList; onItemsAdded:
 
 // ─── MAIN TOOL EXPORT ─────────────────────────────────────────────────────────
 
-export function ShoppingListTool({ isSignedIn }: { isSignedIn: boolean }) {
+export function ShoppingListTool({ isSignedIn, onInsufficientTokens }: { isSignedIn: boolean } & ShoppingListToolProps) {
   const { user }  = useUser();
   const [lists,   setLists]   = useState<ShoppingList[]>([]);
   const [loading, setLoading] = useState(true);
@@ -434,6 +460,19 @@ export function ShoppingListTool({ isSignedIn }: { isSignedIn: boolean }) {
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify(data),
         });
+
+        // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Shopping List AI",
+        });
+        setCreatingList(false);
+        return; // stop here — modal is shown by parent
+      }
+
         const resp  = await res.json();
         if (res.ok) {
           setLists(p => [resp.list, ...p]);
@@ -672,6 +711,12 @@ export function ShoppingListTool({ isSignedIn }: { isSignedIn: boolean }) {
   };
 
   const shareUrl = activeList ? `${typeof window !== "undefined" ? window.location.origin : "https://isaacpaha.com"}/tools/smart-shopping-list/share/${activeList.shareId}` : "";
+
+  // ── Handle insufficient tokens ────────────────────────────────────────────
+
+  const handleInsufficientTokens = (info: TokenGateInfo) => {
+    onInsufficientTokens?.(info);
+  };
 
   // ── Filtered items ────────────────────────────────────────────────────────
 
@@ -963,7 +1008,7 @@ export function ShoppingListTool({ isSignedIn }: { isSignedIn: boolean }) {
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-stone-100">
                 <div className="p-5">
-                  <AIAssistant list={activeList} onItemsAdded={handleAIItemsAdded} />
+                  <AIAssistant list={activeList} onItemsAdded={handleAIItemsAdded} onInsufficientTokens={handleInsufficientTokens} />
                 </div>
               </motion.div>
             )}

@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth }                      from "@clerk/nextjs/server";
 import { prismadb }                  from "@/lib/db";
-import { getFolders, createFolder } from "@/lib/actions/media-actions";
+import { createFolder, getFolders } from "@/lib/actions/media-actions";
 
 async function requireAdmin(): Promise<boolean> {
   const { userId } = await auth();

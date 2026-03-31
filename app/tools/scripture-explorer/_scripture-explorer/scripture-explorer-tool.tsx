@@ -76,6 +76,20 @@ interface StudyResponse {
   disclaimer:        string;
 }
 
+// ─── NEW: token gate prop ─────────────────────────────────────────────────────
+ 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface ScriptureExplorerToolProps {
+  /** Called when the API returns 402 — parent page shows the modal */
+  // isSignedIn?: boolean;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const MODES = [
@@ -328,7 +342,7 @@ function InputStage({ onExplore, onLearningPath }: {
 
 // ─── Study Companion ──────────────────────────────────────────────────────────
 
-function StudyCompanion({ context }: { context: { topic: string } | null }) {
+function StudyCompanion({ context, onInsufficientTokens }: { context: { topic: string } | null; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [question, setQuestion]   = useState("");
   const [loading,  setLoading]    = useState(false);
   const [response, setResponse]   = useState<StudyResponse | null>(null);
@@ -344,6 +358,31 @@ function StudyCompanion({ context }: { context: { topic: string } | null }) {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, context }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) {
+          onInsufficientTokens({
+            required: data.required ?? 0,
+            balance:  data.balance  ?? 0,
+            toolName: data.toolName ?? "Scripture Study Companion",
+          });
+        }
+        setHistory(h => [...h, { 
+          q, 
+          r: { 
+            answer: "You've run out of tokens to use the Study Companion. Please play some games to earn more tokens, then try again.",
+            references: [],
+            followUpQuestions: [],
+            disclaimer: "Token limit reached."
+          } 
+        }]);
+        setResponse(null);
+        setLoading(false);
+        return;
+      }
+      
       const data = await res.json();
       if (data.result) {
         setHistory(h => [...h, { q, r: data.result }]);
@@ -420,13 +459,14 @@ function StudyCompanion({ context }: { context: { topic: string } | null }) {
 // ─── Results Stage ────────────────────────────────────────────────────────────
 
 function ResultsStage({
-  result, onReset, onSave, isSaved, isSignedIn,
+  result, onReset, onSave, isSaved, isSignedIn, onInsufficientTokens,
 }: {
   result:      ComparisonResult;
   onReset:     () => void;
   onSave:      () => void;
   isSaved:     boolean;
   isSignedIn:  boolean;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [activeTab,   setActiveTab]   = useState<"comparison" | "connections" | "context" | "study">("comparison");
   const [copied,      setCopied]      = useState(false);
@@ -630,7 +670,10 @@ function ResultsStage({
 
       {/* ── STUDY tab ──────────────────────────────────────────────────── */}
       {activeTab === "study" && (
-        <StudyCompanion context={{ topic: result.topic }} />
+        <StudyCompanion 
+          context={{ topic: result.topic }} 
+          onInsufficientTokens={onInsufficientTokens}
+        />
       )}
 
       {/* Disclaimer — always visible */}
@@ -644,7 +687,7 @@ function ResultsStage({
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 
-export function ScriptureExplorerTool({ isSignedIn = false }: { isSignedIn?: boolean }) {
+export function ScriptureExplorerTool({ isSignedIn = false, onInsufficientTokens }: { isSignedIn?: boolean; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [stage,   setStage]   = useState<"input" | "loading" | "results">("input");
   const [result,  setResult]  = useState<ComparisonResult | null>(null);
   const [error,   setError]   = useState("");
@@ -673,6 +716,21 @@ export function ScriptureExplorerTool({ isSignedIn = false }: { isSignedIn?: boo
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: q, mode: m }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Scripture Explorer",
+        });
+        clearInterval(interval);
+        setStage("input");
+        setError("You've run out of tokens to explore scripture. Please play some games to earn more tokens, then try again.");
+        return;
+      }
+      
       const data = await res.json();
       clearInterval(interval);
 

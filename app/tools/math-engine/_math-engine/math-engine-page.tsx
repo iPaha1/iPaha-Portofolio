@@ -15,9 +15,11 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { TOOLS, TOOL_CATEGORIES } from "@/lib/data/tools-data";
-import { MathEngineTool, MathReopenData } from "./math-engine-tool";
+import { MathEngineTool, MathReopenData, TokenGateInfo } from "./math-engine-tool";
 import { ToolCard } from "../../_tools/tools-card";
 import { MathDashboard }          from "./math-dashboard";
+import { InsufficientTokensModal } from "@/components/(tokens)/insufficient-tokens-model";
+import { useRouter } from "next/navigation";
  
 const TOOL     = TOOLS.find((t) => t.slug === "math-engine")!;
 const ACCENT   = "#6366f1";
@@ -55,6 +57,10 @@ export function MathEnginePage({ isSignedIn }: { isSignedIn: boolean }) {
   const [activeTab, setActiveTab] = useState<"tool" | "workspace" | "guide" | "reviews">("tool");
   const [copied,    setCopied]    = useState(false);
   const [reopenData, setReopenData] = useState<MathReopenData | null>(null);
+  const router = useRouter();
+  
+    // ── NEW: token modal state ────────────────────────────────────────────────
+        const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
  
   const category = TOOL_CATEGORIES.find((c) => c.name === TOOL?.category);
   const related  = TOOLS.filter((t) => t.category === TOOL?.category && t.slug !== TOOL?.slug && t.status !== "COMING_SOON").slice(0, 3);
@@ -207,7 +213,12 @@ export function MathEnginePage({ isSignedIn }: { isSignedIn: boolean }) {
                     </div>
                   </div>
                   <div className="p-6 md:p-8">
-                    <MathEngineTool isSignedIn={isSignedIn} reopenData={reopenData} onReopened={() => setReopenData(null)} />
+                    <MathEngineTool 
+                      isSignedIn={isSignedIn} 
+                      reopenData={reopenData} 
+                      onReopened={() => setReopenData(null)}
+                      onInsufficientTokens={(info) => setTokenModal(info)}
+                     />
                   </div>
                 </div>
                 <div className="flex items-start gap-3 mt-5 bg-blue-50 border border-blue-100 rounded-xs px-4 py-3.5">
@@ -366,6 +377,19 @@ export function MathEnginePage({ isSignedIn }: { isSignedIn: boolean }) {
           </div>
         )}
       </div>
+
+      {/* ── NEW: Insufficient Tokens Modal ─────────────────────────────────── */}
+          <InsufficientTokensModal
+            open={!!tokenModal}
+            onClose={() => setTokenModal(null)}
+            required={tokenModal?.required ?? 0}
+            balance={tokenModal?.balance   ?? 0}
+            toolName={tokenModal?.toolName ?? undefined}
+            onPlayGame={() => {
+              setTokenModal(null);
+              router.push("/games"); // or open game overlay via context
+            }}
+          />
     </div>
   );
 }

@@ -110,6 +110,17 @@ interface ChemistryExplanation {
   estimatedReadMinutes:  number;
 }
 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface ChemistryEngineToolProps {
+  /** Called when the API returns 402 — parent page shows the modal */
+     onInsufficientTokens?: (info: TokenGateInfo) => void;
+    }
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const ACCENT = "#10b981";
@@ -337,7 +348,7 @@ function ExperimentCard({ exp }: { exp: ChemistryExplanation["experiments"][0] }
 
 // ─── Practice Panel ───────────────────────────────────────────────────────────
 
-function PracticePanel({ result, level, question }: { result: ChemistryExplanation; level: string; question: string }) {
+function PracticePanel({ result, level, question, onInsufficientTokens }: { result: ChemistryExplanation; level: string; question: string; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [qType,    setQType]    = useState<"practice" | "theory_questions">("practice");
   const [questions,setQuestions]= useState<any[]>([]);
   const [loading,  setLoading]  = useState(false);
@@ -355,6 +366,19 @@ function PracticePanel({ result, level, question }: { result: ChemistryExplanati
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: result.topic, conceptName: result.conceptName, level, type: qType, originalQuestion: question }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Chemistry Practice Questions",
+        });
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
       setQuestions(data.questions ?? []);
     } catch {}
@@ -493,7 +517,7 @@ function PracticePanel({ result, level, question }: { result: ChemistryExplanati
 
 // ─── AI Tutor ─────────────────────────────────────────────────────────────────
 
-function AITutor({ question, level }: { question: string; level: string }) {
+function AITutor({ question, level, onInsufficientTokens }: { question: string; level: string; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
   const [input,    setInput]    = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -508,6 +532,20 @@ function AITutor({ question, level }: { question: string; level: string }) {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, level, mode: "tutor", followUpContext: `Topic: "${question}". Student: "${msg}"` }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Chemistry AI Tutor",
+        });
+        setMessages(p => [...p, { role: "ai", text: "You've run out of tokens to use the Chemistry Tutor. Please play some games to earn more tokens, then try again." }]);
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
       const r    = data.result;
       if (r?.response) setMessages(p => [...p, { role: "ai", text: r.response }]);
@@ -582,10 +620,12 @@ export function ChemistryEngineTool({
   isSignedIn  = false,
   reopenData,
   onReopened,
+  onInsufficientTokens,
 }: {
   isSignedIn?:  boolean;
   reopenData?:  ChemistryReopenData | null;
   onReopened?:  () => void;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [question,     setQuestion]     = useState("");
   const [level,        setLevel]        = useState("gcse");
@@ -640,6 +680,21 @@ export function ChemistryEngineTool({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, level: lvl, mode: "full", explorerMode: explorer }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Chemistry Engine",
+        });
+        clearInterval(interval);
+        setStage("input");
+        setError("You've run out of tokens to explore chemistry concepts. Please play some games to earn more tokens, then try again.");
+        return;
+      }
+
       const data = await res.json();
       clearInterval(interval);
       if (!res.ok || !data.result) { setError(data.error ?? "Explanation failed — please try again."); setStage("input"); return; }
@@ -650,17 +705,53 @@ export function ChemistryEngineTool({
   const handleSimpler = async () => {
     if (!question || !result) return; setSimplifying(true);
     try {
-      const res  = await fetch("/api/tools/chemistry-engine/explain", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, level, mode: "simpler" }) });
-      const data = await res.json(); setSimpleResult(data.result);
-    } catch {} setSimplifying(false);
+      const res  = await fetch("/api/tools/chemistry-engine/explain", { 
+        method: "POST", headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ question, level, mode: "simpler" }) 
+      });
+
+      // ── NEW: handle 402 insufficient tokens for simpler mode ─────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Chemistry Engine (Simpler)",
+        });
+        setSimplifying(false);
+        return;
+      }
+
+      const data = await res.json(); 
+      setSimpleResult(data.result);
+    } catch {} 
+    setSimplifying(false);
   };
 
   const handleDeeper = async () => {
     if (!question || !result) return; setDeepening(true);
     try {
-      const res  = await fetch("/api/tools/chemistry-engine/explain", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, level, mode: "deeper" }) });
-      const data = await res.json(); setDeepResult(data.result);
-    } catch {} setDeepening(false);
+      const res  = await fetch("/api/tools/chemistry-engine/explain", { 
+        method: "POST", headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ question, level, mode: "deeper" }) 
+      });
+
+      // ── NEW: handle 402 insufficient tokens for deeper mode ──────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Chemistry Engine (Deeper)",
+        });
+        setDeepening(false);
+        return;
+      }
+
+      const data = await res.json(); 
+      setDeepResult(data.result);
+    } catch {} 
+    setDeepening(false);
   };
 
   const vizData = result ? buildVisualisationData(result.visualisation) : null;
@@ -1166,13 +1257,23 @@ export function ChemistryEngineTool({
           )}
           <div className="border-t border-stone-100 pt-5">
             <p className="text-xs font-black text-stone-400 uppercase tracking-wider mb-3">Practice Questions</p>
-            <PracticePanel result={result} level={level} question={question} />
+            <PracticePanel 
+              result={result} 
+              level={level} 
+              question={question} 
+              onInsufficientTokens={onInsufficientTokens}
+              />
           </div>
         </div>
       )}
 
       {/* ── TUTOR tab ─────────────────────────────────────────────── */}
-      {activeTab === "tutor" && <AITutor question={question} level={level} />}
+      {activeTab === "tutor" && <AITutor 
+          question={question} 
+          level={level} 
+          onInsufficientTokens={onInsufficientTokens}
+        />
+        }
     </div>
   );
 }

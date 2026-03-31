@@ -22,7 +22,7 @@ import { CVAnalyzerTool } from "./cv-analyzer";
 import { StartupIdeaGenerator } from "./startup-ideas-generator";
 import { LearningRoadmapGenerator } from "./learning-roadmap";
 import { ReadingTimeCalculator } from "./reading-time-calculator";
-import { JobApplicationTrackerTool } from "../job-application-tracker/_application-tracker/job-application-tracker";
+import { JobApplicationTrackerTool } from "../job-application-tracker/_application-tracker/job-application-tracker-tool";
 import { STATUS_CONFIG, Tool, TOOL_CATEGORIES, TOOLS } from "@/lib/data/tools-data";
 import { staggerContainer, staggerItem } from "@/lib/animations";
 import { StarRating } from "./star-rating";

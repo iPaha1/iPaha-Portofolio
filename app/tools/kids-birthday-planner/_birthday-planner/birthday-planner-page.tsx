@@ -23,7 +23,9 @@ import {
 } from "lucide-react";
 import { TOOL_CATEGORIES, TOOLS } from "@/lib/data/tools-data";
 import { ToolCard } from "../../_tools/tools-card";
-import { BirthdayPlannerTool }     from "./birthday-planner-tool";
+import { BirthdayPlannerTool, TokenGateInfo }     from "./birthday-planner-tool";
+import { InsufficientTokensModal } from "@/components/(tokens)/insufficient-tokens-model";
+import { useRouter } from "next/navigation";
 
 const TOOL   = TOOLS.find((t) => t.slug === "kids-birthday-planner")!;
 const ACCENT = "#f43f5e";
@@ -56,6 +58,7 @@ function PartyListDashboard({ onReopenParty }: {
   const [loading,  setLoading]  = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [copied,   setCopied]   = useState<string | null>(null);
+  
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -231,6 +234,10 @@ export function BirthdayPlannerPage({ isSignedIn }: { isSignedIn: boolean }) {
   const [activeTab,  setActiveTab]  = useState<"tool" | "workspace" | "guide" | "reviews">("tool");
   const [copied,     setCopied]     = useState(false);
   const [reopenData, setReopenData] = useState<BirthdayReopenData | null>(null);
+  const router = useRouter();
+  
+  // ── NEW: token modal state ────────────────────────────────────────────────
+    const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
 
   const category = TOOL_CATEGORIES.find(c => c.name === TOOL?.category);
   const related  = TOOLS.filter(t => t.category === TOOL?.category && t.slug !== TOOL?.slug && t.status !== "COMING_SOON").slice(0, 3);
@@ -378,6 +385,7 @@ export function BirthdayPlannerPage({ isSignedIn }: { isSignedIn: boolean }) {
                       isSignedIn={isSignedIn}
                       reopenData={reopenData}
                       onReopened={() => setReopenData(null)}
+                      onInsufficientTokens={(info) => setTokenModal(info)}
                     />
                   </div>
                 </div>
@@ -506,6 +514,19 @@ export function BirthdayPlannerPage({ isSignedIn }: { isSignedIn: boolean }) {
           </div>
         )}
       </div>
+
+      {/* ── NEW: Insufficient Tokens Modal ─────────────────────────────────── */}
+        <InsufficientTokensModal
+          open={!!tokenModal}
+          onClose={() => setTokenModal(null)}
+          required={tokenModal?.required ?? 0}
+          balance={tokenModal?.balance   ?? 0}
+          toolName={tokenModal?.toolName ?? undefined}
+          onPlayGame={() => {
+            setTokenModal(null);
+            router.push("/games"); // or open game overlay via context
+          }}
+        />
     </div>
   );
 }

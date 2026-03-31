@@ -549,7 +549,7 @@ export const HeroSection = () => {
                   whileTap={{ scale: 0.97 }}
                   className="group inline-flex items-center gap-2.5 bg-amber-500 hover:bg-amber-400 text-[#0a0a0c] font-black text-sm px-7 py-3.5 rounded-xs transition-all duration-200 shadow-[0_0_32px_rgba(245,158,11,0.28)] hover:shadow-[0_0_52px_rgba(245,158,11,0.5)] cursor-pointer"
                 >
-                  Love Games?
+                  Love games?
                   <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
                 </motion.span>
               </Link>

@@ -13,10 +13,12 @@ import {
   MessageSquare, BookOpen, Zap, Info, ArrowRight, Target,
   Shield, TrendingUp, Sparkles, Award,
 } from "lucide-react";
-import { CVAnalyserTool }         from "./cv-analyser-tool";
+import { CVAnalyserTool, TokenGateInfo }         from "./cv-analyser-tool";
 import { CVDashboard }           from "./cv-dashboard";
 import { TOOL_CATEGORIES, TOOLS } from "@/lib/data/tools-data";
 import { ToolCard } from "../../_tools/tools-card";
+import { InsufficientTokensModal } from "@/components/(tokens)/insufficient-tokens-model";
+import { useRouter } from "next/navigation";
 
 // ─── Tool data ────────────────────────────────────────────────────────────────
 
@@ -103,6 +105,10 @@ interface CVAnalyserPageProps {
 export function CVAnalyserPage({ isSignedIn }: CVAnalyserPageProps) {
   const [activeTab, setActiveTab] = useState<"tool" | "workspace" | "guide" | "reviews">("tool");
   const [copied,    setCopied]    = useState(false);
+  const router = useRouter();
+  
+  // ── NEW: token modal state ────────────────────────────────────────────────
+    const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
 
   const category = TOOL_CATEGORIES.find((c) => c.name === TOOL?.category);
   const related  = TOOLS.filter((t) => t.category === TOOL?.category && t.slug !== TOOL?.slug && t.status !== "COMING_SOON").slice(0, 3);
@@ -260,7 +266,10 @@ export function CVAnalyserPage({ isSignedIn }: CVAnalyserPageProps) {
                     </div>
                   </div>
                   <div className="p-6 md:p-8">
-                    <CVAnalyserTool isSignedIn={isSignedIn} />
+                    <CVAnalyserTool 
+                      isSignedIn={isSignedIn}
+                      onInsufficientTokens={(info) => setTokenModal(info)}  
+                    />
                   </div>
                 </div>
                 <div className="flex items-start gap-3 mt-5 bg-amber-50 border border-amber-100 rounded-xs px-4 py-3.5">
@@ -432,6 +441,19 @@ export function CVAnalyserPage({ isSignedIn }: CVAnalyserPageProps) {
           </div>
         )}
       </div>
+
+      {/* ── NEW: Insufficient Tokens Modal ─────────────────────────────────── */}
+        <InsufficientTokensModal
+          open={!!tokenModal}
+          onClose={() => setTokenModal(null)}
+          required={tokenModal?.required ?? 0}
+          balance={tokenModal?.balance   ?? 0}
+          toolName={tokenModal?.toolName ?? undefined}
+          onPlayGame={() => {
+            setTokenModal(null);
+            router.push("/games"); // or open game overlay via context
+          }}
+        />
     </div>
   );
 }

@@ -26,7 +26,7 @@ import { deductTokens } from "@/lib/tokens/token-deduct";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 // Tool token costs (in tokens per request)
-const TOKEN_COST = 4000; // Adjust based on expected response length and model pricing
+const TOKEN_COST = 40000000000; // Adjust based on expected response length and model pricing
 export interface ExpenseItem {
   id:       string;
   label:    string;
@@ -206,7 +206,9 @@ RULES:
 }
 
 export async function POST(req: NextRequest) {
+  console.log(`[budget-planner/plan] Received request at ${new Date().toISOString()}`);
   try {
+    console.log("[budget-planner/plan] Request body:", await req.clone().text());
     const body: BudgetPlanRequest = await req.json();
 
     if (!body.totalBudget || body.totalBudget <= 0) {

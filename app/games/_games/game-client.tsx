@@ -957,8 +957,8 @@ export function GameClient() {
     {isSignedIn && (
       <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xs"
         style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
-        <Coins className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-amber-400" />
-        <span className="text-xs sm:text-sm font-black" style={{ color: "#f59e0b", letterSpacing: "-0.02em" }}>
+        <Coins className="w-3.5 h-6 sm:w-4 sm:h-4 text-amber-400" />
+        <span className="hidden md:block text-xs sm:text-sm font-black" style={{ color: "#f59e0b", letterSpacing: "-0.02em" }}>
           {tokenBalance.toLocaleString()}
         </span>
       </div>

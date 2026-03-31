@@ -95,6 +95,17 @@ interface PracticeQuestion {
   explanation: string;
   examStyle:   boolean;
 }
+
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface MathEngineToolProps {
+  /** Called when the API returns 402 — parent page shows the modal */
+    onInsufficientTokens?: (info: TokenGateInfo) => void;
+  }
  
 // ─── Config ───────────────────────────────────────────────────────────────────
  
@@ -209,10 +220,11 @@ function StepCard({ step, index }: { step: MathStep; index: number }) {
  
 // ─── Practice Panel ───────────────────────────────────────────────────────────
  
-function PracticePanel({ explanation, level, originalQuestion }: {
+function PracticePanel({ explanation, level, originalQuestion, onInsufficientTokens }: {
   explanation: MathExplanation;
   level:       string;
   originalQuestion: string;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [questions, setQuestions]  = useState<PracticeQuestion[]>([]);
   const [loading,   setLoading]    = useState(false);
@@ -233,6 +245,19 @@ function PracticePanel({ explanation, level, originalQuestion }: {
           originalQuestion,
         }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Math Practice Questions",
+        });
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
       setQuestions(data.questions ?? []);
     } catch {}
@@ -364,7 +389,7 @@ function PracticePanel({ explanation, level, originalQuestion }: {
  
 // ─── AI Tutor Panel ───────────────────────────────────────────────────────────
  
-function AITutorPanel({ question, level }: { question: string; level: string }) {
+function AITutorPanel({ question, level, onInsufficientTokens }: { question: string; level: string; onInsufficientTokens?: (info: TokenGateInfo) => void }) {
   const [messages, setMessages] = useState<{ role: "user" | "ai"; text: string }[]>([]);
   const [input,    setInput]    = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -383,6 +408,20 @@ function AITutorPanel({ question, level }: { question: string; level: string }) 
           followUpContext: `Original question: "${question}". Student asks: "${userMsg}"`,
         }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({  
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Math AI Tutor",
+        });
+        setMessages((p) => [...p, { role: "ai", text: "You've run out of tokens to use the Math Tutor. Please play some games to earn more tokens, then try again." }]);
+        setLoading(false);
+        return;
+      }
+
       const data = await res.json();
       const r    = data.result;
       const text = r?.response ?? r?.hint ?? "I'd be happy to help. Can you be more specific about what confused you?";
@@ -463,10 +502,12 @@ export function MathEngineTool({
   isSignedIn  = false,
   reopenData,
   onReopened,
+  onInsufficientTokens,
 }: {
   isSignedIn?:  boolean;
   reopenData?:  MathReopenData | null;
   onReopened?:  () => void;        // called after reopen so parent can clear the prop
+  onInsufficientTokens?: (info: TokenGateInfo) => void; // called when API returns 402, parent shows modal
 }) {
   const [question,     setQuestion]     = useState("");
   const [level,        setLevel]        = useState("gcse");
@@ -530,6 +571,21 @@ export function MathEngineTool({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, level: lvl, mode: "full" }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Math Engine",
+        });
+        clearInterval(interval);
+        setStage("input");
+        setError("You've run out of tokens to explore math concepts. Please play some games to earn more tokens, then try again.");
+        return;
+      }
+
       const data = await res.json();
       clearInterval(interval);
       if (!res.ok || !data.result) {
@@ -554,6 +610,19 @@ export function MathEngineTool({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, level, mode: "simpler" }),
       });
+
+      // ── NEW: handle 402 insufficient tokens for simpler mode ─────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({  
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Math Engine (Simpler)",
+        });
+        setSimplifying(false);
+        return;
+      }
+
       const data = await res.json();
       setSimpleResult(data.result);
     } catch {}
@@ -568,6 +637,19 @@ export function MathEngineTool({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, level, mode: "deeper" }),
       });
+
+      // ── NEW: handle 402 insufficient tokens for deeper mode ──────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        if (onInsufficientTokens) onInsufficientTokens({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Math Engine (Deeper)",
+        });
+        setDeepening(false);
+        return;
+      }
+
       const data = await res.json();
       setDeepResult(data.result);
     } catch {}
@@ -925,12 +1007,21 @@ export function MathEngineTool({
  
       {/* ── PRACTICE tab ──────────────────────────────────────────────── */}
       {activeTab === "practice" && (
-        <PracticePanel explanation={result} level={level} originalQuestion={question} />
+        <PracticePanel 
+          explanation={result} 
+          level={level} 
+          originalQuestion={question}
+          onInsufficientTokens={onInsufficientTokens || (() => {})}
+         />
       )}
  
       {/* ── TUTOR tab ─────────────────────────────────────────────────── */}
       {activeTab === "tutor" && (
-        <AITutorPanel question={question} level={level} />
+        <AITutorPanel 
+          question={question} 
+          level={level}
+          onInsufficientTokens={onInsufficientTokens || (() => {})}
+        />
       )}
     </div>
   );

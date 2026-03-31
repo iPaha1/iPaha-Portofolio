@@ -17,7 +17,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 
 // Tool token costs (in tokens per request)
-const TOKEN_COST = 4000; // Adjust based on expected response length and model pricing
+const TOKEN_COST = 4000000000000000; // Adjust based on expected response length and model pricing
 
 const BUDGET_LABEL: Record<string, string> = {
   low:    "£50–£100 (keep it fun and affordable — lots of DIY ideas)",

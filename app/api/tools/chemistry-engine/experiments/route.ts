@@ -15,8 +15,8 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 // Tool token costs (in tokens per request) — adjust based on expected response length and model pricing
 const MODE_TOKEN_COST: Record<string, number> = {
-  practice: 3000, // Practice questions with solutions are more complex
-  theory_questions: 2000, // Theory questions with model answers
+  practice: 30000000000000, // Practice questions with solutions are more complex
+  theory_questions: 2000000000000000, // Theory questions with model answers
 };
 
 export async function POST(req: NextRequest) {

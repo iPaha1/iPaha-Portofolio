@@ -18,13 +18,16 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 
 // Tool token costs (in tokens per request)
-const TOKEN_COST = 800; // Adjust based on expected response length and model pricing
+const TOKEN_COST = 80000000000000; // Adjust based on expected response length and model pricing
 
 export async function POST(req: NextRequest) {
+  console.log("[job-tracker/ai] Received AI request");
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Sign in to use AI coaching" }, { status: 401 });
 
+  console.log(`[job-tracker/ai] Authenticated user: ${userId}`);
   const { mode, targetRole, sector } = await req.json();
+  console.log(`[job-tracker/ai] Request body:`, { mode, targetRole, sector });
 
   const [stats, profile] = await Promise.all([
     getApplicationStats(),

@@ -14,9 +14,11 @@ import {
   Sparkles, Shield, Target, PiggyBank, Info,
 } from "lucide-react";
 import { TOOLS, TOOL_CATEGORIES } from "@/lib/data/tools-data";
-import { HomePlannerTool }        from "./home-planner-tool";
+import { HomePlannerTool, TokenGateInfo }        from "./home-planner-tool";
 import { HomeDashboard }          from "./home-dashboard";
 import { ToolCard } from "../../_tools/tools-card";
+import { InsufficientTokensModal } from "@/components/(tokens)/insufficient-tokens-model";
+import { useRouter } from "next/navigation";
 
 const TOOL = TOOLS.find((t) => t.slug === "first-home-planner")!;
 
@@ -63,6 +65,10 @@ interface Props { isSignedIn: boolean; initialPlan?: any }
 export function HomePlannerPage({ isSignedIn, initialPlan }: Props) {
   const [activeTab, setActiveTab] = useState<"tool" | "workspace" | "guide" | "reviews">("tool");
   const [copied,    setCopied]    = useState(false);
+  const router = useRouter();
+  
+  // ── NEW: token modal state ────────────────────────────────────────────────
+      const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
 
   const category = TOOL_CATEGORIES.find((c) => c.name === TOOL?.category);
   const related  = TOOLS.filter(t => t.category === TOOL?.category && t.slug !== TOOL?.slug && t.status !== "COMING_SOON").slice(0, 3);
@@ -213,7 +219,7 @@ export function HomePlannerPage({ isSignedIn, initialPlan }: Props) {
                     </div>
                   </div>
                   <div className="p-6 md:p-8">
-                    <HomePlannerTool isSignedIn={isSignedIn} />
+                    <HomePlannerTool isSignedIn={isSignedIn} onInsufficientTokens={(info) => setTokenModal(info)} />
                   </div>
                 </div>
                 <div className="flex items-start gap-3 mt-5 bg-amber-50 border border-amber-100 rounded-xs px-4 py-3.5">
@@ -368,6 +374,18 @@ export function HomePlannerPage({ isSignedIn, initialPlan }: Props) {
           </div>
         )}
       </div>
+      {/* ── NEW: Insufficient Tokens Modal ─────────────────────────────────── */}
+          <InsufficientTokensModal
+            open={!!tokenModal}
+            onClose={() => setTokenModal(null)}
+            required={tokenModal?.required ?? 0}
+            balance={tokenModal?.balance   ?? 0}
+            toolName={tokenModal?.toolName ?? undefined}
+            onPlayGame={() => {
+              setTokenModal(null);
+              router.push("/games"); // or open game overlay via context
+            }}
+          />
     </div>
   );
 }

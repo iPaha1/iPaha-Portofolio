@@ -96,6 +96,20 @@ interface CVAnalysis {
   interviewQuestions: InterviewQuestion[];
 }
 
+// ─── NEW: token gate prop ─────────────────────────────────────────────────────
+ 
+export interface TokenGateInfo {
+  required: number;
+  balance:  number;
+  toolName: string | null;
+}
+
+export interface CVAnalyserToolProps {
+  isSignedIn?: boolean;
+  /** Called when the API returns 402 — parent page shows the modal */
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const ROLE_MODES = [
@@ -305,7 +319,6 @@ function InputStage({ onAnalyse }: { onAnalyse: (cv: string, jd: string, mode: s
 }
 
 // ─── Interview Tab Component ─────────────────────────────────────────────────
-// Standalone component so it can hold its own open/close state per question
 
 function InterviewTab({ questions, hasJD }: { questions: InterviewQuestion[]; hasJD: boolean }) {
   const [openAnswers, setOpenAnswers] = React.useState<Set<number>>(new Set());
@@ -488,10 +501,10 @@ function InterviewTab({ questions, hasJD }: { questions: InterviewQuestion[]; ha
   );
 }
 
-// ─── Results Stage ────────────────────────────────────────────────────────────
+// ─── Results Stage (UPDATED with token gate) ──────────────────────────────────
 
 function ResultsStage({
-  analysis, cvText, jdText, onReset, onRewrite, isSignedIn,
+  analysis, cvText, jdText, onReset, onRewrite, isSignedIn, onInsufficientTokens,
 }: {
   analysis:   CVAnalysis;
   cvText:     string;
@@ -499,6 +512,7 @@ function ResultsStage({
   onReset:    () => void;
   onRewrite:  (mode: string) => void;
   isSignedIn: boolean;
+  onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
   const [activeTab,      setActiveTab]      = useState<"overview" | "keywords" | "sections" | "rewrites" | "interview" | "cover-letter">("overview");
   const [copied,         setCopied]         = useState(false);
@@ -545,10 +559,52 @@ function ResultsStage({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ section: "Full CV", content: cvText, jobDescription: jdText, mode }),
       });
+
+      // ── NEW: handle 402 insufficient tokens for rewrite ─────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "CV Rewriter",
+        });
+        setRewriteResult("You've run out of tokens to rewrite your CV. Please play some games to earn more tokens, then try again.");
+        setRewriting(false);
+        return;
+      }
+
       const data = await res.json();
       setRewriteResult(data.result ?? "Rewrite failed");
     } catch { setRewriteResult("Rewrite failed — please try again."); }
     setRewriting(false);
+  };
+
+  const handleGenerateCoverLetter = async () => {
+    setClLoading(true); setClResult("");
+    try {
+      const res  = await fetch("/api/tools/cv-analyser/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cvText, jobDescription: jdText, style: clStyle }),
+      });
+
+      // ── NEW: handle 402 insufficient tokens for cover letter ────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "Cover Letter Generator",
+        });
+        setClResult("You've run out of tokens to generate a cover letter. Please play some games to earn more tokens, then try again.");
+        setClLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      setClResult(data.coverLetter ?? data.error ?? "Generation failed");
+    } catch { setClResult("Network error — please try again."); }
+    setClLoading(false);
   };
 
   const TABS = [
@@ -992,7 +1048,7 @@ function ResultsStage({
         <InterviewTab questions={analysis.interviewQuestions ?? []} hasJD={hasJD} />
       )}
 
-      {/* ── COVER LETTER tab ──────────────────────────────────────────── */}
+      {/* ── COVER LETTER tab (UPDATED with token gate) ─────────────────── */}
       {activeTab === "cover-letter" && (
         <div className="space-y-5">
           {!hasJD && (
@@ -1032,19 +1088,7 @@ function ResultsStage({
 
           {/* Generate button */}
           <button
-            onClick={async () => {
-              setClLoading(true); setClResult("");
-              try {
-                const res  = await fetch("/api/tools/cv-analyser/cover-letter", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ cvText, jobDescription: jdText, style: clStyle }),
-                });
-                const data = await res.json();
-                setClResult(data.coverLetter ?? data.error ?? "Generation failed");
-              } catch { setClResult("Network error — please try again."); }
-              setClLoading(false);
-            }}
+            onClick={handleGenerateCoverLetter}
             disabled={clLoading}
             className="w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 py-3 rounded-sm transition-colors disabled:opacity-60 shadow-sm"
           >
@@ -1117,9 +1161,9 @@ function ResultsStage({
   );
 }
 
-// ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
+// ─── MAIN EXPORT (UPDATED with token gate) ────────────────────────────────────
 
-export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean }) {
+export function CVAnalyserTool({ isSignedIn = false, onInsufficientTokens }: CVAnalyserToolProps) {
   const [stage,    setStage]    = useState<"input" | "loading" | "results">("input");
   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
   const [cvText,   setCvText]   = useState("");
@@ -1148,6 +1192,21 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cvText: cv, jobDescription: jd, roleMode: mode }),
       });
+
+      // ── NEW: handle 402 insufficient tokens ──────────────────────────────
+      if (res.status === 402) {
+        const data = await res.json();
+        onInsufficientTokens?.({
+          required: data.required ?? 0,
+          balance:  data.balance  ?? 0,
+          toolName: data.toolName ?? "CV Analyser",
+        });
+        clearInterval(interval);
+        setStage("input");
+        setError("You've run out of tokens to analyse your CV. Please play some games to earn more tokens, then try again.");
+        return;
+      }
+
       const data = await res.json();
       clearInterval(interval);
       if (!res.ok || !data.analysis) {
@@ -1206,6 +1265,7 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
           onReset={() => { setStage("input"); setAnalysis(null); }}
           onRewrite={() => {}}
           isSignedIn={isSignedIn}
+          onInsufficientTokens={onInsufficientTokens}
         />
       )}
     </div>
@@ -1280,11 +1340,12 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
 // }
 
 // interface InterviewQuestion {
-//   question:  string;
-//   type:      string;
-//   difficulty: "Easy" | "Medium" | "Hard";
-//   tip:       string;
-//   starHint:  string;
+//   question:    string;
+//   type:        string;
+//   difficulty:  "Easy" | "Medium" | "Hard";
+//   tip:         string;
+//   starHint:    string;
+//   modelAnswer?: string;  // AI-generated model answer — revealed via dropdown
 // }
 
 // interface CVAnalysis {
@@ -1313,6 +1374,7 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
 //   topImprovements:  TopImprovement[];
 //   interviewQuestions: InterviewQuestion[];
 // }
+
 
 // // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -1522,22 +1584,213 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
 //   );
 // }
 
+// // ─── Interview Tab Component ─────────────────────────────────────────────────
+// // Standalone component so it can hold its own open/close state per question
+
+// function InterviewTab({ questions, hasJD }: { questions: InterviewQuestion[]; hasJD: boolean }) {
+//   const [openAnswers, setOpenAnswers] = React.useState<Set<number>>(new Set());
+//   const [studyMode,   setStudyMode]   = React.useState(false);
+//   const [marked,      setMarked]      = React.useState<Set<number>>(new Set());
+
+//   const toggle = (i: number) => {
+//     setOpenAnswers((prev) => {
+//       const next = new Set(prev);
+//       prev.has(i) ? next.delete(i) : next.add(i);
+//       return next;
+//     });
+//   };
+
+//   const toggleMark = (i: number) => {
+//     setMarked((prev) => {
+//       const next = new Set(prev);
+//       prev.has(i) ? next.delete(i) : next.add(i);
+//       return next;
+//     });
+//   };
+
+//   const byType = questions.reduce<Record<string, InterviewQuestion[]>>((acc, q) => {
+//     (acc[q.type] = acc[q.type] ?? []).push(q);
+//     return acc;
+//   }, {});
+
+//   const TYPE_CFG: Record<string, { color: string; bg: string; emoji: string }> = {
+//     Behavioural:  { color: "#7c3aed", bg: "#ede9fe", emoji: "🧠" },
+//     Technical:    { color: "#1d4ed8", bg: "#dbeafe", emoji: "⚙️" },
+//     Situational:  { color: "#b45309", bg: "#fef3c7", emoji: "🎯" },
+//     Motivational: { color: "#065f46", bg: "#d1fae5", emoji: "💡" },
+//     Competency:   { color: "#be185d", bg: "#fce7f3", emoji: "⭐" },
+//   };
+
+//   return (
+//     <div className="space-y-5">
+//       {/* Header bar */}
+//       <div className="flex items-center justify-between flex-wrap gap-3">
+//         <div className="flex items-start gap-3 flex-1 bg-blue-50 border border-blue-200 rounded-sm px-4 py-3">
+//           <MessageSquare className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+//           <p className="text-xs text-blue-700 leading-relaxed">
+//             {questions.length} questions generated{hasJD ? " from your CV and the job description" : " from your CV"}.{" "}
+//             <span className="font-semibold">Click "Reveal Answer" on each question to see a model answer to study.</span>
+//           </p>
+//         </div>
+//         <button
+//           onClick={() => setStudyMode((p) => !p)}
+//           className={`flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-sm border transition-colors flex-shrink-0 ${
+//             studyMode ? "bg-emerald-500 text-white border-emerald-500" : "bg-white text-stone-600 border-stone-200 hover:border-emerald-400 hover:text-emerald-600"
+//           }`}
+//         >
+//           {studyMode ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+//           {studyMode ? "Exit Study Mode" : "Study Mode"}
+//         </button>
+//       </div>
+
+//       {/* Progress in study mode */}
+//       {studyMode && (
+//         <div className="bg-emerald-50 border border-emerald-200 rounded-sm px-4 py-3 flex items-center justify-between">
+//           <div>
+//             <p className="text-sm font-bold text-emerald-800">Study Progress</p>
+//             <p className="text-xs text-emerald-600 mt-0.5">{marked.size} of {questions.length} questions marked as ready</p>
+//           </div>
+//           <div className="w-32 h-2 bg-emerald-100 rounded-full overflow-hidden">
+//             <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${questions.length > 0 ? (marked.size / questions.length) * 100 : 0}%` }} />
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Questions grouped by type */}
+//       {Object.entries(byType).map(([type, qs]) => {
+//         const cfg = TYPE_CFG[type] ?? { color: "#6b7280", bg: "#f3f4f6", emoji: "❓" };
+//         return (
+//           <div key={type}>
+//             <div className="flex items-center gap-2 mb-2">
+//               <span className="text-base">{cfg.emoji}</span>
+//               <p className="text-xs font-black uppercase tracking-wider" style={{ color: cfg.color }}>{type}</p>
+//               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm" style={{ color: cfg.color, backgroundColor: cfg.bg }}>{qs.length}</span>
+//             </div>
+//             <div className="space-y-2">
+//               {qs.map((q) => {
+//                 const globalIdx = questions.indexOf(q);
+//                 const isOpen    = openAnswers.has(globalIdx);
+//                 const isMarked  = marked.has(globalIdx);
+//                 return (
+//                   <div key={globalIdx}
+//                     className={`border rounded-sm overflow-hidden transition-all ${isMarked ? "border-emerald-300 bg-emerald-50/30" : "border-stone-100 bg-white"}`}>
+//                     {/* Question header */}
+//                     <div className="p-4">
+//                       <div className="flex items-start gap-3">
+//                         <div className="flex-1 min-w-0">
+//                           <div className="flex items-center gap-2 flex-wrap mb-2">
+//                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm" style={{ color: cfg.color, backgroundColor: cfg.bg }}>{type}</span>
+//                             {q.difficulty && (
+//                               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm"
+//                                 style={{ color: DIFFICULTY_COLOR[q.difficulty] ?? "#6b7280", backgroundColor: `${DIFFICULTY_COLOR[q.difficulty] ?? "#6b7280"}15` }}>
+//                                 {q.difficulty}
+//                               </span>
+//                             )}
+//                             {isMarked && <span className="text-[10px] font-bold text-emerald-600">✓ Ready</span>}
+//                           </div>
+//                           <p className="text-sm font-semibold text-stone-900 leading-snug">{q.question}</p>
+//                           {q.tip && <p className="text-xs text-stone-400 mt-2 leading-relaxed">💡 {q.tip}</p>}
+//                         </div>
+//                         {studyMode && (
+//                           <button onClick={() => toggleMark(globalIdx)}
+//                             className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+//                               isMarked ? "bg-emerald-500 border-emerald-500 text-white" : "border-stone-200 text-stone-200 hover:border-emerald-400"
+//                             }`}>
+//                             <Check className="w-4 h-4" />
+//                           </button>
+//                         )}
+//                       </div>
+
+//                       {/* STAR hint */}
+//                       {q.starHint && (
+//                         <div className="flex items-start gap-2 mt-3 bg-blue-50 border border-blue-100 rounded-sm px-3 py-2">
+//                           <ChevronRight className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
+//                           <p className="text-xs text-blue-700 font-medium">{q.starHint}</p>
+//                         </div>
+//                       )}
+
+//                       {/* Reveal answer button */}
+//                       {q.modelAnswer && (
+//                         <button
+//                           onClick={() => toggle(globalIdx)}
+//                           className={`mt-3 flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-sm border transition-all w-full justify-center ${
+//                             isOpen
+//                               ? "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+//                               : "bg-stone-50 border-stone-200 text-stone-600 hover:border-purple-400 hover:text-purple-600"
+//                           }`}
+//                         >
+//                           {isOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+//                           {isOpen ? "Hide Answer" : "Reveal Model Answer"}
+//                           {!isOpen && <span className="ml-auto text-[10px] text-stone-400 font-normal">Click to study →</span>}
+//                         </button>
+//                       )}
+//                     </div>
+
+//                     {/* Expandable model answer */}
+//                     <AnimatePresence>
+//                       {isOpen && q.modelAnswer && (
+//                         <motion.div
+//                           initial={{ height: 0, opacity: 0 }}
+//                           animate={{ height: "auto", opacity: 1 }}
+//                           exit={{ height: 0, opacity: 0 }}
+//                           transition={{ duration: 0.25 }}
+//                           className="overflow-hidden"
+//                         >
+//                           <div className="border-t border-purple-100 bg-purple-50 px-4 py-4">
+//                             <div className="flex items-center justify-between mb-2">
+//                               <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider">
+//                                 📖 Model Answer — Adapt This to Your Own Words
+//                               </p>
+//                               <button onClick={() => navigator.clipboard.writeText(q.modelAnswer!)}
+//                                 className="flex items-center gap-1 text-[10px] text-purple-400 hover:text-purple-700 transition-colors">
+//                                 <Copy className="w-3 h-3" />Copy
+//                               </button>
+//                             </div>
+//                             <p className="text-sm text-purple-900 leading-relaxed">{q.modelAnswer}</p>
+//                             <div className="mt-3 flex items-start gap-2 bg-white/70 border border-purple-100 rounded-sm px-3 py-2">
+//                               <Info className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
+//                               <p className="text-[11px] text-purple-600 leading-relaxed">
+//                                 <span className="font-bold">How to use this:</span> Don't memorise it word-for-word. Understand the structure, then practice saying it in your own voice. The best interview answers feel natural, not rehearsed.
+//                               </p>
+//                             </div>
+//                           </div>
+//                         </motion.div>
+//                       )}
+//                     </AnimatePresence>
+//                   </div>
+//                 );
+//               })}
+//             </div>
+//           </div>
+//         );
+//       })}
+//     </div>
+//   );
+// }
+
 // // ─── Results Stage ────────────────────────────────────────────────────────────
 
 // function ResultsStage({
-//   analysis, cvText, jdText, onReset, onRewrite,
+//   analysis, cvText, jdText, onReset, onRewrite, isSignedIn,
 // }: {
-//   analysis:  CVAnalysis;
-//   cvText:    string;
-//   jdText:    string;
-//   onReset:   () => void;
-//   onRewrite: (mode: string) => void;
+//   analysis:   CVAnalysis;
+//   cvText:     string;
+//   jdText:     string;
+//   onReset:    () => void;
+//   onRewrite:  (mode: string) => void;
+//   isSignedIn: boolean;
 // }) {
-//   const [activeTab,      setActiveTab]      = useState<"overview" | "keywords" | "sections" | "rewrites" | "interview">("overview");
+//   const [activeTab,      setActiveTab]      = useState<"overview" | "keywords" | "sections" | "rewrites" | "interview" | "cover-letter">("overview");
 //   const [copied,         setCopied]         = useState(false);
 //   const [rewriting,      setRewriting]      = useState(false);
 //   const [rewriteResult,  setRewriteResult]  = useState("");
 //   const [rewriteMode,    setRewriteMode]    = useState<"improve" | "full_rewrite" | "tailor" | null>(null);
+//   const [clLoading,      setClLoading]      = useState(false);
+//   const [clResult,       setClResult]       = useState("");
+//   const [clStyle,        setClStyle]        = useState<"professional" | "creative" | "concise">("professional");
+//   const [saving,         setSaving]         = useState(false);
+//   const [saved,          setSaved]          = useState(false);
+//   const [saveError,      setSaveError]      = useState("");
 
 //   const scoreColor = (s: number) => s >= 80 ? "#10b981" : s >= 60 ? "#f59e0b" : "#ef4444";
 
@@ -1579,11 +1832,12 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
 //   };
 
 //   const TABS = [
-//     { id: "overview",  label: "Overview",    icon: BarChart2   },
-//     { id: "keywords",  label: "Keywords",    icon: Search      },
-//     { id: "sections",  label: "Sections",    icon: BookOpen    },
-//     { id: "rewrites",  label: "Improvements",icon: Wand2       },
-//     { id: "interview", label: "Interview",   icon: MessageSquare },
+//     { id: "overview",       label: "Overview",       icon: BarChart2      },
+//     { id: "keywords",       label: "Keywords",       icon: Search         },
+//     { id: "sections",       label: "Sections",       icon: BookOpen       },
+//     { id: "rewrites",       label: "Improvements",   icon: Wand2          },
+//     { id: "interview",      label: "Interview Prep", icon: MessageSquare  },
+//     { id: "cover-letter",   label: "Cover Letter",   icon: FileText       },
 //   ] as const;
 
 //   return (
@@ -1600,16 +1854,51 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
 //               <span className="text-2xl text-white/30 mb-2">/100</span>
 //             </div>
 //           </div>
-//           <div className="flex gap-2">
+//           <div className="flex gap-2 flex-wrap">
 //             <button onClick={copyAll}
 //               className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white border border-white/10 hover:border-white/25 px-3 py-2 rounded-sm transition-all">
-//               {copied ? <><Check className="w-3.5 h-3.5 text-emerald-400" />Copied!</> : <><Copy className="w-3.5 h-3.5" />Copy results</>}
+//               {copied ? <><Check className="w-3.5 h-3.5 text-emerald-400" />Copied!</> : <><Copy className="w-3.5 h-3.5" />Copy</>}
 //             </button>
+//             {isSignedIn && (
+//               <button
+//                 onClick={async () => {
+//                   setSaving(true); setSaveError(""); setSaved(false);
+//                   try {
+//                     const res = await fetch("/api/tools/cv-analyser/save", {
+//                       method: "POST",
+//                       headers: { "Content-Type": "application/json" },
+//                       body: JSON.stringify({
+//                         cvText, jobDescription: jdText,
+//                         analysis,
+//                         coverLetter:      clResult || undefined,
+//                         coverLetterStyle: clResult ? clStyle : undefined,
+//                       }),
+//                     });
+//                     const data = await res.json();
+//                     if (!res.ok) { setSaveError(data.error ?? "Save failed"); }
+//                     else { setSaved(true); setTimeout(() => setSaved(false), 3000); }
+//                   } catch { setSaveError("Network error"); }
+//                   setSaving(false);
+//                 }}
+//                 disabled={saving}
+//                 className={`flex items-center gap-1.5 text-xs font-bold border px-3 py-2 rounded-sm transition-all ${
+//                   saved
+//                     ? "text-emerald-400 border-emerald-400/40 bg-emerald-400/10"
+//                     : "text-white/70 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/5"
+//                 }`}
+//               >
+//                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <Check className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+//                 {saving ? "Saving…" : saved ? "Saved!" : "Save to Workspace"}
+//               </button>
+//             )}
 //             <button onClick={onReset}
 //               className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white border border-white/10 hover:border-white/25 px-3 py-2 rounded-sm transition-all">
-//               <RefreshCw className="w-3.5 h-3.5" />New Analysis
+//               <RefreshCw className="w-3.5 h-3.5" />New
 //             </button>
 //           </div>
+//           {saveError && (
+//             <p className="text-xs text-red-400 mt-1">{saveError}</p>
+//           )}
 //         </div>
 
 //         {/* Score rings */}
@@ -1980,35 +2269,128 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
 
 //       {/* ── INTERVIEW tab ─────────────────────────────────────────────── */}
 //       {activeTab === "interview" && (
-//         <div className="space-y-3">
-//           <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-sm px-4 py-3">
-//             <MessageSquare className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-//             <p className="text-xs text-blue-700 leading-relaxed">
-//               These questions are generated based on your CV{hasJD ? " and the job description" : ""}. Use the STAR framework (Situation, Task, Action, Result) for behavioural questions.
-//             </p>
+//         <InterviewTab questions={analysis.interviewQuestions ?? []} hasJD={hasJD} />
+//       )}
+
+//       {/* ── COVER LETTER tab ──────────────────────────────────────────── */}
+//       {activeTab === "cover-letter" && (
+//         <div className="space-y-5">
+//           {!hasJD && (
+//             <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-sm px-4 py-3.5">
+//               <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+//               <div>
+//                 <p className="text-sm font-bold text-amber-800">Job description recommended</p>
+//                 <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+//                   A cover letter without a JD will be generic. Go back and add the job description for a tailored letter.
+//                 </p>
+//                 <button onClick={onReset} className="mt-2 text-xs font-bold text-amber-700 border border-amber-300 hover:bg-amber-100 px-3 py-1.5 rounded-sm transition-colors">
+//                   Add Job Description
+//                 </button>
+//               </div>
+//             </div>
+//           )}
+
+//           {/* Style selector */}
+//           <div>
+//             <label className="block text-[10px] font-black text-stone-400 uppercase tracking-wider mb-2">Cover Letter Style</label>
+//             <div className="flex gap-2">
+//               {([
+//                 { id: "professional", label: "Professional",  desc: "Formal, structured, traditional"     },
+//                 { id: "creative",     label: "Creative",       desc: "Engaging, personality-led, modern"   },
+//                 { id: "concise",      label: "Concise",        desc: "Short, punchy, 3 paragraphs max"     },
+//               ] as const).map((s) => (
+//                 <button key={s.id} onClick={() => setClStyle(s.id)}
+//                   title={s.desc}
+//                   className={`flex-1 text-xs font-bold py-2.5 px-3 rounded-sm border transition-colors text-center ${
+//                     clStyle === s.id ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-white border-stone-200 text-stone-500 hover:border-stone-400"
+//                   }`}>
+//                   {s.label}
+//                 </button>
+//               ))}
+//             </div>
 //           </div>
-//           {analysis.interviewQuestions?.map((q, i) => (
-//             <div key={i} className="bg-white border border-stone-100 rounded-sm p-4">
-//               <div className="flex items-start justify-between gap-3 mb-2">
-//                 <p className="text-sm font-semibold text-stone-900 leading-snug">{q.question}</p>
-//                 <div className="flex items-center gap-1.5 flex-shrink-0">
-//                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm text-stone-500 bg-stone-100">{q.type}</span>
-//                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm" style={{ color: DIFFICULTY_COLOR[q.difficulty], backgroundColor: `${DIFFICULTY_COLOR[q.difficulty]}15` }}>
-//                     {q.difficulty}
-//                   </span>
+
+//           {/* Generate button */}
+//           <button
+//             onClick={async () => {
+//               setClLoading(true); setClResult("");
+//               try {
+//                 const res  = await fetch("/api/tools/cv-analyser/cover-letter", {
+//                   method: "POST",
+//                   headers: { "Content-Type": "application/json" },
+//                   body: JSON.stringify({ cvText, jobDescription: jdText, style: clStyle }),
+//                 });
+//                 const data = await res.json();
+//                 setClResult(data.coverLetter ?? data.error ?? "Generation failed");
+//               } catch { setClResult("Network error — please try again."); }
+//               setClLoading(false);
+//             }}
+//             disabled={clLoading}
+//             className="w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 py-3 rounded-sm transition-colors disabled:opacity-60 shadow-sm"
+//           >
+//             {clLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+//             {clLoading ? "Generating your cover letter…" : `Generate ${clStyle.charAt(0).toUpperCase() + clStyle.slice(1)} Cover Letter`}
+//           </button>
+
+//           {/* Loading indicator */}
+//           {clLoading && (
+//             <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-sm px-4 py-3">
+//               <Loader2 className="w-4 h-4 text-emerald-500 animate-spin flex-shrink-0" />
+//               <p className="text-xs text-emerald-700">Writing your personalised cover letter… (~10 seconds)</p>
+//             </div>
+//           )}
+
+//           {/* Result */}
+//           {clResult && !clLoading && (
+//             <div className="border border-stone-200 rounded-sm overflow-hidden">
+//               <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-b border-stone-100">
+//                 <p className="text-xs font-bold text-stone-600">Your Cover Letter</p>
+//                 <div className="flex gap-2">
+//                   <button onClick={() => navigator.clipboard.writeText(clResult)}
+//                     className="flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-stone-900 border border-stone-200 hover:border-stone-400 px-2.5 py-1.5 rounded-sm transition-colors">
+//                     <Copy className="w-3 h-3" />Copy
+//                   </button>
+//                   <button onClick={() => {
+//                     const blob = new Blob([clResult], { type: "text/plain" });
+//                     const url  = URL.createObjectURL(blob);
+//                     const a    = document.createElement("a"); a.href = url; a.download = "cover-letter.txt"; a.click();
+//                     URL.revokeObjectURL(url);
+//                   }} className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 border border-emerald-200 hover:bg-emerald-50 px-2.5 py-1.5 rounded-sm transition-colors">
+//                     <Download className="w-3 h-3" />Download
+//                   </button>
+//                   <button onClick={() => setClResult("")} className="text-stone-300 hover:text-stone-600">
+//                     <X className="w-4 h-4" />
+//                   </button>
 //                 </div>
 //               </div>
-//               {q.tip && (
-//                 <p className="text-xs text-stone-500 mb-2 leading-relaxed">💡 {q.tip}</p>
-//               )}
-//               {q.starHint && (
-//                 <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-sm px-3 py-2">
-//                   <ChevronRight className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-//                   <p className="text-xs text-blue-700 font-medium">{q.starHint}</p>
-//                 </div>
-//               )}
+//               <div className="p-5">
+//                 <pre className="text-sm text-stone-800 whitespace-pre-wrap leading-relaxed font-sans">{clResult}</pre>
+//               </div>
+//               <div className="px-5 py-3 bg-amber-50 border-t border-amber-100">
+//                 <p className="text-[11px] text-amber-700 leading-relaxed">
+//                   <span className="font-bold">Important:</span> This is a starting point. Always personalise it — add specific company research, adjust the tone to match the company culture, and make it unmistakably you.
+//                 </p>
+//               </div>
 //             </div>
-//           ))}
+//           )}
+
+//           {/* What makes a great cover letter */}
+//           <div className="bg-stone-50 border border-stone-100 rounded-sm p-5">
+//             <p className="text-xs font-black text-stone-400 uppercase tracking-wider mb-3">What makes a great cover letter</p>
+//             <div className="grid grid-cols-2 gap-3">
+//               {[
+//                 { label: "Opening hook",   desc: "Start with a specific, compelling reason why you want this role — not 'I am writing to apply for...'" },
+//                 { label: "Relevant wins",  desc: "Pick 2-3 achievements that directly match what the JD asks for. Quantify them." },
+//                 { label: "Company knowledge", desc: "Show you've researched them. Reference something specific — a product, initiative, or value." },
+//                 { label: "Clear close",    desc: "End with confidence: request an interview, don't beg for one." },
+//               ].map((tip) => (
+//                 <div key={tip.label} className="bg-white border border-stone-100 rounded-sm p-3">
+//                   <p className="text-xs font-bold text-stone-700 mb-1">{tip.label}</p>
+//                   <p className="text-[11px] text-stone-500 leading-snug">{tip.desc}</p>
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
 //         </div>
 //       )}
 //     </div>
@@ -2017,7 +2399,7 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
 
 // // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
 
-// export function CVAnalyserTool() {
+// export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean }) {
 //   const [stage,    setStage]    = useState<"input" | "loading" | "results">("input");
 //   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
 //   const [cvText,   setCvText]   = useState("");
@@ -2103,8 +2485,11 @@ export function CVAnalyserTool({ isSignedIn = false }: { isSignedIn?: boolean })
 //           analysis={analysis} cvText={cvText} jdText={jdText}
 //           onReset={() => { setStage("input"); setAnalysis(null); }}
 //           onRewrite={() => {}}
+//           isSignedIn={isSignedIn}
 //         />
 //       )}
 //     </div>
 //   );
 // }
+
+

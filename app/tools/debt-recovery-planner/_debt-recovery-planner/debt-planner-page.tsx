@@ -14,9 +14,11 @@ import {
   TrendingUp, Sparkles, Heart, AlertTriangle, Info,
 } from "lucide-react";
 import { TOOLS, TOOL_CATEGORIES } from "@/lib/data/tools-data";
-import { DebtPlannerTool } from "./debt-planner-tool";
+import { DebtPlannerTool, TokenGateInfo } from "./debt-planner-tool";
 import { DebtDashboard } from "./debt-dashboard";
 import { ToolCard } from "../../_tools/tools-card";
+import { InsufficientTokensModal } from "@/components/(tokens)/insufficient-tokens-model";
+import { useRouter } from "next/navigation";
 
 
 const TOOL = TOOLS.find((t) => t.slug === "debt-recovery-planner")!;
@@ -94,6 +96,10 @@ interface Props { isSignedIn: boolean; }
 export function DebtPlannerPage({ isSignedIn }: Props) {
   const [activeTab, setActiveTab] = useState<"tool" | "dashboard" | "guide" | "reviews">("tool");
   const [copied,    setCopied]    = useState(false);
+  const router = useRouter();
+  
+  // ── NEW: token modal state ────────────────────────────────────────────────
+    const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
 
   const category = TOOL_CATEGORIES.find(c => c.name === TOOL?.category);
   const related  = TOOLS.filter(t => t.category === TOOL?.category && t.slug !== TOOL?.slug && t.status !== "COMING_SOON").slice(0, 3);
@@ -260,7 +266,10 @@ export function DebtPlannerPage({ isSignedIn }: Props) {
                     </div>
                   </div>
                   <div className="p-6 md:p-8">
-                    <DebtPlannerTool isSignedIn={isSignedIn} />
+                    <DebtPlannerTool 
+                      isSignedIn={isSignedIn} 
+                      onInsufficientTokens={(info) => setTokenModal(info)} 
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -430,6 +439,18 @@ export function DebtPlannerPage({ isSignedIn }: Props) {
           </div>
         )}
       </div>
+      {/* ── NEW: Insufficient Tokens Modal ─────────────────────────────────── */}
+          <InsufficientTokensModal
+            open={!!tokenModal}
+            onClose={() => setTokenModal(null)}
+            required={tokenModal?.required ?? 0}
+            balance={tokenModal?.balance   ?? 0}
+            toolName={tokenModal?.toolName ?? undefined}
+            onPlayGame={() => {
+              setTokenModal(null);
+              router.push("/games"); // or open game overlay via context
+            }}
+          />
     </div>
   );
 }
