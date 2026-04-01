@@ -63,6 +63,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SharedListPage({ params }: Props) {
     const { shareId } = await params;
   const list = await getList(shareId);
+  console.log("Shopping list:", list)
   if (!list) notFound();
 
   return <SharedListClient initialList={list} shareId={shareId} />;

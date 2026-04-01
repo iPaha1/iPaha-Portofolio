@@ -1,5 +1,5 @@
 // =============================================================================
-// app/manifest.webmanifest/route.ts  →  GET /manifest.webmanifest
+// app/manifest.ts/route.ts  →  GET /manifest.ts
 // Full PWA manifest — makes site installable, improves mobile SEO signals.
 // =============================================================================
 

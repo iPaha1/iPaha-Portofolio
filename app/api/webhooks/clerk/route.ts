@@ -55,7 +55,7 @@ async function initializeGamificationForUser(userId: string, displayName: string
     await prismadb.tokenTransaction.create({
       data: {
         userId,
-        amount: 100,
+        amount: 10,
         type: "ACHIEVEMENT",
         description: "🎉 Welcome to the platform! Here are 100 free tokens to get you started.",
         metadata: JSON.stringify({

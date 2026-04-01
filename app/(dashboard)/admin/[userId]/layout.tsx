@@ -23,7 +23,7 @@ export default async function AdminLayout({
 
   // 1. Not authenticated → sign in
   if (!authUserId) {
-    redirect("/sign-in?redirect_url=/admin");
+    redirect("/sign-in?redirect_url=/admin/dashboard");
   }
 
   // 2. URL userId doesn't match authenticated user → forbidden

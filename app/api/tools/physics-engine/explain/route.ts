@@ -7,38 +7,58 @@
 //   mode:        "full" | "simpler" | "deeper" | "tutor"
 //   explorerMode: true for Theory Explorer (broad topics like "Relativity")
 //
-// Returns 8-layer concept breakdown:
-//   1. plainDefinition    — plain English "what is it?"
-//   2. governingLaw       — the core equation with meaning of each term
-//   3. whyItExists        — the motivation (why scientists needed this)
-//   4. history            — discovery, key scientists, context
-//   5. realWorld          — tangible applications in multiple fields
-//   6. intuition          — mental models and analogies
-//   7. misconceptions     — common wrong beliefs corrected
-//   8. experiments        — simple "try it yourself" activities
-//   + conceptLinks, visualisation, levelSummary, whyItMatters
+// Returns 8-layer concept breakdown
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic                     from "@anthropic-ai/sdk";
+import Anthropic from "@anthropic-ai/sdk";
 import { tokenGate } from "@/lib/tokens/token-gate";
 import { deductTokens } from "@/lib/tokens/token-deduct";
+import { getIpFromRequest, trackToolUsage } from "@/lib/tools/track-tool-usage";
+import { prismadb } from "@/lib/db";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
-// Tool token costs (in tokens per request)
-const TOKEN_COST = 10000000000000000; // Adjust based on expected response length and model pricing
+const ToolSlug = "physics-engine";
+const TOKEN_COST = 150; // Higher cost for comprehensive explanations
+const TOOL_NAME = "Physics Explanation Engine";
+
+// Get tool ID from DB
+let TOOL_ID = "unknown-tool-id";
+try {
+  const ToolId = await prismadb.tool.findUnique({
+    where: { slug: ToolSlug },
+    select: { id: true },
+  });
+  TOOL_ID = ToolId?.id ?? "unknown-tool-id";
+  console.log(`[physics-engine/explain] Loaded tool ID: ${TOOL_ID} for slug: ${ToolSlug}`);
+} catch (err) {
+  console.error(`[physics-engine/explain] Failed to load tool ID:`, err);
+}
 
 // ─── Level config ─────────────────────────────────────────────────────────────
-
 const LEVEL_CFG: Record<string, { label: string; depth: string; vocab: string; math: string }> = {
-  gcse:       { label: "GCSE (UK Year 10-11)",    depth: "foundational",   vocab: "plain English, relatable analogies, everyday examples",         math: "simple equations, no calculus, intuitive notation" },
-  alevel:     { label: "A-Level (UK Year 12-13)", depth: "intermediate",   vocab: "precise scientific language, some mathematical derivation",     math: "algebra, basic differentiation, vector notation where needed" },
-  university: { label: "University / Degree",     depth: "advanced",       vocab: "rigorous, formal, full mathematical treatment when appropriate", math: "full calculus, tensors if relevant, formal proofs and derivations" },
+  gcse: { 
+    label: "GCSE (UK Year 10-11)", 
+    depth: "foundational", 
+    vocab: "plain English, relatable analogies, everyday examples", 
+    math: "simple equations, no calculus, intuitive notation" 
+  },
+  alevel: { 
+    label: "A-Level (UK Year 12-13)", 
+    depth: "intermediate", 
+    vocab: "precise scientific language, some mathematical derivation", 
+    math: "algebra, basic differentiation, vector notation where needed" 
+  },
+  university: { 
+    label: "University / Degree", 
+    depth: "advanced", 
+    vocab: "rigorous, formal, full mathematical treatment when appropriate", 
+    math: "full calculus, tensors if relevant, formal proofs and derivations" 
+  },
 };
 
 // ─── Physics visualisation type detector ─────────────────────────────────────
-
 function detectPhysicsVisType(question: string): string {
   const q = question.toLowerCase();
   if (/wave|frequency|amplitude|oscillat|vibrat|sound|light|em wave|transverse|longitudinal/.test(q)) return "wave";
@@ -50,30 +70,77 @@ function detectPhysicsVisType(question: string): string {
   return "none";
 }
 
-// ─── Handler ──────────────────────────────────────────────────────────────────
+// Helper to clean and parse JSON
+function cleanAndParseJSON(rawResponse: string): any {
+  let cleaned = rawResponse.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  cleaned = cleaned.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+  cleaned = cleaned.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
+  
+  const jsonMatch = cleaned.match(/\{[\s\S]+\}/);
+  if (!jsonMatch) throw new Error("No JSON object found");
+  
+  let jsonStr = jsonMatch[0];
+  let inString = false;
+  let escaped = '';
+  for (let i = 0; i < jsonStr.length; i++) {
+    const char = jsonStr[i];
+    const prevChar = i > 0 ? jsonStr[i - 1] : '';
+    if (char === '"' && prevChar !== '\\') {
+      inString = !inString;
+      escaped += char;
+    } else {
+      escaped += char;
+    }
+  }
+  
+  return JSON.parse(escaped);
+}
 
+// ─── Handler ──────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const start = Date.now();
+  let gateResult = null;
+  
   try {
     const {
       question,
-      level        = "gcse",
-      mode         = "full",
+      level = "gcse",
+      mode = "full",
       explorerMode = false,
       followUpContext = "",
     } = await req.json();
 
     if (!question?.trim() || question.trim().length < 2) {
-      return NextResponse.json({ error: "Please enter a physics topic or question" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Please enter a physics topic or question (minimum 2 characters)" },
+        { status: 400 }
+      );
+    }
+
+    // Validate level
+    const validLevels = ["gcse", "alevel", "university"];
+    const validLevel = validLevels.includes(level) ? level : "gcse";
+
+    // Validate mode
+    const validModes = ["full", "simpler", "deeper", "tutor"];
+    if (!validModes.includes(mode)) {
+      return NextResponse.json(
+        { error: `Invalid mode. Valid modes: ${validModes.join(", ")}` },
+        { status: 400 }
+      );
     }
 
     // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
-    const gate = await tokenGate(req, TOKEN_COST, { toolName: "Physics Explanation Engine" });
-    console.log(`[physics-engine/explain] Token gate result:`, gate);
-    if (!gate.ok) return gate.response; // sends 402 JSON to client
-    console.log(`[physics-engine/explain] Token gate passed for user ${gate.dbUserId} — proceeding with explanation generation`);
+    gateResult = await tokenGate(req, TOKEN_COST, { toolName: TOOL_NAME });
+    console.log(`[physics-engine/explain] Token gate result:`, gateResult);
+    
+    if (!gateResult.ok) {
+      return gateResult.response;
+    }
+    
+    console.log(`[physics-engine/explain] Token gate passed for user ${gateResult.dbUserId}`);
 
-
-    const lvl    = LEVEL_CFG[level] ?? LEVEL_CFG.gcse;
+    const lvl = LEVEL_CFG[validLevel] ?? LEVEL_CFG.gcse;
     const vizType = detectPhysicsVisType(question);
 
     const systemPrompt = `You are an exceptional physics teacher and science communicator. Your teaching philosophy:
@@ -92,7 +159,12 @@ Your goal: transform confusion into deep, lasting understanding.`;
     if (mode === "simpler") {
       userPrompt = `A ${lvl.label} student found the physics explanation too complex. Simplify "${question}" dramatically.
 Use the most powerful analogy possible. Make it feel obvious in hindsight.
-Return ONLY valid JSON:
+
+CRITICAL JSON FORMATTING RULES:
+- Return ONLY a valid JSON object - no other text
+- Do NOT use trailing commas
+
+Return EXACTLY this JSON structure:
 {
   "analogy": "<the best possible analogy — specific, vivid, relatable>",
   "simplifiedExplanation": "<2-3 sentences maximum — plain English>",
@@ -104,7 +176,12 @@ Return ONLY valid JSON:
     // ── DEEPER mode ───────────────────────────────────────────────────────────
     else if (mode === "deeper") {
       userPrompt = `A ${lvl.label} student wants to go deeper on "${question}". Provide the advanced treatment.
-Return ONLY valid JSON:
+
+CRITICAL JSON FORMATTING RULES:
+- Return ONLY a valid JSON object - no other text
+- Do NOT use trailing commas
+
+Return EXACTLY this JSON structure:
 {
   "derivation": "<full mathematical derivation or proof at the next level up>",
   "advancedTheory": "<what lies beneath — the deeper physics>",
@@ -117,9 +194,14 @@ Return ONLY valid JSON:
 
     // ── TUTOR mode ────────────────────────────────────────────────────────────
     else if (mode === "tutor") {
-      userPrompt = `A ${lvl.label} student is studying "${question}". Context: ${followUpContext}
+      userPrompt = `A ${lvl.label} student is studying "${question}". Context: ${followUpContext || "none"}
 Respond as a patient, Socratic tutor. Guide them to the answer, don't just give it.
-Return ONLY valid JSON:
+
+CRITICAL JSON FORMATTING RULES:
+- Return ONLY a valid JSON object - no other text
+- Do NOT use trailing commas
+
+Return EXACTLY this JSON structure:
 {
   "response": "<your tutoring response — address their specific confusion>",
   "guidingQuestion": "<a question to help them think it through>",
@@ -138,161 +220,449 @@ Return ONLY valid JSON:
         : `Explain this physics question/topic COMPLETELY for a ${lvl.label} student: "${question}"`
       }
 
-Return ONLY valid JSON (no markdown, no backticks, no explanation outside JSON):
+CRITICAL JSON FORMATTING RULES:
+- Return ONLY a valid JSON object - no other text
+- Do NOT use trailing commas in arrays or objects
+- Escape all double quotes inside strings with backslashes (\\")
+- Ensure all strings are properly closed with quotes
+
+Return EXACTLY this JSON structure (every field must be filled):
 
 {
-  "topic": "<branch of physics — e.g. Mechanics, Electromagnetism, Thermodynamics, Quantum Physics>",
-  "conceptName": "<specific concept — e.g. Newton's Second Law, Electromagnetic Induction, Wave-Particle Duality>",
+  "topic": "<branch of physics — e.g. Mechanics, Electromagnetism>",
+  "conceptName": "<specific concept — e.g. Newton's Second Law>",
   "keyScientists": ["<Scientist 1 with brief role>", "<Scientist 2>"],
 
   "plainDefinition": {
     "oneLineSummary": "<one sentence: what is this in plain English — no jargon>",
-    "expandedDefinition": "<2-3 sentence plain English definition — as if explaining to a curious 14-year-old>",
-    "analogy": "<the most powerful, specific analogy that makes this click immediately>"
+    "expandedDefinition": "<2-3 sentence plain English definition>",
+    "analogy": "<the most powerful, specific analogy>"
   },
 
   "governingLaw": {
     "name": "<name of the law, principle, or equation>",
     "equation": "<the equation — e.g. F = ma>",
-    "terms": [
-      { "symbol": "<e.g. F>", "meaning": "<what it represents>", "unit": "<SI unit>" }
-    ],
-    "inWords": "<the equation stated in plain English — 'Force equals mass times acceleration'>",
+    "terms": [{ "symbol": "<e.g. F>", "meaning": "<what it represents>", "unit": "<SI unit>" }],
+    "inWords": "<the equation stated in plain English>",
     "levelNote": "<any additional mathematical treatment specific to ${lvl.label}>"
   },
 
   "whyItExists": {
-    "problem": "<what specific problem or observation forced scientists to develop this concept>",
-    "beforeDiscovery": "<what people believed or didn't understand before this>",
+    "problem": "<what specific problem forced scientists to develop this>",
+    "beforeDiscovery": "<what people believed before this>",
     "breakthrough": "<the key insight that changed everything>",
-    "significance": "<why this was revolutionary for science>"
+    "significance": "<why this was revolutionary>"
   },
 
   "history": {
-    "discovered": "<by whom, roughly when, under what circumstances>",
-    "keyMoment": "<the famous moment, experiment, or observation that led to the discovery>",
-    "evolution": "<how the understanding deepened or changed over time>",
-    "funFact": "<one genuinely surprising or counterintuitive historical fact about this>",
-    "scientists": [
-      { "name": "<scientist>", "contribution": "<their specific contribution>", "era": "<rough time period>" }
-    ]
+    "discovered": "<by whom, roughly when>",
+    "keyMoment": "<the famous moment or experiment>",
+    "evolution": "<how understanding deepened over time>",
+    "funFact": "<one genuinely surprising historical fact>",
+    "scientists": [{ "name": "<scientist>", "contribution": "<their contribution>", "era": "<time period>" }]
   },
 
-  "realWorld": [
-    {
-      "field": "<Engineering | Medicine | Space | Technology | Environment | Everyday Life | etc.>",
-      "application": "<specific real application>",
-      "example": "<concrete, vivid, relatable example — not abstract>",
-      "impact": "<why this application matters>"
-    }
-  ],
+  "realWorld": [{ "field": "<field>", "application": "<specific application>", "example": "<concrete example>", "impact": "<why this matters>" }],
 
   "intuition": {
-    "primaryModel": "<the single best mental model — vivid and specific>",
-    "alternativeModel": "<a different way of thinking about it for when the first doesn't work>",
-    "thinkAboutItLike": "<complete this: 'Think about it like...' with a specific everyday scenario>",
-    "whatChangesWhen": ["<what happens to X when Y increases — building intuition for the relationships>"]
+    "primaryModel": "<the single best mental model>",
+    "alternativeModel": "<a different way of thinking>",
+    "thinkAboutItLike": "<complete: 'Think about it like...'>",
+    "whatChangesWhen": ["<what happens when X increases>"]
   },
 
-  "misconceptions": [
-    {
-      "wrongBelief": "<common misconception — stated as students typically believe it>",
-      "whyItSeemsTrue": "<why this misconception is understandable — don't dismiss it>",
-      "truth": "<the correct understanding>",
-      "evidence": "<a simple demonstration or example that disproves the misconception>"
-    }
-  ],
+  "misconceptions": [{ "wrongBelief": "<common misconception>", "whyItSeemsTrue": "<why it's understandable>", "truth": "<correct understanding>", "evidence": "<simple demonstration>" }],
 
-  "experiments": [
-    {
-      "title": "<experiment name>",
-      "materials": ["<item 1>", "<item 2>"],
-      "instructions": "<clear, brief instructions — 2-4 sentences>",
-      "whatYoullSee": "<what happens and why — connecting observation to concept>",
-      "safetyNote": "<safety note if relevant, empty string if not>"
-    }
-  ],
+  "experiments": [{ "title": "<experiment name>", "materials": ["<item>"], "instructions": "<clear instructions>", "whatYoullSee": "<what happens>", "safetyNote": "<safety note>" }],
 
-  "conceptLinks": [
-    {
-      "concept": "<related physics concept>",
-      "relationship": "<how it connects>",
-      "direction": "<prerequisite | builds-on | parallel>"
-    }
-  ],
+  "conceptLinks": [{ "concept": "<related concept>", "relationship": "<how it connects>", "direction": "<prerequisite|builds-on|parallel>" }],
 
-  "whyItMatters": "<2-3 sentences on the broader significance — GPS needs relativity, electricity powers civilisation, etc.>",
-
-  "levelSummary": "<2-3 sentence summary pitched exactly at ${lvl.label} — this is what they need for their exam/course>",
-
-  "examTips": [
-    "<specific exam tip 1 for ${lvl.label}>",
-    "<specific exam tip 2>"
-  ],
-
-  "visualisation": {
-    "type": "${vizType}",
-    "description": "<what should be shown and why it aids understanding>",
-    "keyPoints": ["<key visual insight>"],
-    "data": ${vizType !== "none" ? `{
-      "amplitude": <number if wave>,
-      "frequency": <number if wave>,
-      "waveType": "<sine|cosine|damped if wave>",
-      "motionType": "<displacement-time|velocity-time if motion_graph>",
-      "initialValue": <number if motion>,
-      "finalValue": <number if motion>,
-      "timeRange": <number if motion>,
-      "circuitType": "<series|parallel if circuit>",
-      "vectors": [{"x": <num>, "y": <num>, "label": "<>", "color": "<hex>"}],
-      "functionExpression": "<if function_graph>",
-      "xRange": "<if function_graph>"
-    }` : "null"}
-  },
-
-  "difficulty": "<Introductory | GCSE | A-Level | University | Research>",
+  "whyItMatters": "<2-3 sentences on broader significance>",
+  "levelSummary": "<2-3 sentence summary for ${lvl.label}>",
+  "examTips": ["<specific exam tip>"],
+  "visualisation": { "type": "${vizType}", "description": "<what should be shown>", "keyPoints": ["<key insight>"] },
+  "difficulty": "<Introductory|GCSE|A-Level|University|Research>",
   "estimatedReadMinutes": <number>
 }
 
-CRITICAL RULES:
-- Every field must be filled. Never leave a field empty or null (except visualisation.data when type is "none").
-- The plain definition analogy must be SPECIFIC — not "it's like energy" but something vivid and memorable.
-- misconceptions must be things students ACTUALLY believe — not trivial errors. Include 2-3.
-- experiments must be genuinely doable at home or in a school lab with simple materials.
-- realWorld must have 4-6 entries from genuinely diverse fields.
-- For ${lvl.label}: vocabulary, depth, and mathematics must feel natural — not too advanced, not too basic.
-- History scientists entries: include 2-3 relevant scientists with their actual specific contributions.`;
+IMPORTANT: For ${lvl.label} level, ensure vocabulary, depth, and mathematics are appropriate.`;
     }
 
     const message = await anthropic.messages.create({
-      model:      "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-20250514",
       max_tokens: 6000,
-      system:     systemPrompt,
-      messages:   [{ role: "user", content: userPrompt }],
+      temperature: 0.3,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
     });
 
-    const raw   = message.content[0].type === "text" ? message.content[0].text : "{}";
-    const clean = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-
+    const processingMs = Date.now() - start;
+    
+    const raw = message.content[0].type === "text" ? message.content[0].text : "{}";
+    
     let result: any;
-    try { result = JSON.parse(clean); }
-    catch {
-      const match = clean.match(/\{[\s\S]+\}/);
-      if (!match) return NextResponse.json({ error: "Explanation failed — please try again" }, { status: 500 });
-      try { result = JSON.parse(match[0]); }
-      catch { return NextResponse.json({ error: "Could not parse AI response — please try again" }, { status: 500 }); }
+    try {
+      const clean = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      const noTrailing = clean.replace(/,\s*([\]}])/g, '$1');
+      result = JSON.parse(noTrailing);
+    } catch {
+      result = cleanAndParseJSON(raw);
     }
 
     // ── ② DEDUCT tokens — only after successful AI response ─────────────────
-    await deductTokens(gate.dbUserId, TOKEN_COST, "physics-engine/explain", {
-      question,
-      level,
-      mode, 
+    await deductTokens(gateResult.dbUserId, TOKEN_COST, "physics-engine/explain", {
+      questionLength: question.length,
+      level: validLevel,
+      mode,
+      processingMs,
     });
-    console.log(`[physics-engine/explain] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId}`);
+    console.log(`[physics-engine/explain] Deducted ${TOKEN_COST} tokens from user ${gateResult.dbUserId}`);
 
-    return NextResponse.json({ ok: true, result, mode });
+    // ── ③ TRACK USAGE ───────────────────────────────────────────────────────
+    await trackToolUsage({
+      toolId: TOOL_ID,
+      toolName: TOOL_NAME,
+      userId: gateResult.dbUserId,
+      ipAddress: getIpFromRequest(req),
+      processingMs,
+      tokenCost: TOKEN_COST,
+      wasSuccess: true,
+    });
+    console.log(`[physics-engine/explain] Tracked tool usage for user ${gateResult.dbUserId}`);
+
+    return NextResponse.json({ 
+      ok: true, 
+      result, 
+      mode,
+      metadata: {
+        processingTimeMs: processingMs,
+        tokensUsed: TOKEN_COST,
+        level: validLevel,
+        mode,
+      }
+    });
   } catch (err: any) {
-    console.error("[physics-engine/explain]", err);
-    return NextResponse.json({ error: err.message ?? "Explanation failed" }, { status: 500 });
+    console.error("[physics-engine/explain] Error:", err);
+
+    try {
+      await trackToolUsage({
+        toolId: TOOL_ID,
+        toolName: TOOL_NAME,
+        ipAddress: getIpFromRequest(req),
+        processingMs: Date.now() - start,
+        wasSuccess: false,
+        errorMsg: err.message || "Unknown error",
+      });
+    } catch (trackError) {
+      console.error("[physics-engine/explain] Failed to track error:", trackError);
+    }
+    
+    return NextResponse.json(
+      { 
+        error: err.message ?? "Explanation failed",
+        type: err.name ?? "UnknownError"
+      },
+      { status: 500 }
+    );
   }
 }
+
+
+// // =============================================================================
+// // isaacpaha.com — Physics Understanding Engine — Explanation API
+// // app/api/tools/physics-engine/explain/route.ts
+// //
+// // POST { question, level, mode, explorerMode }
+// //   level:       "gcse" | "alevel" | "university"
+// //   mode:        "full" | "simpler" | "deeper" | "tutor"
+// //   explorerMode: true for Theory Explorer (broad topics like "Relativity")
+// //
+// // Returns 8-layer concept breakdown:
+// //   1. plainDefinition    — plain English "what is it?"
+// //   2. governingLaw       — the core equation with meaning of each term
+// //   3. whyItExists        — the motivation (why scientists needed this)
+// //   4. history            — discovery, key scientists, context
+// //   5. realWorld          — tangible applications in multiple fields
+// //   6. intuition          — mental models and analogies
+// //   7. misconceptions     — common wrong beliefs corrected
+// //   8. experiments        — simple "try it yourself" activities
+// //   + conceptLinks, visualisation, levelSummary, whyItMatters
+// // =============================================================================
+
+// import { NextRequest, NextResponse } from "next/server";
+// import Anthropic                     from "@anthropic-ai/sdk";
+// import { tokenGate } from "@/lib/tokens/token-gate";
+// import { deductTokens } from "@/lib/tokens/token-deduct";
+
+// const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+// // Tool token costs (in tokens per request)
+// const TOKEN_COST = 10000000000000000; // Adjust based on expected response length and model pricing
+
+// // ─── Level config ─────────────────────────────────────────────────────────────
+
+// const LEVEL_CFG: Record<string, { label: string; depth: string; vocab: string; math: string }> = {
+//   gcse:       { label: "GCSE (UK Year 10-11)",    depth: "foundational",   vocab: "plain English, relatable analogies, everyday examples",         math: "simple equations, no calculus, intuitive notation" },
+//   alevel:     { label: "A-Level (UK Year 12-13)", depth: "intermediate",   vocab: "precise scientific language, some mathematical derivation",     math: "algebra, basic differentiation, vector notation where needed" },
+//   university: { label: "University / Degree",     depth: "advanced",       vocab: "rigorous, formal, full mathematical treatment when appropriate", math: "full calculus, tensors if relevant, formal proofs and derivations" },
+// };
+
+// // ─── Physics visualisation type detector ─────────────────────────────────────
+
+// function detectPhysicsVisType(question: string): string {
+//   const q = question.toLowerCase();
+//   if (/wave|frequency|amplitude|oscillat|vibrat|sound|light|em wave|transverse|longitudinal/.test(q)) return "wave";
+//   if (/motion|velocity|speed|acceleration|displacement|suvat|kinematics|projectile/.test(q)) return "motion_graph";
+//   if (/circuit|resistor|capacitor|voltage|current|ohm|electric|series|parallel/.test(q)) return "circuit";
+//   if (/force|vector|resultant|component|resolv/.test(q)) return "vector";
+//   if (/graph|plot|linear|parabola|f\(x\)|y =/.test(q)) return "function_graph";
+//   if (/sin|cos|tan|angle|pendulum|circular|rotation/.test(q)) return "geometric";
+//   return "none";
+// }
+
+// // ─── Handler ──────────────────────────────────────────────────────────────────
+
+// export async function POST(req: NextRequest) {
+//   try {
+//     const {
+//       question,
+//       level        = "gcse",
+//       mode         = "full",
+//       explorerMode = false,
+//       followUpContext = "",
+//     } = await req.json();
+
+//     if (!question?.trim() || question.trim().length < 2) {
+//       return NextResponse.json({ error: "Please enter a physics topic or question" }, { status: 400 });
+//     }
+
+//     // ── ① TOKEN GATE — check BEFORE doing any AI work ──────────────────────
+//     const gate = await tokenGate(req, TOKEN_COST, { toolName: "Physics Explanation Engine" });
+//     console.log(`[physics-engine/explain] Token gate result:`, gate);
+//     if (!gate.ok) return gate.response; // sends 402 JSON to client
+//     console.log(`[physics-engine/explain] Token gate passed for user ${gate.dbUserId} — proceeding with explanation generation`);
+
+
+//     const lvl    = LEVEL_CFG[level] ?? LEVEL_CFG.gcse;
+//     const vizType = detectPhysicsVisType(question);
+
+//     const systemPrompt = `You are an exceptional physics teacher and science communicator. Your teaching philosophy:
+// - Physics is the story of how humans understood reality — always teach it that way
+// - Every law has a human story behind it — show it
+// - Analogies and mental models are not simplifications, they ARE the understanding
+// - Students fail physics because they memorise without understanding context or meaning
+// - Level: ${lvl.label} — ${lvl.vocab}
+// - Mathematics: ${lvl.math}
+
+// Your goal: transform confusion into deep, lasting understanding.`;
+
+//     let userPrompt = "";
+
+//     // ── SIMPLER mode ─────────────────────────────────────────────────────────
+//     if (mode === "simpler") {
+//       userPrompt = `A ${lvl.label} student found the physics explanation too complex. Simplify "${question}" dramatically.
+// Use the most powerful analogy possible. Make it feel obvious in hindsight.
+// Return ONLY valid JSON:
+// {
+//   "analogy": "<the best possible analogy — specific, vivid, relatable>",
+//   "simplifiedExplanation": "<2-3 sentences maximum — plain English>",
+//   "keyInsight": "<the one thing they must remember>",
+//   "rememberThis": "<memorable one-liner to cement the concept>"
+// }`;
+//     }
+
+//     // ── DEEPER mode ───────────────────────────────────────────────────────────
+//     else if (mode === "deeper") {
+//       userPrompt = `A ${lvl.label} student wants to go deeper on "${question}". Provide the advanced treatment.
+// Return ONLY valid JSON:
+// {
+//   "derivation": "<full mathematical derivation or proof at the next level up>",
+//   "advancedTheory": "<what lies beneath — the deeper physics>",
+//   "limitationsOfSimpleModel": "<where the simple model breaks down>",
+//   "openQuestions": ["<unresolved question 1>", "<unresolved question 2>"],
+//   "nobelConnections": "<any Nobel Prize-winning work related to this concept>",
+//   "cuttingEdge": "<how this concept relates to current physics research>"
+// }`;
+//     }
+
+//     // ── TUTOR mode ────────────────────────────────────────────────────────────
+//     else if (mode === "tutor") {
+//       userPrompt = `A ${lvl.label} student is studying "${question}". Context: ${followUpContext}
+// Respond as a patient, Socratic tutor. Guide them to the answer, don't just give it.
+// Return ONLY valid JSON:
+// {
+//   "response": "<your tutoring response — address their specific confusion>",
+//   "guidingQuestion": "<a question to help them think it through>",
+//   "hint": "<a subtle hint if they're stuck>",
+//   "encouragement": "<genuine, specific encouragement based on what they got right>",
+//   "nextConcept": "<the next thing they should explore to deepen this understanding>"
+// }`;
+//     }
+
+//     // ── FULL mode — the 8-layer breakdown ─────────────────────────────────────
+//     else {
+//       const isExplorer = explorerMode;
+
+//       userPrompt = `${isExplorer
+//         ? `Provide a complete Theory Explorer breakdown for the physics topic: "${question}"`
+//         : `Explain this physics question/topic COMPLETELY for a ${lvl.label} student: "${question}"`
+//       }
+
+// Return ONLY valid JSON (no markdown, no backticks, no explanation outside JSON):
+
+// {
+//   "topic": "<branch of physics — e.g. Mechanics, Electromagnetism, Thermodynamics, Quantum Physics>",
+//   "conceptName": "<specific concept — e.g. Newton's Second Law, Electromagnetic Induction, Wave-Particle Duality>",
+//   "keyScientists": ["<Scientist 1 with brief role>", "<Scientist 2>"],
+
+//   "plainDefinition": {
+//     "oneLineSummary": "<one sentence: what is this in plain English — no jargon>",
+//     "expandedDefinition": "<2-3 sentence plain English definition — as if explaining to a curious 14-year-old>",
+//     "analogy": "<the most powerful, specific analogy that makes this click immediately>"
+//   },
+
+//   "governingLaw": {
+//     "name": "<name of the law, principle, or equation>",
+//     "equation": "<the equation — e.g. F = ma>",
+//     "terms": [
+//       { "symbol": "<e.g. F>", "meaning": "<what it represents>", "unit": "<SI unit>" }
+//     ],
+//     "inWords": "<the equation stated in plain English — 'Force equals mass times acceleration'>",
+//     "levelNote": "<any additional mathematical treatment specific to ${lvl.label}>"
+//   },
+
+//   "whyItExists": {
+//     "problem": "<what specific problem or observation forced scientists to develop this concept>",
+//     "beforeDiscovery": "<what people believed or didn't understand before this>",
+//     "breakthrough": "<the key insight that changed everything>",
+//     "significance": "<why this was revolutionary for science>"
+//   },
+
+//   "history": {
+//     "discovered": "<by whom, roughly when, under what circumstances>",
+//     "keyMoment": "<the famous moment, experiment, or observation that led to the discovery>",
+//     "evolution": "<how the understanding deepened or changed over time>",
+//     "funFact": "<one genuinely surprising or counterintuitive historical fact about this>",
+//     "scientists": [
+//       { "name": "<scientist>", "contribution": "<their specific contribution>", "era": "<rough time period>" }
+//     ]
+//   },
+
+//   "realWorld": [
+//     {
+//       "field": "<Engineering | Medicine | Space | Technology | Environment | Everyday Life | etc.>",
+//       "application": "<specific real application>",
+//       "example": "<concrete, vivid, relatable example — not abstract>",
+//       "impact": "<why this application matters>"
+//     }
+//   ],
+
+//   "intuition": {
+//     "primaryModel": "<the single best mental model — vivid and specific>",
+//     "alternativeModel": "<a different way of thinking about it for when the first doesn't work>",
+//     "thinkAboutItLike": "<complete this: 'Think about it like...' with a specific everyday scenario>",
+//     "whatChangesWhen": ["<what happens to X when Y increases — building intuition for the relationships>"]
+//   },
+
+//   "misconceptions": [
+//     {
+//       "wrongBelief": "<common misconception — stated as students typically believe it>",
+//       "whyItSeemsTrue": "<why this misconception is understandable — don't dismiss it>",
+//       "truth": "<the correct understanding>",
+//       "evidence": "<a simple demonstration or example that disproves the misconception>"
+//     }
+//   ],
+
+//   "experiments": [
+//     {
+//       "title": "<experiment name>",
+//       "materials": ["<item 1>", "<item 2>"],
+//       "instructions": "<clear, brief instructions — 2-4 sentences>",
+//       "whatYoullSee": "<what happens and why — connecting observation to concept>",
+//       "safetyNote": "<safety note if relevant, empty string if not>"
+//     }
+//   ],
+
+//   "conceptLinks": [
+//     {
+//       "concept": "<related physics concept>",
+//       "relationship": "<how it connects>",
+//       "direction": "<prerequisite | builds-on | parallel>"
+//     }
+//   ],
+
+//   "whyItMatters": "<2-3 sentences on the broader significance — GPS needs relativity, electricity powers civilisation, etc.>",
+
+//   "levelSummary": "<2-3 sentence summary pitched exactly at ${lvl.label} — this is what they need for their exam/course>",
+
+//   "examTips": [
+//     "<specific exam tip 1 for ${lvl.label}>",
+//     "<specific exam tip 2>"
+//   ],
+
+//   "visualisation": {
+//     "type": "${vizType}",
+//     "description": "<what should be shown and why it aids understanding>",
+//     "keyPoints": ["<key visual insight>"],
+//     "data": ${vizType !== "none" ? `{
+//       "amplitude": <number if wave>,
+//       "frequency": <number if wave>,
+//       "waveType": "<sine|cosine|damped if wave>",
+//       "motionType": "<displacement-time|velocity-time if motion_graph>",
+//       "initialValue": <number if motion>,
+//       "finalValue": <number if motion>,
+//       "timeRange": <number if motion>,
+//       "circuitType": "<series|parallel if circuit>",
+//       "vectors": [{"x": <num>, "y": <num>, "label": "<>", "color": "<hex>"}],
+//       "functionExpression": "<if function_graph>",
+//       "xRange": "<if function_graph>"
+//     }` : "null"}
+//   },
+
+//   "difficulty": "<Introductory | GCSE | A-Level | University | Research>",
+//   "estimatedReadMinutes": <number>
+// }
+
+// CRITICAL RULES:
+// - Every field must be filled. Never leave a field empty or null (except visualisation.data when type is "none").
+// - The plain definition analogy must be SPECIFIC — not "it's like energy" but something vivid and memorable.
+// - misconceptions must be things students ACTUALLY believe — not trivial errors. Include 2-3.
+// - experiments must be genuinely doable at home or in a school lab with simple materials.
+// - realWorld must have 4-6 entries from genuinely diverse fields.
+// - For ${lvl.label}: vocabulary, depth, and mathematics must feel natural — not too advanced, not too basic.
+// - History scientists entries: include 2-3 relevant scientists with their actual specific contributions.`;
+//     }
+
+//     const message = await anthropic.messages.create({
+//       model:      "claude-sonnet-4-20250514",
+//       max_tokens: 6000,
+//       system:     systemPrompt,
+//       messages:   [{ role: "user", content: userPrompt }],
+//     });
+
+//     const raw   = message.content[0].type === "text" ? message.content[0].text : "{}";
+//     const clean = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+//     let result: any;
+//     try { result = JSON.parse(clean); }
+//     catch {
+//       const match = clean.match(/\{[\s\S]+\}/);
+//       if (!match) return NextResponse.json({ error: "Explanation failed — please try again" }, { status: 500 });
+//       try { result = JSON.parse(match[0]); }
+//       catch { return NextResponse.json({ error: "Could not parse AI response — please try again" }, { status: 500 }); }
+//     }
+
+//     // ── ② DEDUCT tokens — only after successful AI response ─────────────────
+//     await deductTokens(gate.dbUserId, TOKEN_COST, "physics-engine/explain", {
+//       question,
+//       level,
+//       mode, 
+//     });
+//     console.log(`[physics-engine/explain] Deducted ${TOKEN_COST} tokens from user ${gate.dbUserId}`);
+
+//     return NextResponse.json({ ok: true, result, mode });
+//   } catch (err: any) {
+//     console.error("[physics-engine/explain]", err);
+//     return NextResponse.json({ error: err.message ?? "Explanation failed" }, { status: 500 });
+//   }
+// }

@@ -19,6 +19,7 @@ import {
   Lightbulb,
   Drill,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function SignUpPage() {
   const searchParams = useSearchParams();
@@ -288,9 +289,9 @@ export default function SignUpPage() {
           className="text-center text-[10px] text-gray-400 dark:text-gray-600 mt-4"
         >
           Already have an account?{" "}
-          <a href={`/sign-in?redirectUrl=${redirectUrl}`} className="text-amber-600 dark:text-amber-400 hover:underline font-semibold">
+          <Link href={`/sign-in?redirectUrl=${redirectUrl}`} className="text-amber-600 dark:text-amber-400 hover:underline font-semibold">
             Sign in here
-          </a>
+          </Link>
         </motion.p>
       </motion.div>
     </div>

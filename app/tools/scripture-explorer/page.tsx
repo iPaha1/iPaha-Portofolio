@@ -1,14 +1,73 @@
 // =============================================================================
-// isaacpaha.com — Comparative Scripture Explorer — Server Page
+// isaacpaha.com — Comparative Scripture Explorer — Dedicated Tool Page
 // app/tools/scripture-explorer/page.tsx
 // Route: /tools/scripture-explorer
 // =============================================================================
 
 import type { Metadata }          from "next";
 import { currentUser }            from "@clerk/nextjs/server";
+import { notFound }               from "next/navigation";
+import { getToolBySlug }          from "@/lib/actions/tools-actions";
+import { getPublicTools }         from "@/lib/actions/tools-actions";
+import type { NormalisedTool, DbTool } from "../_tools/tools-lab-client";
 import { ScriptureExplorerPage } from "./_scripture-explorer/scripture-explorer-page";
 
 export const dynamic = 'force-dynamic';
+
+// ─── Field normaliser (mirrors tools-lab-client.tsx normalise()) ──────────────
+
+const CATEGORY_ACCENT: Record<string, string> = {
+  AI:           "#f59e0b",
+  CAREER:       "#ec4899",
+  FINANCE:      "#14b8a6",
+  STARTUP:      "#10b981",
+  EDUCATION:    "#8b5cf6",
+  PRODUCTIVITY: "#14b8a6",
+  WRITING:      "#3b82f6",
+  OTHER:        "#6b7280",
+};
+
+function parseTags(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const p = JSON.parse(raw);
+    return Array.isArray(p) ? p.filter((t): t is string => typeof t === "string") : [];
+  } catch { return []; }
+}
+
+function parseFeatures(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter((f): f is string => typeof f === "string");
+  if (typeof raw === "string") {
+    try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+  }
+  return [];
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalise(t: any): NormalisedTool {
+  return {
+    id:          t.id,
+    slug:        t.slug,
+    name:        t.name,
+    tagline:     t.tagLine,
+    description: t.description,
+    category:    t.category,
+    status:      t.status,
+    icon:        t.icon          ?? "📖",
+    accentColor: t.accentColor   ?? CATEGORY_ACCENT[t.category] ?? "#6366f1",
+    tags:        parseTags(t.tags),
+    features:    parseFeatures(t.features),
+    usageCount:  t.usageCount    ?? 0,
+    tokenCost:   t.tokenCost     ?? undefined,
+    ratingAvg:   t.ratingAvg     ?? 0,
+    ratingCount: t.ratingCount   ?? 0,
+    isFeatured:  t.isFeatured,
+    isNew:       t.isNew,
+    isPremium:   t.isPremium,
+    coverImage:  t.coverImage    ?? undefined,
+  };
+}
 
 export const metadata: Metadata = {
   title:       "Comparative Scripture Explorer — Bible, Qur'an & Tanakh Side by Side",
@@ -35,6 +94,67 @@ export const metadata: Metadata = {
 };
 
 export default async function ScriptureExplorerServerPage() {
-  const clerkUser = await currentUser().catch(() => null);
-  return <ScriptureExplorerPage isSignedIn={!!clerkUser} />;
+  const [clerkUser, rawTool, allTools] = await Promise.all([
+    currentUser().catch(() => null),
+    getToolBySlug("scripture-explorer"),
+    getPublicTools(),
+  ]);
+
+  // Tool must exist and be active/public
+  if (!rawTool || !rawTool.isActive || !rawTool.isPublic) notFound();
+
+  const tool         = normalise(rawTool);
+  const relatedTools = (allTools as DbTool[])
+    .filter((t) => t.category === rawTool.category && t.slug !== rawTool.slug && t.status !== "COMING_SOON")
+    .slice(0, 3)
+    .map(normalise);
+
+  return (
+    <ScriptureExplorerPage
+      isSignedIn={!!clerkUser}
+      tool={tool}
+      relatedTools={relatedTools}
+    />
+  );
 }
+
+// // =============================================================================
+// // isaacpaha.com — Comparative Scripture Explorer — Server Page
+// // app/tools/scripture-explorer/page.tsx
+// // Route: /tools/scripture-explorer
+// // =============================================================================
+
+// import type { Metadata }          from "next";
+// import { currentUser }            from "@clerk/nextjs/server";
+// import { ScriptureExplorerPage } from "./_scripture-explorer/scripture-explorer-page";
+
+// export const dynamic = 'force-dynamic';
+
+// export const metadata: Metadata = {
+//   title:       "Comparative Scripture Explorer — Bible, Qur'an & Tanakh Side by Side",
+//   description: "Explore themes, stories, and teachings across the Bible, Qur'an, and Hebrew Bible / Tanakh. AI-powered, neutral, educational. Understand similarities, differences, and historical context across the Abrahamic traditions.",
+//   openGraph: {
+//     title:       "Comparative Scripture Explorer | Isaac Paha Tools",
+//     description: "Respectful, educational AI tool for exploring the Bible, Qur'an, and Tanakh side by side. No rankings. No judgment. Just understanding.",
+//     url:         "https://isaacpaha.com/tools/scripture-explorer",
+//     type:        "website",
+//   },
+//   twitter: {
+//     card:        "summary_large_image",
+//     title:       "Comparative Scripture Explorer | Free Educational Tool",
+//     description: "Explore the Bible, Qur'an, and Tanakh side by side with AI. Neutral, respectful, educational.",
+//     creator:     "@iPaha3",
+//   },
+//   alternates: { canonical: "https://isaacpaha.com/tools/scripture-explorer" },
+//   keywords: [
+//     "comparative religion", "Bible Quran Tanakh comparison", "Abrahamic religions",
+//     "interfaith education", "scripture comparison tool", "Islam Christianity Judaism",
+//     "religious studies tool", "Bible study", "Quranic studies", "Torah study",
+//     "comparative theology", "interfaith understanding",
+//   ],
+// };
+
+// export default async function ScriptureExplorerServerPage() {
+//   const clerkUser = await currentUser().catch(() => null);
+//   return <ScriptureExplorerPage isSignedIn={!!clerkUser} />;
+// }

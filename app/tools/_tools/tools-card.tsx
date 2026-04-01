@@ -3,15 +3,56 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Users, Zap, Lock, Sparkles } from "lucide-react";
+import { ArrowRight, Users, Zap, Lock } from "lucide-react";
 import { StarRating } from "./star-rating";
 import { staggerItem } from "@/lib/animations";
 import { cn } from "@/lib/utils";
-import { type Tool, STATUS_CONFIG, TOOL_CATEGORIES } from "@/lib/data/tools-data";
+import type { NormalisedTool } from "./tools-lab-client";
 
-export const ToolCard = ({ tool }: { tool: Tool }) => {
-  const status = STATUS_CONFIG[tool.status];
-  const category = TOOL_CATEGORIES.find((c) => c.name === tool.category);
+// ─── Status config (inlined — no longer imported from tools-data.ts) ──────────
+
+const STATUS_CONFIG = {
+  LIVE: {
+    label:  "Live",
+    color:  "text-green-600",
+    bg:     "bg-green-50",
+    border: "border-green-200",
+    dot:    "bg-green-400",
+  },
+  BETA: {
+    label:  "Beta",
+    color:  "text-amber-600",
+    bg:     "bg-amber-50",
+    border: "border-amber-200",
+    dot:    "bg-amber-400 animate-pulse",
+  },
+  COMING_SOON: {
+    label:  "Coming Soon",
+    color:  "text-gray-400",
+    bg:     "bg-gray-50",
+    border: "border-gray-200",
+    dot:    "bg-gray-300",
+  },
+} as const;
+
+// ─── Category display config (derived from DB category string) ────────────────
+
+const CATEGORY_CFG: Record<string, { icon: string; color: string }> = {
+  AI:           { icon: "🤖", color: "#f59e0b" },
+  CAREER:       { icon: "💼", color: "#ec4899" },
+  FINANCE:      { icon: "💰", color: "#14b8a6" },
+  STARTUP:      { icon: "🚀", color: "#10b981" },
+  EDUCATION:    { icon: "📚", color: "#8b5cf6" },
+  PRODUCTIVITY: { icon: "⚡", color: "#14b8a6" },
+  WRITING:      { icon: "✍️", color: "#3b82f6" },
+  OTHER:        { icon: "🔧", color: "#6b7280" },
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export const ToolCard = ({ tool }: { tool: NormalisedTool }) => {
+  const status     = STATUS_CONFIG[tool.status];
+  const catCfg     = CATEGORY_CFG[tool.category] ?? { icon: "🔧", color: "#6b7280" };
   const isDisabled = tool.status === "COMING_SOON";
 
   const CardContent = (
@@ -25,7 +66,7 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
           : "border-gray-100 hover:border-amber-300 hover:shadow-xl hover:shadow-amber-50 cursor-pointer"
       )}
     >
-      {/* Top color stripe */}
+      {/* Static top stripe (disabled state) */}
       <div
         className="absolute top-0 left-0 right-0 h-0.5 transition-all duration-300"
         style={{
@@ -35,6 +76,7 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
           opacity: isDisabled ? 1 : 0,
         }}
       />
+      {/* Animated top stripe (hover) */}
       <div
         className="absolute top-0 left-0 right-0 h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"
         style={{
@@ -43,6 +85,7 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
       />
 
       <div className="p-6 flex flex-col flex-1">
+
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -51,11 +94,12 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
               className="w-11 h-11 rounded-xs flex items-center justify-center text-2xl border transition-all duration-200"
               style={{
                 backgroundColor: `${tool.accentColor}10`,
-                borderColor: `${tool.accentColor}20`,
+                borderColor:     `${tool.accentColor}20`,
               }}
             >
               {tool.icon}
             </div>
+
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-gray-900 group-hover:text-gray-700 transition-colors duration-200 leading-snug">
@@ -71,12 +115,11 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                {/* Category */}
                 <span
                   className="text-[10px] font-semibold"
-                  style={{ color: category?.color }}
+                  style={{ color: catCfg.color }}
                 >
-                  {category?.icon} {tool.category}
+                  {catCfg.icon} {tool.category}
                 </span>
               </div>
             </div>
@@ -101,33 +144,37 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
           {tool.description}
         </p>
 
-        {/* Features list */}
-        <ul className="space-y-1.5 mb-5">
-          {tool.features.slice(0, 3).map((f) => (
-            <li key={f} className="flex items-center gap-2 text-xs text-gray-500">
-              <span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: tool.accentColor }}
-              />
-              {f}
-            </li>
-          ))}
-        </ul>
+        {/* Features — top 3 from DB */}
+        {tool.features.length > 0 && (
+          <ul className="space-y-1.5 mb-5">
+            {tool.features.slice(0, 3).map((f) => (
+              <li key={f} className="flex items-center gap-2 text-xs text-gray-500">
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: tool.accentColor }}
+                />
+                {f}
+              </li>
+            ))}
+          </ul>
+        )}
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 mb-5">
-          {tool.tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-[10px] font-medium text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-xs"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+        {tool.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            {tool.tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] font-medium text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-xs"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-50 mt-auto">
           <div className="flex items-center gap-3">
             {tool.ratingCount > 0 && (
               <StarRating rating={tool.ratingAvg} count={tool.ratingCount} />
@@ -136,6 +183,12 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
               <span className="flex items-center gap-1 text-xs text-gray-300">
                 <Users className="w-3 h-3" />
                 {tool.usageCount.toLocaleString()}
+              </span>
+            )}
+            {/* Token cost */}
+            {tool.tokenCost != null && tool.tokenCost > 0 && (
+              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-xs">
+                🪙 {tool.tokenCost}
               </span>
             )}
           </div>
@@ -148,18 +201,18 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
             </div>
           )}
         </div>
+
       </div>
     </motion.article>
   );
 
   if (isDisabled) return CardContent;
   return (
-  <Link href={`/tools/${tool.slug}`} className="block h-full">
+    <Link href={`/tools/${tool.slug}`} className="block h-full">
       {CardContent}
     </Link>
   );
 };
-
 
 
 
@@ -170,11 +223,11 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
 // import React from "react";
 // import Link from "next/link";
 // import { motion } from "framer-motion";
-// import { ArrowRight, Users, Zap, Lock } from "lucide-react";
-// import { type Tool, STATUS_CONFIG, TOOL_CATEGORIES } from "@/lib/data/tools-data";
+// import { ArrowRight, Users, Zap, Lock, Sparkles } from "lucide-react";
+// import { StarRating } from "./star-rating";
 // import { staggerItem } from "@/lib/animations";
 // import { cn } from "@/lib/utils";
-// import { StarRating } from "./star-rating";
+// import { type Tool, STATUS_CONFIG, TOOL_CATEGORIES } from "@/lib/data/tools-data";
 
 // export const ToolCard = ({ tool }: { tool: Tool }) => {
 //   const status = STATUS_CONFIG[tool.status];
@@ -321,8 +374,11 @@ export const ToolCard = ({ tool }: { tool: Tool }) => {
 
 //   if (isDisabled) return CardContent;
 //   return (
-//     <Link href={`/tools/${tool.slug}`} className="block h-full">
+//   <Link href={`/tools/${tool.slug}`} className="block h-full">
 //       {CardContent}
 //     </Link>
 //   );
 // };
+
+
+

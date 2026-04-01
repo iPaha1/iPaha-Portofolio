@@ -89,6 +89,7 @@ model User {
   authProviderId    String?
 
   // Relationships
+  toolReviews      ToolReview[]
   sessions          UserSession[]
   comments          BlogComment[]
   reactions         BlogReaction[]
@@ -274,11 +275,11 @@ enum AppStatus {
   DEPRECATED
 }
 
-enum ToolStatus {
-  LIVE
-  BETA
-  COMING_SOON
-}
+// enum ToolStatus {
+//   LIVE
+//   BETA
+//   COMING_SOON
+// }
 
 model AppScreenshot {
   id        String   @id @default(cuid())
@@ -430,62 +431,63 @@ model Tool {
   slug            String       @unique
   tagLine         String       @db.Text
   description     String       @db.Text
-  longDescription String?      @db.LongText
-  features        Json?        // List of features for the tool
+  longDescription String?      @db.LongText   // ADD
+  features        Json?                        // already exists
   icon            String?
+  accentColor     String?                      // ADD
   tags            String?      @db.Text
+  tokenCost       Float?
   coverImage      String?
   category        ToolCategory @default(AI)
-  status          ToolStatus  @default(LIVE)
-  isPublic        Boolean      @default(true)
+  status          ToolStatus   @default(LIVE)
+  isPublic        Boolean      @default(true)  // already exists
   isPremium       Boolean      @default(false)
   isFeatured      Boolean      @default(false)
+  isNew           Boolean      @default(false) // ADD (if not present)
   isInteractive   Boolean      @default(false)
   isActive        Boolean      @default(true)
-
   version         String?      @default("1.0.0")
-  apiEndpoint     String?
-  config          String?      @db.Text // JSON
-
+  apiEndpoint     String?                      // ADD
+  config          String?      @db.Text        // already exists (JSON)
+  metaTitle       String?                      // ADD
+  metaDescription String?                      // ADD
   viewCount       Int          @default(0)
   usageCount      Int          @default(0)
   ratingAvg       Float?
   ratingCount     Int          @default(0)
-
-  metaTitle       String?
-  metaDescription String?
-
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  usageLogs       ToolUsageLog[]
-
+  // Relations (keep all your existing ones)
+  usageLogs           ToolUsageLog[]
+  toolReviews         ToolReview[]
   cvAnalyses          CvAnalysis[]
   qrCodes             QrCode[]
-  debtRecoveryPlanner        DebtProfile[]
-  jobApplicationPlanner   JobSeekerProfile[]
-  firstHomePlanner        HomeOwnershipPlan[]
-  smartShoppingList       ShoppingList[]
-  scriptureExplorer       ScriptureExploration[]
-  mathEngine              MathQuery[]
-  physicsEngine           PhysicsQuery[]
-  
+  debtRecoveryPlanner DebtProfile[]
+  jobApplicationPlanner JobSeekerProfile[]
+  firstHomePlanner    HomeOwnershipPlan[]
+  smartShoppingList   ShoppingList[]
+  scriptureExplorer   ScriptureExploration[]
+  mathEngine          MathQuery[]
+  physicsEngine       PhysicsQuery[]
 
   @@map("tools")
   @@index([slug])
   @@index([category])
   @@index([isActive])
+  @@index([status])       // ADD
+  @@index([isFeatured])   // ADD
 }
-
-
 
 model ToolUsageLog {
   id           String   @id @default(cuid())
   toolId       String
+  toolName     String   // ADD — tool name for analytics without joins
   userId       String?
   ipAddress    String?
   inputData    String?  @db.Text
-  processingMs Int?
+  processingMs Int?     // milliseconds the AI call took
+  tokenCost    Int?     // ADD — tokens deducted this run
   wasSuccess   Boolean  @default(true)
   errorMsg     String?
   country      String?
@@ -498,6 +500,25 @@ model ToolUsageLog {
   @@index([toolId])
   @@index([userId])
   @@index([createdAt])
+  @@index([toolName])   // ADD — fast analytics queries by tool name
+}
+
+
+model ToolReview {
+  id        String   @id @default(cuid())
+  toolId    String
+  userId    String
+  rating    Int      // 1 to 5
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, userId])
+  @@map("tool_reviews")
+  @@index([toolId])
+  @@index([userId])
 }
 
 enum ToolCategory {
@@ -507,7 +528,14 @@ enum ToolCategory {
   STARTUP
   EDUCATION
   WRITING
-  OTHER
+  FINANCE    // ADD if not present
+  OTHER      // ADD if not present
+}
+
+enum ToolStatus {
+  LIVE
+  BETA
+  COMING_SOON
 }
 
 
