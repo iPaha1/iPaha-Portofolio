@@ -32,6 +32,7 @@ export interface DBPost {
   likeCount:          number;
   commentCount:       number;
   isFeatured:         boolean;
+  isLatest:           boolean;
   isEditorPick:       boolean;
   seriesPart:         string | null;
   series:             { title: string } | null;

@@ -91,6 +91,8 @@ export async function getBlogPosts({
   categoryId,
   search,
   isFeatured,
+  isToolsShowcase,
+  isLatest,
   sortBy     = "updatedAt",
   sortOrder  = "desc",
 }: {
@@ -100,6 +102,8 @@ export async function getBlogPosts({
   categoryId?: string;
   search?:     string;
   isFeatured?: boolean;
+  isToolsShowcase?: boolean;
+  isLatest?: boolean;
   sortBy?:     "createdAt" | "updatedAt" | "publishedAt" | "title" | "viewCount" | "likeCount" | "trendingScore";
   sortOrder?:  "asc" | "desc";
 } = {}) {
@@ -108,6 +112,8 @@ export async function getBlogPosts({
     ...(status     && { status }),
     ...(categoryId && { categoryId }),
     ...(isFeatured !== undefined && { isFeatured }),
+    ...(isToolsShowcase !== undefined && { isToolsShowcase }),
+    ...(isLatest !== undefined && { isLatest }),
     ...(search && {
       OR: [
         { title:   { contains: search } },
@@ -127,7 +133,7 @@ export async function getBlogPosts({
         id: true, title: true, slug: true, excerpt: true, status: true,
         coverImage: true, categoryId: true, seriesId: true,
         isFeatured: true, isPinned: true, isPremium: true,
-        isIdeasLab: true, isBuildInPublic: true,
+        isIdeasLab: true, isToolsShowcase: true, isLatest: true, isBuildInPublic: true,
         tags: true, publishedAt: true, scheduledAt: true,
         readingTimeMinutes: true, wordCount: true,
         viewCount: true, likeCount: true, commentCount: true,
@@ -196,6 +202,8 @@ export async function createBlogPost(data: {
   isPinned?:        boolean;
   isPremium?:       boolean;
   isIdeasLab?:      boolean;
+  isToolsShowcase?: boolean;
+  isLatest?:        boolean;
   isBuildInPublic?: boolean;
   scheduledAt?:     Date;
   authorId:         string;
@@ -231,6 +239,8 @@ export async function createBlogPost(data: {
       isPinned:         data.isPinned     ?? false,
       isPremium:        data.isPremium    ?? false,
       isIdeasLab:       data.isIdeasLab   ?? false,
+      isToolsShowcase:  data.isToolsShowcase ?? false,
+      isLatest:           data.isLatest ?? false,
       isBuildInPublic:  data.isBuildInPublic ?? false,
       scheduledAt:      data.scheduledAt  ?? null,
       publishedAt:      data.status === "PUBLISHED" ? new Date() : null,
@@ -275,6 +285,8 @@ export async function updateBlogPost(
     isPinned:         boolean;
     isPremium:        boolean;
     isIdeasLab:       boolean;
+    isToolsShowcase:  boolean;
+    isLatest:           boolean;
     isBuildInPublic:  boolean;
     scheduledAt:      Date | null;
     authorBio:        string | null;

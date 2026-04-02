@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
               currency:     "usd",
               unit_amount:  pkg.price,
               product_data: {
-                name:        `${pkg.tokens.toLocaleString()} isaacpaha Tokens`,
+                name:        `${pkg.tokens.toLocaleString()} Isaac Paha Tokens`,
                 description: `${pkg.label} pack — ${pkg.per1k}`,
-                images:      ["https://isaacpaha.com/og-tokens.png"],
+                images:      ["https://isaacpaha.com/og-tokens-use.png"],
               },
             },
             quantity: 1,
@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
           tokens:    pkg.tokens.toString(),
         },
         customer_email:        dbUser.email ?? undefined,
-        success_url:           `${process.env.NEXT_PUBLIC_URL}/token-purchase-success?token_success=1&tokens=${pkg.tokens}`,
-        cancel_url:            `${process.env.NEXT_PUBLIC_URL}/token-purchase-success?token_cancelled=1`,
+        success_url:           `${process.env.NEXT_PUBLIC_BASE_URL}/token-purchase-success?token_success=1&tokens=${pkg.tokens}`,
+        cancel_url:            `${process.env.NEXT_PUBLIC_BASE_URL}/token-purchase-success?token_cancelled=1`,
         allow_promotion_codes: true,
       });
       return NextResponse.json({ url: session.url });
@@ -85,8 +85,8 @@ export async function POST(req: NextRequest) {
         tokens:    pkg.tokens.toString(),
       },
       customer_email:        dbUser.email ?? undefined,
-      success_url:           `${process.env.NEXT_PUBLIC_URL}/token-purchase-success?token_success=1&tokens=${pkg.tokens}`,
-      cancel_url:            `${process.env.NEXT_PUBLIC_URL}/token-purchase-success?token_cancelled=1`,
+      success_url:           `${process.env.NEXT_PUBLIC_BASE_URL}/token-purchase-success?token_success=1&tokens=${pkg.tokens}`,
+      cancel_url:            `${process.env.NEXT_PUBLIC_BASE_URL}/token-purchase-success?token_cancelled=1`,
       allow_promotion_codes: true,
     });
 

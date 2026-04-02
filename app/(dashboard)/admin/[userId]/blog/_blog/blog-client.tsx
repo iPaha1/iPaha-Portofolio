@@ -39,6 +39,8 @@ type PostSummary = {
   coverImage:       string | null;
   categoryId:       string | null;
   isFeatured:       boolean;
+  isToolsShowcase:  boolean;
+  isLatest:        boolean;
   isPinned:         boolean;
   isPremium:        boolean;
   isIdeasLab:       boolean;

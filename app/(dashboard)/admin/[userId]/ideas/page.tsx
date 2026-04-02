@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 interface Props {
   params:       Promise<{ userId: string }>;
   searchParams: Promise<{
-    tab?:      "ideas" | "editor" | "brainstorm"; // specify valid tab values
+    tab?:      "ideas" | "editor" | "brainstorm" | "comments"; // specify valid tab values
     page?:     string;
     search?:   string;
     category?: string;

@@ -25,6 +25,8 @@ type PostSummary = {
   coverImage:     string | null;
   categoryId:     string | null;
   isFeatured:     boolean;
+  isToolsShowcase:  boolean;
+  isLatest:        boolean;
   isPinned:       boolean;
   isPremium:      boolean;
   isIdeasLab:     boolean;
@@ -134,6 +136,8 @@ function PostRow({
             {post.title}
           </button>
           {post.isFeatured && <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-sm uppercase flex-shrink-0">Featured</span>}
+          {post.isToolsShowcase && <span className="text-[9px] font-black bg-green-100 text-green-700 px-1.5 py-0.5 rounded-sm uppercase flex-shrink-0">Tools Showcase</span>}
+          {post.isLatest && <span className="text-[9px] font-black bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded-sm uppercase flex-shrink-0">Latest</span>}
           {post.isPinned   && <span className="text-[9px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-sm uppercase flex-shrink-0">Pinned</span>}
           {post.isPremium  && <span className="text-[9px] font-black bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-sm uppercase flex-shrink-0">Premium</span>}
           {post.isIdeasLab && <span className="text-[9px] font-black bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-sm uppercase flex-shrink-0">Ideas Lab</span>}

@@ -40,16 +40,16 @@ async function initializeGamificationForUser(userId: string, displayName: string
   console.log(`🎮 Initializing gamification for new user: ${displayName} (${email})`);
   
   try {
-    // 1. Create token wallet with 100 free tokens
+    // 1. Create token wallet with 10 free tokens
     const wallet = await prismadb.tokenWallet.create({
       data: {
         userId,
-        balance: 100,
-        totalEarned: 100,
+        balance: 10,
+        totalEarned: 10,
         totalSpent: 0,
       },
     });
-    console.log(`✅ Created token wallet with 100 tokens`);
+    console.log(`✅ Created token wallet with 10 tokens`);
 
     // 2. Create welcome bonus transaction
     await prismadb.tokenTransaction.create({
@@ -57,7 +57,7 @@ async function initializeGamificationForUser(userId: string, displayName: string
         userId,
         amount: 10,
         type: "ACHIEVEMENT",
-        description: "🎉 Welcome to the platform! Here are 100 free tokens to get you started.",
+        description: "🎉 Welcome to the platform! Here are 10 free tokens to get you started.",
         metadata: JSON.stringify({
           type: "welcome_bonus",
           timestamp: new Date().toISOString(),

@@ -19,7 +19,9 @@ import {
    Heart, MessageSquare, Save, Wand2, CheckSquare, Square, FileText, Layers,
   Zap, Brain, Target, MoreHorizontal, ExternalLink,
    ChevronDown, Pencil, Grid3x3,
+   MessageCircle,
 } from "lucide-react";
+import { IdeaCommentsTab } from "./idea-comments-tab";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -70,7 +72,7 @@ interface Props {
   initialIdeas:    IdeaSummary[];
   ideaTotal:       number;
   ideaPages:       number;
-  initialTab:      "ideas" | "editor" | "brainstorm";
+  initialTab:      "ideas" | "editor" | "brainstorm" | "comments";
   initialSearch:   string;
   initialCategory: string;
   initialStatus:   string;
@@ -1095,7 +1097,7 @@ export function IdeasAdminClient({
 //   const [isPending, startTransition] = useTransition();
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
-  const [tab, setTab] = useState<"ideas" | "editor" | "brainstorm">(initialTab);
+  const [tab, setTab] = useState<"ideas" | "editor" | "brainstorm" | "comments">(initialTab);
 
   // ── Ideas list state ──────────────────────────────────────────────────────
   const [ideas,      setIdeas]      = useState<IdeaSummary[]>(initialIdeas);
@@ -1316,8 +1318,9 @@ export function IdeasAdminClient({
             { id: "ideas",      label: "All Ideas",  icon: Grid3x3  },
             { id: "editor",     label: editIdea ? `Editing: ${editIdea.title.slice(0, 28)}…` : "New Idea", icon: Pencil },
             { id: "brainstorm", label: "AI Brainstorm", icon: Brain },
+            { id: "comments",   label: "Comments",     icon: MessageCircle },
           ].map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id as "ideas" | "editor" | "brainstorm")}
+            <button key={t.id} onClick={() => setTab(t.id as "ideas" | "editor" | "brainstorm" | "comments")}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all ${
                 tab === t.id
                   ? "border-amber-500 text-amber-600"
@@ -1541,6 +1544,14 @@ export function IdeasAdminClient({
           <BrainstormTab onUseIdea={handleUseIdea} />
         </div>
       )}
+    {/* ════════════════════════════════════════════════════════════════════
+          TAB: IDEA COMMENTS
+      ════════════════════════════════════════════════════════════════════ */}
+      {tab === "comments" && (
+        <div className="flex-1 overflow-hidden">
+            <IdeaCommentsTab />
+        </div>
+       )}
     </div>
   );
 }

@@ -48,6 +48,7 @@ const STATIC: MetadataRoute.Sitemap = [
 
   // ── Games ──────────────────────────────────────────────────────────────────
   { url: `${BASE}/games/multiplayer`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.75 },
+  { url: `${BASE}/games/token-rush`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.75 },
 
   // ── Static tool pages ─────────────────────────────────────────────────────
   { url: `${BASE}/tools/ai-cv-analyser`,           lastModified: new Date(), changeFrequency: "monthly", priority: 0.85 },

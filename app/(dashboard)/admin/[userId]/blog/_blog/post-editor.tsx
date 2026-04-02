@@ -11,7 +11,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,  Eye, Globe, AlertCircle, Loader2, Check,
   Sparkles, Search, Settings, ExternalLink, History,
-  Star, Pin, Crown, X, 
+  Star, Pin, Crown, X,
+  Wrench,
+  Clock, 
 } from "lucide-react";
 import { RichTextToolbar, useEditorShortcuts } from "./rich-text-toolbar";
 import { AIPanel } from "./ai-panel";
@@ -46,6 +48,8 @@ type PostFull = {
   isPinned:         boolean;
   isPremium:        boolean;
   isIdeasLab:       boolean;
+  isToolsShowcase:   boolean;
+  isLatest:           boolean;
   isBuildInPublic:  boolean;
   scheduledAt:      Date | null;
   publishedAt:      Date | null;
@@ -105,6 +109,8 @@ export function PostEditor({ post, categories, series, onSaved, onCancel }: Post
 
   // Flags
   const [isFeatured,    setIsFeatured]    = useState(post?.isFeatured    ?? false);
+  const [isToolsShowcase, setIsToolsShowcase] = useState(post?.isToolsShowcase ?? false);
+  const [isLatest,           setIsLatest]           = useState(post?.isLatest ?? false);
   const [isPinned,      setIsPinned]      = useState(post?.isPinned      ?? false);
   const [isPremium,     setIsPremium]     = useState(post?.isPremium     ?? false);
   const [isIdeasLab,    setIsIdeasLab]    = useState(post?.isIdeasLab    ?? false);
@@ -171,7 +177,7 @@ export function PostEditor({ post, categories, series, onSaved, onCancel }: Post
       ogImage: ogImage || null, metaTitle: metaTitle || null,
       metaDescription: metaDesc || null, canonicalUrl: canonicalUrl || null,
       keywords: keywords || null, tags,
-      isFeatured, isPinned, isPremium, isIdeasLab, isBuildInPublic: isBuildPublic,
+      isFeatured, isPinned, isPremium, isIdeasLab, isToolsShowcase, isLatest, isBuildInPublic: isBuildPublic,
       scheduledAt: overrideStatus === "SCHEDULED" && scheduledAt ? new Date(scheduledAt) : null,
     };
     try {
@@ -334,6 +340,8 @@ export function PostEditor({ post, categories, series, onSaved, onCancel }: Post
                 {/* Flags row */}
                 {[
                   { label: "Featured", val: isFeatured,    set: setIsFeatured,    icon: Star  },
+                  { label: "Tools Showcase", val: isToolsShowcase, set: setIsToolsShowcase, icon: Wrench },
+                  { label: "Latest", val: isLatest, set: setIsLatest, icon: Clock },
                   { label: "Pinned",   val: isPinned,      set: setIsPinned,      icon: Pin   },
                   { label: "Premium",  val: isPremium,     set: setIsPremium,     icon: Crown },
                 ].map((f) => (

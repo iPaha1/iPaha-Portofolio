@@ -41,8 +41,10 @@ model BlogPost {
   isFeatured        Boolean     @default(false)
   isPinned          Boolean     @default(false)
   isIdeasLab        Boolean     @default(false)
+  isToolsShowcase   Boolean     @default(false)
   isBuildInPublic   Boolean     @default(false)
   isEditorPick       Boolean     @default(false)
+  isLatest           Boolean     @default(false)
   tags              String?     @db.Text // JSON string[]
 
   // Reading metrics

@@ -374,7 +374,7 @@ export function GameTeaserSection() {
                 }}
               >
                 <Gamepad2 className="w-4 h-4" />
-                Explore all 24 games
+                Explore all 100+ games
                 <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
               </motion.span>
             </Link>

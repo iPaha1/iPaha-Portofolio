@@ -137,7 +137,7 @@ export const metadata: Metadata = {
         url:    OG_IMAGE,
         width:  1200,
         height: 630,
-        alt:    "Isaac Paha — Technologist, Entrepreneur & Builder",
+        alt:    "Isaac Paha — Technologist, Entrepreneur & Thinker",
         type:   "image/png",
       },
     ],
@@ -231,7 +231,7 @@ const personSchema = {
     "@id":    `${SITE_URL}/#org`,
   },
   knowsAbout: [
-    "React.js", "Next.js", "Node.js", "TypeScript", "Prisma ORM",
+    "React.js", "Next.js", "Node.js", "TypeScript", "Prisma ORM", "MYSQL",
     "Artificial Intelligence", "Software Development", "Entrepreneurship",
     "African Technology", "UK Technology Sector", "Full-Stack Web Development",
     "Product Management", "SaaS", "E-commerce",

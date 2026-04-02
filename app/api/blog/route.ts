@@ -30,6 +30,17 @@ export async function GET(req: NextRequest) {
       // You can override here or handle it inside getBlogPosts
       // For now, assuming getBlogPosts already supports sortBy=publishedAt + desc
     }
+    console.log("Blog list API result:", result);
+    // console.log("Query params:", {
+    //   page: sp.get("page"),
+    //   pageSize: sp.get("pageSize"),
+    //   status: sp.get("status"),
+    //   categoryId: sp.get("categoryId"),
+    //   search: sp.get("search"),
+    //   sortBy: sp.get("sortBy"),
+    //   sortOrder: sp.get("sortOrder"),
+    //   sort: sp.get("sort"),
+    // });
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {

@@ -59,26 +59,49 @@ export default function manifest(): MetadataRoute.Manifest {
     
     shortcuts: [
       {
-        name: 'About Isaac',
-        short_name: 'About',
-        description: 'Learn about Isaac Paha\'s journey',
-        url: '/about',
-        icons: [{ src: '/favicon-192x192.png', sizes: '192x192' }]
-      },
-      {
-        name: 'Projects',
-        short_name: 'Projects',
-        description: 'View Isaac\'s portfolio',
-        url: '/projects',
-        icons: [{ src: '/favicon-192x192.png', sizes: '192x192' }]
-      },
-      {
         name: 'Blog',
         short_name: 'Blog',
         description: 'Read tech articles and insights',
         url: '/blog',
         icons: [{ src: '/favicon-192x192.png', sizes: '192x192' }]
       },
+      {
+        name: 'Apps',
+        short_name: 'Apps',
+        description: 'View Isaac\'s apps',
+        url: '/apps',
+        icons: [{ src: '/favicon-192x192.png', sizes: '192x192' }]
+      },
+      {
+        name: 'Ideas Lab',
+        short_name: 'Ideas',
+        description: 'Ideas worth reading',
+        url: '/ideas',
+        icons: [{ src: '/favicon-192x192.png', sizes: '192x192' }]
+      },
+      {
+        name: 'Tools',
+        short_name: 'Tools',
+        description: 'Tools that gets the work done',
+        url: '/tools',
+        icons: [{ src: '/favicon-192x192.png', sizes: '192x192' }]
+      },
+      {
+        name: 'Games Center',
+        short_name: 'Games',
+        description: 'Mini games to keep you busy',
+        url: '/games',
+        icons: [{ src: '/favicon-192x192.png', sizes: '192x192' }]
+      },
+      {
+        name: 'Now',
+        short_name: 'Now',
+        description: "What I'm doing now",
+        url: '/now',
+        icons: [{ src: '/favicon-192x192.png', sizes: '192x192' }]
+      },
+      
+      
       {
         name: 'Contact',
         short_name: 'Contact',
@@ -90,19 +113,107 @@ export default function manifest(): MetadataRoute.Manifest {
 
     screenshots: [
       {
-        src: '/images/screenshots/desktop-home.png',
+        src: '/screenshots/desktop-home.png',
         sizes: '1280x720',
         type: 'image/png',
         form_factor: 'wide',
-        label: 'Isaac Paha Portfolio Homepage'
+        label: 'Isaac Paha Homepage'
       },
       {
-        src: '/images/screenshots/mobile-home.png',
+        src: '/screenshots/mobile-home.png',
         sizes: '750x1334',
         type: 'image/png',
         form_factor: 'narrow',
-        label: 'Isaac Paha Portfolio Mobile View'
+        label: 'Isaac Paha Mobile View'
+      },
+      {
+        src: '/screenshots/desktop-blog.png',
+        sizes: '1280x720',
+        type: 'image/png',
+        form_factor: 'wide',
+        label: 'Isaac Paha Blog View'
+      },
+      {
+        src: '/screenshots/mobile-blog.png',
+        sizes: '750x1334',
+        type: 'image/png',
+        form_factor: 'narrow',
+        label: 'Isaac Paha Blog View'
+      },
+      {
+        src: '/screenshots/desktop-apps.png',
+        sizes: '1280x720',
+        type: 'image/png',
+        form_factor: 'wide',
+        label: 'Isaac Paha Apps'
+      },
+      {
+        src: '/screenshots/mobile-apps.png',
+        sizes: '750x1334',
+        type: 'image/png',
+        form_factor: 'narrow',
+        label: 'Isaac Paha Apps'
+      },
+      {
+        src: '/screenshots/desktop-ideas-lab.png',
+        sizes: '1280x720',
+        type: 'image/png',
+        form_factor: 'wide',
+        label: 'Isaac Paha Ideas Lab'
+      },
+      {
+        src: '/screenshots/mobile-ideas-lab.png',
+        sizes: '750x1334',
+        type: 'image/png',
+        form_factor: 'narrow',
+        label: 'Isaac Paha Ideas Lab'
+      },
+      {
+        src: '/screenshots/desktop-tools.png',
+        sizes: '1280x720',
+        type: 'image/png',
+        form_factor: 'wide',
+        label: 'Isaac Paha Tools View'
+      },
+      {
+        src: '/screenshots/mobile-tools.png',
+        sizes: '750x1334',
+        type: 'image/png',
+        form_factor: 'narrow',
+        label: 'Isaac Paha Tools View'
+      },
+      {
+        src: '/screenshots/desktop-games.png',
+        sizes: '1280x720',
+        type: 'image/png',
+        form_factor: 'wide',
+        label: 'Isaac Paha Games'
+      },
+      {
+        src: '/screenshots/mobile-games.png',
+        sizes: '750x1334',
+        type: 'image/png',
+        form_factor: 'narrow',
+        label: 'Isaac Paha Games'
+      },
+      {
+        src: '/screenshots/desktop-now.png',
+        sizes: '1280x720',
+        type: 'image/png',
+        form_factor: 'wide',
+        label: 'Isaac Paha Now'
+      },
+      {
+        src: '/screenshots/mobile-now.png',
+        sizes: '750x1334',
+        type: 'image/png',
+        form_factor: 'narrow',
+        label: 'Isaac Paha Now'
       }
-    ]
+    ],
+    "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  
   }
 }
