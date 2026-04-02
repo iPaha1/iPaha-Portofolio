@@ -655,16 +655,117 @@ function FullscreenGame({
     return () => clearTimeout(t);
   }, [count]);
 
+  // const handleComplete = useCallback((r: number, s?: number) => {
+  //   setReward(r); setScore(s ?? 0); setPhase("result");
+  //   const timeTaken = Date.now() - startTime.current;
+  //   setTimeout(() => onComplete(r, s ?? 0), 2000);
+  //   fetch("/api/game/complete", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ gameEventId: game.id, rewardEarned: r, score: s ?? 0, timeTaken, isWinner: r > 0 }),
+  //   }).catch(console.error);
+  // }, [game.id, onComplete]);
+
   const handleComplete = useCallback((r: number, s?: number) => {
-    setReward(r); setScore(s ?? 0); setPhase("result");
-    const timeTaken = Date.now() - startTime.current;
-    setTimeout(() => onComplete(r, s ?? 0), 2000);
-    fetch("/api/game/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameEventId: game.id, rewardEarned: r, score: s ?? 0, timeTaken, isWinner: r > 0 }),
-    }).catch(console.error);
-  }, [game.id, onComplete]);
+  setReward(r); 
+  setScore(s ?? 0); 
+  setPhase("result");
+  const timeTaken = Date.now() - startTime.current;
+  
+  // Calculate performance based on score/reward
+  let performance = "good"; // default
+  const maxPossibleReward = game.bonusTokens ?? game.rewardTokens * 2;
+  const percentage = (r / maxPossibleReward) * 100;
+  
+  if (percentage >= 90) performance = "perfect";
+  else if (percentage >= 70) performance = "good";
+  else if (percentage >= 50) performance = "partial";
+  else performance = "fail";
+  
+  // Determine game type mapping
+  let gameTypeForAPI = game.type.toLowerCase();
+  // Map your game types to the ones expected by the economy manager
+  const gameTypeMap: Record<string, string> = {
+    "click_hunt": "memory",
+    "token_rain": "memory", 
+    "reaction": "memory",
+    "bubble_burst": "memory",
+    "mole_mash": "memory",
+    "dodge_rush": "memory",
+    "memory_match": "memory",
+    "number_pulse": "memory",
+    "shadow_trace": "memory",
+    "pixel_paint": "memory",
+    "star_connect": "memory",
+    "frequency_match": "memory",
+    "sequence_memory": "memory",
+    "vault_cracker": "memory",
+    "colour_tap": "quiz",
+    "math_blitz": "quiz",
+    "speed_typer": "quiz",
+    "gravity_flip": "puzzle",
+    "signal_chain": "puzzle",
+    "rhythm_pulse": "quiz",
+    "neon_trail": "puzzle",
+    "ice_slide": "puzzle",
+    "precision_stop": "quiz",
+    "laser_grid": "puzzle",
+    "orbit_slingshot": "puzzle",
+    "neon_typerace": "quiz",
+    "color_flood": "puzzle",
+    "pulse_catcher": "quiz",
+    "shadow_match": "memory",
+    "warp_speed": "puzzle",
+    "mind_the_gap": "quiz",
+    "particle_painter": "puzzle",
+    "chain_reaction_part_two": "puzzle",
+    "frequency_surfer": "quiz",
+    "heist_laser": "puzzle",
+    "black_hole": "puzzle",
+    "pixel_storm": "puzzle",
+    "plasma_snake": "puzzle",
+    "mind_meld": "quiz",
+    "neon_pinball": "puzzle",
+    "time_freeze": "puzzle",
+    "echo_chamber": "quiz",
+    "quantum_collapse": "puzzle",
+    "tile_flip": "puzzle",
+    "chain_reaction": "puzzle",
+    "sonar_sweep": "quiz",
+    "auction_blitz": "quiz",
+    "mirror_painter": "puzzle",
+    "word_hunt": "quiz",
+    "mystery_box": "daily_challenge"
+  };
+  
+  const mappedGameType = gameTypeMap[gameTypeForAPI] || "memory";
+  
+  // Determine if they won (for games with win/lose condition)
+  const isWin = r > 0 && (s ? s > 50 : true);
+  
+  setTimeout(() => onComplete(r, s ?? 0), 2000);
+  
+  // FIXED: Send gameType and performance
+  fetch("/api/game/complete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ 
+      gameEventId: game.id,
+      gameType: mappedGameType,           // ✅ ADD THIS
+      performance: performance,            // ✅ ADD THIS
+      score: s ?? 0, 
+      timeTaken, 
+      isWinner: isWin,
+      metadata: {
+        originalReward: r,
+        maxPossibleReward,
+        percentageScore: percentage,
+        gameTitle: game.title
+      }
+      // ❌ REMOVE rewardEarned - server calculates it!
+    }),
+  }).catch(console.error);
+}, [game.id, game.title, game.type, game.rewardTokens, game.bonusTokens, onComplete]);
 
   return (
     <motion.div

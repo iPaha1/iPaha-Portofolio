@@ -17,7 +17,7 @@ import { prismadb } from "@/lib/db";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 const ToolSlug = "scripture-explorer";
-const TOKEN_COST = 50; // Reasonable token cost for study companion questions
+const TOKEN_COST = 100; // Reasonable token cost for study companion questions
 const TOOL_NAME = "Scripture Study Companion";
 
 // Get tool ID from DB

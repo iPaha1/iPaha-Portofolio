@@ -18,7 +18,7 @@ import { prismadb } from "@/lib/db";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 const ToolSlug = "debt-planner";
-const TOKEN_COST = 30; // Reasonable token cost for coaching conversations
+const TOKEN_COST = 100; // Reasonable token cost for coaching conversations
 const TOOL_NAME = "Debt Recovery Coach";
 
 // Get tool ID from DB

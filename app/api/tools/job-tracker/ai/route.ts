@@ -19,7 +19,7 @@ import { prismadb } from "@/lib/db";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 const ToolSlug = "job-application-tracker"; // For fetching tool ID and tracking usage
-const TOKEN_COST = 500; // Adjust based on expected response length and model pricing
+const TOKEN_COST = 100; // Adjust based on expected response length and model pricing
 const TOOL_NAME = "Job Application Tracker";
 
 // Get tool ID from DB

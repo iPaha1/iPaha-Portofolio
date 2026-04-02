@@ -37,10 +37,10 @@ try {
 
 // ── Token cost by mode ────────────────────────────────────────────────────────
 const MODE_TOKEN_COST: Record<string, number> = {
-  full: 50,
-  simpler: 30,
-  deeper: 40,
-  tutor: 35,
+  full: 120,
+  simpler: 100,
+  deeper: 150,
+  tutor: 100,
 };
 
 // ─── Level config ─────────────────────────────────────────────────────────────

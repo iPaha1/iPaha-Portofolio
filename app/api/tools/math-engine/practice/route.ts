@@ -16,7 +16,7 @@ import { prismadb } from "@/lib/db";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 const ToolSlug = "math-engine";
-const TOKEN_COST = 80; // Reasonable token cost for practice questions
+const TOKEN_COST = 100; // Reasonable token cost for practice questions
 const TOOL_NAME = "Math Practice Generator";
 
 // Get tool ID from DB

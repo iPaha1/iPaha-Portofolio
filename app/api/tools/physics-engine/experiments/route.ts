@@ -16,7 +16,7 @@ import { prismadb } from "@/lib/db";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 const ToolSlug = "physics-engine";
-const TOKEN_COST = 80; // Reasonable token cost for physics questions
+const TOKEN_COST = 100; // Reasonable token cost for physics questions
 const TOOL_NAME = "Physics Understanding Engine";
 
 // Get tool ID from DB

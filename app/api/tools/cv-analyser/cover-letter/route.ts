@@ -17,7 +17,7 @@ import { getIpFromRequest, trackToolUsage } from "@/lib/tools/track-tool-usage";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 const ToolSlug = "ai-cv-analyser";
-const TOKEN_COST = 200;
+const TOKEN_COST = 100;
 const TOOL_NAME = "AI CV Analyser";
 
 // Get tool ID from DB

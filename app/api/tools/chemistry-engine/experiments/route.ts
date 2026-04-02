@@ -33,8 +33,8 @@ try {
 
 // Tool token costs (in tokens per request)
 const MODE_TOKEN_COST: Record<string, number> = {
-  practice: 80,           // Practice questions with solutions
-  theory_questions: 60,   // Theory questions with model answers
+  practice: 120,           // Practice questions with solutions
+  theory_questions: 100,   // Theory questions with model answers
 };
 
 // Helper to clean and parse JSON

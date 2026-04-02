@@ -17,7 +17,7 @@ import { prismadb } from "@/lib/db";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 const ToolSlug = "qr-generator";
-const TOKEN_COST = 20; // Reasonable token cost for AI design suggestions
+const TOKEN_COST = 50; // Reasonable token cost for AI design suggestions
 const TOOL_NAME = "QR Code AI Suggest";
 
 // Get tool ID from DB
