@@ -8,6 +8,8 @@ import { getPublicTools } from "@/lib/actions/tools-actions";
 import { ToolsLabClient } from "./_tools/tools-lab-client";
 import type { DbTool }    from "./_tools/tools-lab-client";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title:       "Tools Lab — AI-Powered Tools for Builders, Students & Job Seekers",
   description: "20+ sharp AI tools for the moments that matter. CV analyser, startup validator, debt planner, learning engines, and more. Most are free to try.",

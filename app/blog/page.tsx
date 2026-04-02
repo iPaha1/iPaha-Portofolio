@@ -7,6 +7,8 @@ import type { Metadata } from "next";
 import { BlogClient } from "./_blog/blog-client";
 import type { DBPost, DBCategory, DBPostFull } from "@/lib/types/blog";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Blog — Essays on Technology, Business, Africa & Life",
   description:
