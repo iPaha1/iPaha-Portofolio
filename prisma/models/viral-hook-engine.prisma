@@ -1,0 +1,87 @@
+model ViralHookQuery {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Input
+  originalIdea     String          @db.Text
+  platform         ContentPlatform @default(YOUTUBE)
+  niche            String?         @db.VarChar(300)
+  targetAudience   String?         @db.VarChar(300)
+  contentFormat    String?         @db.VarChar(200)  // e.g. "10-min tutorial", "talking head", "vlog"
+
+  // Results
+  resultJson       String?         @db.LongText
+  viralityScore    Int?            // 0–100
+  viralityTier     ViralityTier?
+  hooksGenerated   Int             @default(0)
+
+  // User actions
+  isSaved          Boolean         @default(false)
+  isStarred        Boolean         @default(false)
+  chosenHookIndex  Int?            // which hook the user picked
+  notes            String?         @db.Text
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([platform])
+  @@index([createdAt])
+}
+
+model CreatorWorkspace {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Saved hooks and ideas
+  savedHooksJson   String    @db.LongText  // array of hook objects user starred
+  contentCalendar  String    @db.LongText  // scheduled content ideas
+  nicheProfileJson String?  @db.Text                     // user's niche, platform, audience info
+
+  // Stats
+  totalQueries     Int      @default(0)
+  hooksGenerated   Int      @default(0)
+  streakDays       Int      @default(0)
+  xpPoints         Int      @default(0)
+  lastActivityDate DateTime?
+
+  // Platform breakdown JSON: [{ platform, count }]
+  platformsJson    String    @db.Text
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum ContentPlatform {
+  YOUTUBE
+  TIKTOK
+  INSTAGRAM_REELS
+  TWITTER_X
+  LINKEDIN
+  PODCAST
+  NEWSLETTER
+  BLOG
+}
+
+enum HookType {
+  CURIOSITY_GAP
+  CONTROVERSIAL
+  NUMBERS_DATA
+  PERSONAL_STORY
+  FEAR_FOMO
+  SHOCK_SURPRISE
+  HOW_TO
+  LISTICLE
+  CHALLENGE
+  TRANSFORMATION
+}
+
+enum ViralityTier {
+  SLEEPER      // 0–30  — unlikely to spread
+  DECENT       // 31–50 — solid but won't explode
+  STRONG       // 51–70 — real potential
+  HOT          // 71–85 — high viral probability
+  EXPLOSIVE    // 86–100 — all signals point up
+}

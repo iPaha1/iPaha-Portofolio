@@ -1,0 +1,91 @@
+model ContentStudioProject {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Input
+  topic            String              @db.Text
+  platform         ContentStudioPlatform @default(YOUTUBE_LONG)
+  tone             ContentTone         @default(EDUCATIONAL)
+  targetLength     String?             @db.VarChar(100)  // e.g. "10 minutes", "60 seconds"
+  targetAudience   String?             @db.VarChar(300)
+  creatorStyle     String?             @db.Text           // e.g. "casual, no swearing, direct"
+  niche            String?             @db.VarChar(200)
+  keyPoints        String?             @db.Text           // user's own key points to include
+
+  // Generated content (stored as JSON)
+  resultJson       String?             @db.LongText
+  title            String?             @db.VarChar(500)
+  hookText         String?             @db.Text
+
+  // Metadata
+  status           ScriptStatus        @default(DRAFT)
+  isSaved          Boolean             @default(true)
+  isStarred        Boolean             @default(false)
+  publishedUrl     String?             @db.VarChar(500)
+  notes            String?             @db.Text
+  wordCount        Int                 @default(0)
+  estimatedRuntime String?             @db.VarChar(50)
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([platform])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ContentStudioWorkspace {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalProjects    Int      @default(0)
+  totalWords       Int      @default(0)
+  publishedCount   Int      @default(0)
+  streakDays       Int      @default(0)
+  xpPoints         Int      @default(0)
+  lastActivityDate DateTime?
+
+  // JSON arrays
+  platformsJson    String    @db.Text  // [{ platform, count }]
+  tonesJson        String    @db.Text  // [{ tone, count }]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+
+
+enum ContentStudioPlatform {
+  YOUTUBE_LONG
+  YOUTUBE_SHORT
+  TIKTOK
+  INSTAGRAM_REELS
+  LINKEDIN_VIDEO
+  LINKEDIN_POST
+  TWITTER_THREAD
+  PODCAST_EPISODE
+  BLOG_POST
+  NEWSLETTER
+}
+
+enum ContentTone {
+  EDUCATIONAL
+  ENTERTAINING
+  INSPIRATIONAL
+  CONTROVERSIAL
+  STORYTELLING
+  NEWS_COMMENTARY
+  TUTORIAL
+  VLOG
+}
+
+enum ScriptStatus {
+  DRAFT
+  IN_PRODUCTION
+  FILMED
+  EDITED
+  PUBLISHED
+}

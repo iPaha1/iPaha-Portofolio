@@ -151,6 +151,19 @@ model User {
   // Kids Birthday Planner
   party                     Party[]
 
+  // Career Discovery Engine
+  careerQueries           CareerDiscoveryQuery[]
+  savedCareers            SavedCareer[]
+  careerDiscoveryProgress CareerDiscoveryProgress?
+
+  // Viral Hook Engine
+  viralHookQueries  ViralHookQuery[]
+  creatorWorkspace  CreatorWorkspace?
+
+  // Content Studio
+  contentStudioProjects   ContentStudioProject[]
+  contentStudioWorkspace  ContentStudioWorkspace?
+
   // Gamification & achievements
   userAchievements         UserAchievement[]
   gameParticipation    GameParticipation[]
@@ -501,7 +514,7 @@ model Tool {
   apiEndpoint     String?                      // ADD
   config          String?      @db.Text        // already exists (JSON)
   metaTitle       String?                      // ADD
-  metaDescription String?                      // ADD
+  metaDescription String?       @db.Text                     // ADD
   viewCount       Int          @default(0)
   usageCount      Int          @default(0)
   ratingAvg       Float?

@@ -1,0 +1,106 @@
+model CareerDiscoveryQuery {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  // Input snapshot
+  skillsJson      String          @db.Text
+  education       String          @db.VarChar(500)
+  goals           String          @db.Text
+  experienceLevel CareerLevel     @default(ENTRY)
+  currentRole     String?         @db.VarChar(300)
+  salaryTarget    Int?
+ 
+  // Results
+  resultJson      String?         @db.LongText
+  careerCount     Int             @default(0)
+ 
+  // Metadata
+  isSaved         Boolean         @default(true)
+  isStarred       Boolean         @default(false)
+  notes           String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+ 
+  savedCareers    SavedCareer[]
+ 
+  @@index([userId])
+  @@index([createdAt])
+}
+ 
+model SavedCareer {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  queryId   String?
+  query     CareerDiscoveryQuery? @relation(fields: [queryId], references: [id], onDelete: SetNull)
+ 
+  // Core career data
+  careerTitle        String           @db.VarChar(300)
+  careerSlug         String           @db.VarChar(300)
+  industry           String           @db.VarChar(200)
+  competitionLevel   CompetitionLevel @default(MEDIUM)
+  entryTimeframe     EntryTimeframe   @default(SIX_TO_12_MONTHS)
+  salaryEntryGbp     Int?
+  salarySeniorGbp    Int?
+  skillMatchPct      Int              @default(0)
+ 
+  // Full career detail JSON
+  careerJson         String?          @db.LongText
+ 
+  // User progress
+  isApplying         Boolean          @default(false)
+  isStarred          Boolean          @default(false)
+  progressNotes      String?          @db.Text
+  roadmapStep        Int              @default(0)
+ 
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+ 
+  @@index([userId])
+  @@index([careerSlug])
+  @@unique([userId, careerSlug])
+}
+ 
+model CareerDiscoveryProgress {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  totalQueries       Int      @default(0)
+  careersExplored    Int      @default(0)
+  careersStarred     Int      @default(0)
+  streakDays         Int      @default(0)
+  xpPoints           Int      @default(0)
+  lastActivityDate   DateTime?
+ 
+  // JSON arrays
+  industriesJson     String   @db.Text
+  topSkillsJson      String   @db.Text
+ 
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+enum CareerLevel {
+  ENTRY
+  MID
+  SENIOR
+  EXECUTIVE
+}
+ 
+enum CompetitionLevel {
+  VERY_LOW
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+ 
+enum EntryTimeframe {
+  UNDER_3_MONTHS
+  THREE_TO_6_MONTHS
+  SIX_TO_12_MONTHS
+  ONE_TO_2_YEARS
+  TWO_PLUS_YEARS
+}
