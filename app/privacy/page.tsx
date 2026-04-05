@@ -25,7 +25,7 @@ const OPERATOR = "Isaac Paha / iPaha Ltd";
 const CONTACT_EMAIL = "privacy@ipahait.com";
 const DPO_EMAIL = "dpo@ipahait.com";
 const PLATFORM_URL = "https://www.isaacpaha.com";
-const COMPANY_URL = "https://ipahait.com";
+const COMPANY_URL = "https://ipaha.co.uk";
 
 const SECTIONS = [
   {

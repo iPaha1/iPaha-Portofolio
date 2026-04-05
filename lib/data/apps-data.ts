@@ -103,7 +103,7 @@ export const COMPANIES: Record<
     tagline: "Technology solutions for modern businesses",
     country: "United Kingdom",
     flag: "🇬🇧",
-    website: "https://ipahait.com",
+    website: "https://ipaha.co.uk",
     primaryColor: "#f59e0b",
     description:
       "UK-based technology company building SaaS tools and AI-powered products for professionals and businesses.",

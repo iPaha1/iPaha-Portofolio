@@ -30,7 +30,7 @@ export const seoConfig = {
   companies: [
     {
       name: 'iPaha Ltd',
-      url: 'https://ipahait.com',
+      url: 'https://ipaha.co.uk',
       description: 'IT consultancy providing custom software and digital solutions for businesses across the UK and Europe',
       location: 'United Kingdom',
       founded: '2024',

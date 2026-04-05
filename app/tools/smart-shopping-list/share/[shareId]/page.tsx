@@ -22,7 +22,7 @@ interface Props {
 
 async function getList(shareId: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.isaacpaha.com";
     const res = await fetch(`${baseUrl}/api/tools/shopping/share?shareId=${shareId}`, {
       next: { revalidate: 0 },           // always fresh — it's a live collaborative list
       headers: { "Content-Type": "application/json" },

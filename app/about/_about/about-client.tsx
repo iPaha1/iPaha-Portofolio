@@ -21,7 +21,7 @@ const COMPANIES = [
     flag: "🇬🇧",
     year: "2019",
     tagline: "IT consultancy & custom software",
-    href: "https://ipahait.com",
+    href: "https://ipaha.co.uk",
     color: "#f59e0b",
   },
   {

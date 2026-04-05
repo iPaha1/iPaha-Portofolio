@@ -1,0 +1,287 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Enhanced Apps (Products) Schema — 2026 Best Practices
+// ─────────────────────────────────────────────────────────────────────────────
+
+model App {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  tagline         String
+  description     String   @db.Text
+  fullDescription String?  @db.LongText
+
+  // Categorization
+  categories      AppCategoryEntry[]
+  primaryCategory String?  // e.g. "E-Commerce" for quick display
+
+  status          AppStatus @default(IN_DEVELOPMENT)
+  isPublished     Boolean   @default(false)
+  isFeatured      Boolean   @default(false)
+  isNew           Boolean   @default(false)
+  comingSoon      Boolean   @default(false)
+
+  // Visuals & Branding
+  emoji           String    @default("📱")
+  coverImage      String?
+  logoImage       String?
+  primaryColor    String    @default("#f59e0b")
+  accentColor     String    @default("#fbbf24")
+  icon            String?   // emoji or svg
+
+  // Core Content
+  problemSolved   String?   @db.LongText
+  targetUsers     String?   @db.LongText
+  businessModel   String?   @db.LongText
+  nextMilestone   String?   @db.Text
+
+  // Business & Metrics
+  launchedYear    Int?
+  launchDate      DateTime?
+  monthlyGMV      Decimal?  @db.Decimal(15, 2)  // in local currency
+  currency        String    @default("GHS")     // ₵ for Ghana
+
+  // Links
+  liveUrl         String?
+  appUrl          String?
+  githubUrl       String?
+  playStoreUrl    String?
+  appStoreUrl     String?
+
+  // SEO & Discovery
+  metaTitle       String?
+  metaDescription String?   @db.Text
+  keywords        String  // array of strings
+
+  // Engagement
+  viewCount       Int       @default(0)
+  likeCount       Int       @default(0)
+  userCount       Int       @default(0)   // active stores/users
+
+  // Timestamps & Soft Delete
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  company         Company   @relation(fields: [companyId], references: [id])
+  companyId       String
+
+  screenshots     AppScreenshot[]
+  features        AppFeature[]
+  metrics         AppMetric[]
+  techItems       AppTechItem[]
+  changelog       AppChangelog[]
+  updates         AppUpdate[]
+  integrations    AppIntegration[]
+  pricingTiers    AppPricingTier[]
+  faqs            AppFaq[]
+  awards          AppAward[]
+
+  @@map("apps")
+  @@index([slug])
+  @@index([status])
+  @@index([isFeatured])
+  @@index([isPublished])
+  @@index([companyId])
+  @@index([primaryCategory])
+}
+
+model Company {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  slug        String  @unique
+  flag        String  @default("🇬🇭")   // emoji flag
+  description String? @db.Text
+  website     String?
+  foundedYear Int?
+
+  apps        App[]
+
+  @@map("companies")
+}
+
+enum AppStatus {
+  COMING_SOON
+  IN_DEVELOPMENT
+  BETA
+  LIVE
+  DEPRECATED
+}
+
+enum AppCategory {
+  E_COMMERCE
+  FINTECH
+  LOGISTICS
+  PRODUCTIVITY
+  ANALYTICS
+  MOBILE_MONEY
+  SAAS
+  WEB_APP
+  TOOL
+  OTHER
+}
+
+// Many-to-many for categories
+model AppCategoryEntry {
+  appId     String
+  category  AppCategory
+
+  app       App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@id([appId, category])
+  @@map("app_categories")
+}
+
+model AppScreenshot {
+  id        String   @id @default(cuid())
+  appId     String
+  url       String
+  alt       String?
+  label     String?  // e.g. "Seller Dashboard"
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_screenshots")
+  @@index([appId])
+}
+
+model AppFeature {
+  id          String   @id @default(cuid())
+  appId       String
+  icon        String?  // emoji or icon name
+  title       String
+  description String   @db.Text
+  order       Int      @default(0)
+
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_features")
+  @@index([appId])
+}
+
+model AppMetric {
+  id           String   @id @default(cuid())
+  appId        String
+  label        String   // e.g. "Active Stores"
+  value        String   // e.g. "640+"
+  trend        String?  // "up" | "down" | "stable"
+  trendValue   String?  // "+12% MoM"
+  period       String?  // "All time" | "MoM"
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  app          App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_metrics")
+  @@index([appId])
+}
+
+model AppTechItem {
+  id       String   @id @default(cuid())
+  appId    String
+  name     String
+  category String?  // frontend | backend | database | infra | api | auth
+  iconUrl  String?
+  url      String?
+
+  app      App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_tech_items")
+  @@index([appId])
+}
+
+model AppChangelog {
+  id          String   @id @default(cuid())
+  appId       String
+  version     String
+  title       String
+  description String   @db.Text
+  type        String   @default("feature") // feature | fix | improvement | breaking | launch
+  releasedAt  DateTime
+  createdAt   DateTime @default(now())
+
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_changelog")
+  @@index([appId])
+  @@index([releasedAt])
+}
+
+model AppUpdate {
+  id          String   @id @default(cuid())
+  appId       String
+  title       String
+  content     String   @db.LongText
+  dayNumber   Int?
+  metrics     Json?    // flexible JSON for numbers
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_updates")
+  @@index([appId])
+}
+
+model AppIntegration {
+  id          String   @id @default(cuid())
+  appId       String
+  name        String   // e.g. "MTN MoMo", "Courier Plus"
+  category    String?  // payment | delivery | logistics | auth
+  description String?
+  url         String?
+  logoUrl     String?
+
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_integrations")
+  @@index([appId])
+}
+
+model AppPricingTier {
+  id          String   @id @default(cuid())
+  appId       String
+  name        String   // Free | Starter | Pro | Enterprise
+  price       Decimal? @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  period      String?  // month | year | one-time
+  description String?
+  features    Json // list of included features
+  isPopular   Boolean  @default(false)
+
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_pricing_tiers")
+  @@index([appId])
+}
+
+model AppFaq {
+  id        String   @id @default(cuid())
+  appId     String
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_faqs")
+  @@index([appId])
+}
+
+model AppAward {
+  id          String   @id @default(cuid())
+  appId       String
+  title       String   // e.g. "Best African Fintech 2025"
+  issuer      String
+  year        Int
+  url         String?
+
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@map("app_awards")
+  @@index([appId])
+}

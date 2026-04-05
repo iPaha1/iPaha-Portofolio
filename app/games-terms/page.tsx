@@ -24,7 +24,7 @@ const EFFECTIVE     = "1 January 2025";
 const OPERATOR      = "Isaac Paha / iPaha Ltd";
 const CONTACT_EMAIL = "legal@ipahait.com";
 const PLATFORM_URL  = "https://www.isaacpaha.com";
-const COMPANY_URL   = "https://ipahait.com";
+const COMPANY_URL   = "https://ipaha.co.uk";
 
 const SECTIONS = [
   {

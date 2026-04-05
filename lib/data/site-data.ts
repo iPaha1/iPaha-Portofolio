@@ -27,7 +27,7 @@ export const COMPANIES = [
     description:
       "IT consultancy delivering custom software, digital transformation, and bespoke solutions for businesses globally.",
     website: "ipahait.com",
-    href: "https://ipahait.com",
+    href: "https://ipaha.co.uk",
     year: "2019",
   },
   {

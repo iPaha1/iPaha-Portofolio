@@ -178,7 +178,7 @@ export const blogPosts: BlogPost[] = [
 
       <hr>
 
-      <p><em>Isaac Paha is a Computing & IT student at Open University London and founder of three successful tech companies: iPaha Ltd (UK), iPahaStores Ltd (UK), and Okpah Ltd (Ghana). His platforms serve over 100,000 users across multiple countries. Connect with him on <a href="https://www.linkedin.com/in/isaac-paha-578911a9/" target="_blank">LinkedIn</a> or visit his companies at <a href="https://ipahait.com" target="_blank">ipahait.com</a>, <a href="https://ipahastore.com" target="_blank">ipahastore.com</a>, and <a href="https://okpah.com" target="_blank">okpah.com</a>.</em></p>
+      <p><em>Isaac Paha is a Computing & IT student at Open University London and founder of three successful tech companies: iPaha Ltd (UK), iPahaStores Ltd (UK), and Okpah Ltd (Ghana). His platforms serve over 100,000 users across multiple countries. Connect with him on <a href="https://www.linkedin.com/in/isaac-paha-578911a9/" target="_blank">LinkedIn</a> or visit his companies at <a href="https://ipaha.co.uk" target="_blank">ipahait.com</a>, <a href="https://ipahastore.com" target="_blank">ipahastore.com</a>, and <a href="https://okpah.com" target="_blank">okpah.com</a>.</em></p>
     `,
     author: {
       name: "Isaac Paha",

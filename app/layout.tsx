@@ -24,6 +24,7 @@ import { GameWidget } from "@/components/(gamification)/game-widget";
 import { ChallengeBroadcast } from "./games/token-rush/_token-rush/challenge-broadcast";
 import { BannedUserBanner } from "@/components/global/banned-user-banner";
 import { Analytics } from '@vercel/analytics/next';
+import { BreadcrumbJsonLd } from "@/components/global/breadcrumbs-jsonld";
 
 // ── Font ─────────────────────────────────────────────────────────────────────
 const sora = Sora({
@@ -114,7 +115,7 @@ export const metadata: Metadata = {
     "software founder UK",
     "African tech solutions",
     "technology that matters",
-    
+    "Building AI Agents",
   ],
 
   // ── Authors ──────────────────────────────────────────────────────────────────
@@ -209,12 +210,12 @@ const personSchema = {
     url:           OG_IMAGE,
     width:         1200,
     height:        630,
-    caption:       "Isaac Paha — Technologist, Entrepreneur & Builder",
+    caption:       "Isaac Paha — Technologist, Entrepreneur & Thinker",
   },
   description:
     "British-Ghanaian technologist, entrepreneur, and First-Class Computing & IT graduate from " +
     "The Open University. Founder of iPaha Ltd, iPahaStores Ltd, and Okpah Ltd.",
-  jobTitle:   "Technologist, Entrepreneur & Builder",
+  jobTitle:   "Technologist, Entrepreneur & Thinker",
   nationality: [
     { "@type": "Country", name: "United Kingdom" },
     { "@type": "Country", name: "Ghana" },
@@ -227,20 +228,20 @@ const personSchema = {
   worksFor: {
     "@type":  "Organization",
     name:     "iPaha Ltd",
-    url:      "https://ipahait.com",
+    url:      "https://ipaha.co.uk",
     "@id":    `${SITE_URL}/#org`,
   },
   knowsAbout: [
-    "React.js", "Next.js", "Node.js", "TypeScript", "Prisma ORM", "MYSQL",
-    "Artificial Intelligence", "Software Development", "Entrepreneurship",
-    "African Technology", "UK Technology Sector", "Full-Stack Web Development",
+    "Artificial Intelligence", "React.js", "Next.js", "Node.js", "TypeScript", "Prisma ORM", "MYSQL",
+    "Software Development", "Entrepreneurship",
+    "African Technology", "UK Technology Sector", "Full-Stack Development",
     "Product Management", "SaaS", "E-commerce",
   ],
   sameAs: [
     "https://github.com/iPaha1",
     "https://www.linkedin.com/in/isaac-paha-578911a9/",
     "https://twitter.com/iPaha3",
-    "https://ipahait.com",
+    "https://ipaha.co.uk",
     "https://ipahastore.com",
     "https://okpah.com",
   ],
@@ -257,7 +258,7 @@ const organisationSchema = {
   "@type":    "Organization",
   "@id":      `${SITE_URL}/#org`,
   name:       "iPaha Ltd",
-  url:        "https://ipahait.com",
+  url:        "https://ipaha.co.uk",
   logo: {
     "@type": "ImageObject",
     url:     `${SITE_URL}/logo.png`,
@@ -294,14 +295,14 @@ const websiteSchema = {
   ],
 };
 
-// ── Structured Data: BreadcrumbList (root) ────────────────────────────────────
-const breadcrumbSchema = {
-  "@context":       "https://schema.org",
-  "@type":          "BreadcrumbList",
-  itemListElement:  [
-    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-  ],
-};
+// // ── Structured Data: BreadcrumbList (root) ────────────────────────────────────
+// const breadcrumbSchema = {
+//   "@context":       "https://schema.org",
+//   "@type":          "BreadcrumbList",
+//   itemListElement:  [
+//     { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+//   ],
+// };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const dbUser = await syncUser();
@@ -336,7 +337,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Script id="schema-person"       type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema)       }} />
           <Script id="schema-organisation" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organisationSchema) }} />
           <Script id="schema-website"      type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema)      }} />
-          <Script id="schema-breadcrumb"   type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema)   }} />
+          {/* <Script id="schema-breadcrumb"   type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema)   }} /> */}
+
+          {/* JSON-LD placed before content for SEO prioritization[citation:8] */}
+          <BreadcrumbJsonLd />
         </head>
 
         <body className={`${sora.className} antialiased bg-[#08080f] text-white`}>
@@ -466,7 +470,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //               sameAs: [
 //                 "https://github.com/iPaha1",
 //                 "https://www.linkedin.com/in/isaac-paha-578911a9/",
-//                 "https://ipahait.com", "https://ipahastore.com", "https://okpah.com",
+//                 "https://ipaha.co.uk", "https://ipahastore.com", "https://okpah.com",
 //               ],
 //               jobTitle: "Technologist, Entrepreneur & Thinker",
 //               alumniOf: { "@type": "Organization", name: "The Open University" },
@@ -618,7 +622,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //               sameAs: [
 //                 "https://github.com/iPaha1",
 //                 "https://www.linkedin.com/in/isaac-paha-578911a9/",
-//                 "https://ipahait.com", "https://ipahastore.com", "https://okpah.com",
+//                 "https://ipaha.co.uk", "https://ipahastore.com", "https://okpah.com",
 //               ],
 //               jobTitle: "Technologist, Entrepreneur & Thinker",
 //               alumniOf: { "@type": "Organization", name: "The Open University" },
@@ -807,7 +811,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 //             sameAs: [
 //               "https://github.com/iPaha1",
 //               "https://www.linkedin.com/in/isaac-paha-578911a9/",
-//               "https://ipahait.com",
+//               "https://ipaha.co.uk",
 //               "https://ipahastore.com",
 //               "https://okpah.com",
 //             ],

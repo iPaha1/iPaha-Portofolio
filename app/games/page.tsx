@@ -177,7 +177,7 @@ const structuredData = {
       publisher: {
         "@type": "Organization",
         name:    "iPaha Ltd",
-        url:     "https://ipahait.com",
+        url:     "https://ipaha.co.uk",
       },
       featureList: [
         "50+ unique mini-games",

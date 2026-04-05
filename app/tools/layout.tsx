@@ -15,7 +15,7 @@ import { prismadb } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 
-const homepageUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+const homepageUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.isaacpaha.com";
 
 export default async function ToolsLayout({ children }: { children: React.ReactNode }) {
   // Get the authenticated user's Clerk ID

@@ -32,8 +32,8 @@ export const metadata: Metadata = {
 
 export default async function ToolsLabPage() {
   const dbTools = await getPublicTools();
-  console.log("Tools fetched from DB:", dbTools);
-  console.log(`==============[ToolsLabPage] Fetched ${dbTools.length} tools from the database================`);
+  // console.log("Tools fetched from DB:", dbTools);
+  // console.log(`==============[ToolsLabPage] Fetched ${dbTools.length} tools from the database================`);
 
   return <ToolsLabClient tools={dbTools as DbTool[]} />;
 }

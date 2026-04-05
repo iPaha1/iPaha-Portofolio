@@ -68,7 +68,7 @@ const jsonLd = {
       operatingSystem:        "Web Browser",
       offers: { "@type": "Offer", price: "0", priceCurrency: "GBP", availability: "https://schema.org/InStock" },
       author:    { "@type": "Person",       name: "Isaac Paha", url: "https://www.isaacpaha.com" },
-      publisher: { "@type": "Organization", name: "iPaha Ltd",  url: "https://ipahait.com" },
+      publisher: { "@type": "Organization", name: "iPaha Ltd",  url: "https://ipaha.co.uk" },
       featureList: [
         "Token wagering between real players",
         "Live challenge broadcasting to all online users",
@@ -235,7 +235,7 @@ export default function TokenRushPage() {
 //       publisher: {
 //         "@type": "Organization",
 //         name: "iPaha Ltd",
-//         url: "https://ipahait.com",
+//         url: "https://ipaha.co.uk",
 //       },
 //       featureList: [
 //         "Token wagering between real players",

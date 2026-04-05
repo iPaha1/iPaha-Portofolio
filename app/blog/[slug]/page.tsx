@@ -9,7 +9,7 @@ import type { DBPostFull, DBPost } from "@/lib/types/blog";
 import { parseTags } from "@/lib/types/blog";
 import { BlogPostClient } from "../_blog/blog-post-client";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.isaacpaha.com";
 
 interface PostPageData {
   post:    DBPostFull;

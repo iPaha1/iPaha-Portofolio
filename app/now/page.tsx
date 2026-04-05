@@ -9,7 +9,7 @@ import { NowClient } from "./_now/now-client";
 const dynamic = 'force-dynamic'; // Ensure this page is always server-rendered for SEO and structured data purposes.
 
 export const metadata: Metadata = {
-  title: "Now — What Isaac Is Doing | Isaac Paha",
+  title: "Now — What Isaac Is Doing",
   description:
     "A living snapshot of what Isaac Paha is building, reading, thinking about, and working on right now. Updated regularly. Honest, not curated.",
   openGraph: {

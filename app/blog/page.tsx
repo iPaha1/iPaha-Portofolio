@@ -43,7 +43,7 @@ export const metadata: Metadata = {
 // Revalidate every 5 minutes — keeps stats fresh without hammering the DB
 export const revalidate = 300;
 
-const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.isaacpaha.com";
 
 interface BlogPageData {
   posts:          DBPost[];

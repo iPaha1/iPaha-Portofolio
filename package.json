@@ -17,7 +17,8 @@
     "generate-icons": "npx ts-node --esm scripts/generate-icons-sharp.ts",
     "seed:tools": "npx tsx scripts/seed-tools.ts",
     "seed:blogs": "npx tsx scripts/seed-blogs.ts",
-    "seed:ideas": "npx tsx scripts/seed-ideas.ts"
+    "seed:ideas": "npx tsx scripts/seed-ideas.ts",
+    "seed:apps": "npx tsx scripts/seed-apps.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

@@ -11,7 +11,7 @@ import { redirect } from "next/navigation";
 import { prismadb } from "@/lib/db";
 import { GamesTermsPopup } from "./token-rush/_token-rush/games-terms-popup";
 
-const homepageUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+const homepageUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.isaacpaha.com";
 
 export default async function GamesLayout({
   children,

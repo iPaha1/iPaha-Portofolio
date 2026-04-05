@@ -1,0 +1,71 @@
+
+// ============================================================
+// DEBT REPAYMENT — Isolated models
+// Add these to your existing schema.prisma
+// No foreign keys to any existing model except the note below.
+// Users are identified by email string only (from Clerk session).
+// ============================================================
+
+enum DebtEntryStatus {
+  PENDING
+  CONFIRMED
+  DISPUTED
+}
+
+model DebtEntry {
+  id                      String          @id @default(cuid())
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  createdByEmail          String
+  amountGBP               Decimal         @db.Decimal(10, 2)
+  amountVND               Decimal         @db.Decimal(20, 2)
+  exchangeRateAtTransfer  Decimal         @db.Decimal(20, 4) // VND per £1 at time of transfer
+  dateOfTransfer          DateTime
+  description             String?         @db.Text
+
+  evidenceUrl             String?
+  evidencePublicId        String?
+
+  status                  DebtEntryStatus @default(PENDING)
+  confirmedByEmail        String?
+  confirmedAt             DateTime?
+
+  disputeNote             String?         @db.Text
+  disputeEvidenceUrl      String?
+  disputeEvidencePublicId String?
+
+  repayments              RepaymentEntry[]
+
+  @@map("debt_entries")
+}
+
+model RepaymentEntry {
+  id                        String          @id @default(cuid())
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+
+  createdByEmail            String
+  amountGBP                 Decimal         @db.Decimal(10, 2)
+  amountVND                 Decimal         @db.Decimal(20, 2)
+  exchangeRateAtRepayment   Decimal         @db.Decimal(20, 4) // VND per £1 at time of repayment
+  dateOfPayment             DateTime
+  description               String?         @db.Text
+
+  evidenceUrl               String?
+  evidencePublicId          String?
+
+  status                    DebtEntryStatus @default(PENDING)
+  confirmedByEmail          String?
+  confirmedAt               DateTime?
+
+  disputeNote               String?         @db.Text
+  disputeEvidenceUrl        String?
+  disputeEvidencePublicId   String?
+
+  // Optional: link repayment to a specific debt entry
+  debtEntryId               String?
+  debtEntry                 DebtEntry?      @relation(fields: [debtEntryId], references: [id], onDelete: SetNull)
+
+  @@map("repayment_entries")
+}
