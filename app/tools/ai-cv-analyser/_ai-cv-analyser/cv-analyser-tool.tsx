@@ -20,7 +20,7 @@
 //   - Copy / export results
 // =============================================================================
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence }               from "framer-motion";
 import {
   FileText, Sparkles, Loader2, AlertCircle, Check, Copy,
@@ -30,6 +30,7 @@ import {
   BarChart2, Search, Shield, Lightbulb, ChevronRight,
   X, Plus, Minus, Eye, EyeOff,
 } from "lucide-react";
+import { CVExportStudio } from "./cv-export-studio";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,6 +109,8 @@ export interface CVAnalyserToolProps {
   isSignedIn?: boolean;
   /** Called when the API returns 402 — parent page shows the modal */
   onInsufficientTokens?: (info: TokenGateInfo) => void;
+  reopenAnalysis?: { analysisJson: string; cvText: string; jdText: string } | null;
+  onReopened?: () => void;
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -514,7 +517,7 @@ function ResultsStage({
   isSignedIn: boolean;
   onInsufficientTokens?: (info: TokenGateInfo) => void;
 }) {
-  const [activeTab,      setActiveTab]      = useState<"overview" | "keywords" | "sections" | "rewrites" | "interview" | "cover-letter">("overview");
+  const [activeTab,      setActiveTab]      = useState<"overview" | "keywords" | "sections" | "rewrites" | "interview" | "cover-letter" | "export">("overview");
   const [copied,         setCopied]         = useState(false);
   const [rewriting,      setRewriting]      = useState(false);
   const [rewriteResult,  setRewriteResult]  = useState("");
@@ -614,6 +617,7 @@ function ResultsStage({
     { id: "rewrites",       label: "Improvements",   icon: Wand2          },
     { id: "interview",      label: "Interview Prep", icon: MessageSquare  },
     { id: "cover-letter",   label: "Cover Letter",   icon: FileText       },
+    // { id: "export",          label: "Export CV",     icon: Download       }
   ] as const;
 
   return (
@@ -1048,6 +1052,16 @@ function ResultsStage({
         <InterviewTab questions={analysis.interviewQuestions ?? []} hasJD={hasJD} />
       )}
 
+
+          {/* --- EXPORT CV */}
+          {activeTab === "export" && (
+          <CVExportStudio
+            originalCvText={cvText}
+            jobDescription={jdText}
+            onInsufficientTokens={onInsufficientTokens}
+          />
+        )}
+
       {/* ── COVER LETTER tab (UPDATED with token gate) ─────────────────── */}
       {activeTab === "cover-letter" && (
         <div className="space-y-5">
@@ -1163,13 +1177,27 @@ function ResultsStage({
 
 // ─── MAIN EXPORT (UPDATED with token gate) ────────────────────────────────────
 
-export function CVAnalyserTool({ isSignedIn = false, onInsufficientTokens }: CVAnalyserToolProps) {
+export function CVAnalyserTool({ isSignedIn = false, onInsufficientTokens, reopenAnalysis, onReopened }: CVAnalyserToolProps) {
   const [stage,    setStage]    = useState<"input" | "loading" | "results">("input");
   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
   const [cvText,   setCvText]   = useState("");
   const [jdText,   setJdText]   = useState("");
   const [error,    setError]    = useState("");
   const [loadStep, setLoadStep] = useState(0);
+
+  useEffect(() => {
+    if (!reopenAnalysis) return;
+    try {
+      const parsed = JSON.parse(reopenAnalysis.analysisJson);
+      setAnalysis(parsed);
+      setCvText(reopenAnalysis.cvText ?? "");
+      setJdText(reopenAnalysis.jdText ?? "");
+      setStage("results");
+    } catch (err) {
+      console.error("Failed to parse saved analysis:", err);
+    }
+    onReopened?.();
+  }, [reopenAnalysis]);
 
   const LOAD_STEPS = [
     "Reading your CV…",

@@ -1,0 +1,92 @@
+model StartupIdea {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Input context
+  founderBackground  String?         @db.Text
+  skills             String?         @db.Text           // JSON array
+  interests          String?         @db.Text           // JSON array
+  sector             StartupCategory @default(OTHER)
+  ambitiousness      IdeaAmbitiousness @default(UNICORN)
+  generationMode     GenerationMode  @default(FOUNDER_MATCHED)
+  locationContext    String?         @db.VarChar(200)
+  budgetContext      String?         @db.VarChar(100)
+  timeCommitment     String?         @db.VarChar(100)
+  avoidSectors       String?         @db.Text           // JSON array
+
+  // Generated ideas (stores the full batch)
+  ideasJson          String?         @db.LongText       // array of idea objects
+  ideaCount          Int             @default(0)
+
+  // Single saved/starred idea (when user saves a specific one)
+  savedIdeaJson      String?         @db.LongText
+  savedIdeaTitle     String?         @db.VarChar(300)
+  savedIdeaCategory  StartupCategory?
+
+  // Meta
+  isSaved            Boolean         @default(true)
+  isStarred          Boolean         @default(false)
+  notes              String?         @db.Text
+  status             String          @default("EXPLORING") // EXPLORING | RESEARCHING | BUILDING | LAUNCHED | SHELVED
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([generationMode])
+  @@index([ambitiousness])
+  @@index([createdAt])
+}
+
+model StartupIdeaWorkspace {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalGenerated   Int      @default(0)
+  totalSaved       Int      @default(0)
+  ideasBuilding    Int      @default(0)
+  streakDays       Int      @default(0)
+  xpPoints         Int      @default(0)
+  lastActivityDate DateTime?
+
+  // JSON arrays
+  categoriesJson   String   @db.Text
+  modesJson        String   @db.Text
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum StartupCategory {
+  DEEPTECH          // AI, biotech, quantum, space
+  CONSUMER          // B2C apps, marketplaces, communities
+  B2B_SAAS          // Business software
+  FINTECH           // Financial services, payments, banking
+  HEALTHTECH        // Healthcare, wellness, medical
+  CLIMATETECH       // Clean energy, sustainability
+  EDTECH            // Education, learning, upskilling
+  CREATOR_ECONOMY   // Tools for creators, media
+  INFRASTRUCTURE    // Dev tools, APIs, platforms
+  FUTURE_OF_WORK    // Remote, automation, HR
+  WEB3              // Crypto, DeFi, NFTs, DAOs
+  BIOTECH           // Life sciences, genetics
+  OTHER
+}
+
+enum IdeaAmbitiousness {
+  MOONSHOT          // Change the world, 10+ year journey, $B+ potential
+  UNICORN           // $1B+ realistic path within 7 years
+  ROCKETSHIP        // $100M-$1B, 3-5 year aggressive path
+  SOLID_STARTUP     // $10M-$100M, realistic and achievable
+}
+
+enum GenerationMode {
+  FOUNDER_MATCHED   // Based on founder background
+  SECTOR_FOCUSED    // Deep dive in specific sector
+  CONTRARIAN        // Ideas that seem wrong but aren't
+  TIMING_ARBITRAGE  // Ideas whose time has come NOW
+  WHITE_SPACE       // Gaps nobody else sees
+  FREE_FORM         // No constraints, pure generation
+}

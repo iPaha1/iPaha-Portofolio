@@ -86,6 +86,7 @@ const DEDICATED_ROUTES = new Set([
   "chemistry-engine",
   "message-rewriter",
   "kids-birthday-planner",
+  "teleprompter",
 ]);
 
 // ─── Generate static params for all non-dedicated tools ───────────────────────
@@ -199,7 +200,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
 // const DEDICATED_ROUTES = new Set(["job-application-tracker", "ai-cv-analyser", 
 //   "qr-code-generator", "random-toolkit", "debt-recovery-planner", "smart-budget-planner", 
 //   "first-home-planner", "smart-shopping-list", "scripture-explorer", "math-engine", 
-//   "physics-engine", "chemistry-engine", "message-rewriter", "kids-birthday-planner" ]);
+//   "physics-engine", "chemistry-engine", "message-rewriter", "kids-birthday-planner", "teleprompter" ]);
   
 // export async function generateStaticParams() {
 //   return TOOLS

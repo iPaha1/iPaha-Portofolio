@@ -100,8 +100,12 @@ export function CVAnalyserPage({ isSignedIn, tool, relatedTools }: CVAnalyserPag
   const [activeTab, setActiveTab] = useState<"tool" | "workspace" | "guide" | "reviews">("tool");
   const [copied,    setCopied]    = useState(false);
   const router = useRouter();
-
   const [tokenModal, setTokenModal] = useState<TokenGateInfo | null>(null);
+  const [reopenAnalysis, setReopenAnalysis] = useState<{
+    analysisJson: string;
+    cvText: string;
+    jdText: string;
+  } | null>(null);
 
   // Derive category display from the tool's category string
   const CATEGORY_CFG: Record<string, { icon: string; color: string }> = {
@@ -320,6 +324,8 @@ export function CVAnalyserPage({ isSignedIn, tool, relatedTools }: CVAnalyserPag
                     <CVAnalyserTool
                       isSignedIn={isSignedIn}
                       onInsufficientTokens={(info) => setTokenModal(info)}
+                      reopenAnalysis={reopenAnalysis}
+                      onReopened={() => setReopenAnalysis(null)}
                     />
                   </div>
                 </div>
@@ -336,7 +342,12 @@ export function CVAnalyserPage({ isSignedIn, tool, relatedTools }: CVAnalyserPag
             {activeTab === "workspace" && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 {isSignedIn
-                  ? <CVDashboard onReopenAnalysis={() => setActiveTab("tool")} />
+                  ? <CVDashboard
+                      onReopenAnalysis={(analysisJson, cvText, jdText) => {
+                        setReopenAnalysis({ analysisJson, cvText, jdText });
+                        setActiveTab("tool");
+                      }}
+                    />
                   : (
                     <div className="flex flex-col items-center justify-center py-20 text-center bg-gray-50 border border-gray-100 rounded-xs">
                       <div className="text-4xl mb-4">🔒</div>

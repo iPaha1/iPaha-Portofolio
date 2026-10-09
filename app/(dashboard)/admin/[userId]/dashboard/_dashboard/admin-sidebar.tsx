@@ -15,6 +15,7 @@ import {
   BookOpen, Globe, Layers, BookMarked, Link2,
   // Developer Hub — Phase 3
   Bot, BarChart2, ArrowLeftRight, Tags,
+  KeyboardMusic,
 } from "lucide-react";
 import { NAV_GROUPS } from "@/lib/admin/admin-nav-config";
 
@@ -22,7 +23,7 @@ import { NAV_GROUPS } from "@/lib/admin/admin-nav-config";
 
 const ICONS: Record<string, React.ElementType> = {
   LayoutDashboard, BarChart3, FileText, Lightbulb, Wrench,
-  Clock, Mic, AppWindow, Mail, Share2, Users, Image, Settings,
+  Clock, Mic, AppWindow, Mail, KeyboardMusic, Share2, Users, Image, Settings,
   FilePlus, Upload,
   // Developer Hub — Phase 1
   Database, Code2, Brain, Terminal, Bug, SearchCode,

@@ -1,0 +1,205 @@
+// =============================================================================
+// PORTAL MODELS - Customer portal authentication and communication
+// =============================================================================
+
+// Portal authentication codes (one-time login)
+model PortalAuthCode {
+  id        String   @id @default(cuid())
+  email     String   @unique              // One active code per email
+  companyId String                        // Which company portal this is for
+  code      String                        // 6-digit numeric code (plain — short-lived)
+  expiresAt DateTime
+  attempts  Int      @default(0)          // Failed attempts (max 5 before lockout)
+  createdAt DateTime @default(now())
+
+  @@map("portal_auth_codes")
+  @@index([email])
+  @@index([companyId])
+  @@index([expiresAt])
+}
+
+// Portal sessions for tracking active sessions
+model PortalSession {
+  id         String   @id @default(cuid())
+  contactId   String
+  token      String   @unique
+  tokenHash  String   @unique              // HMAC-SHA256 hash for lookup
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+  
+  // Relations
+  contact CompanyContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String      // Added for direct company relation
+  
+  @@index([contactId])
+  @@index([companyId])
+  @@index([expiresAt])
+  @@index([token])
+  @@index([tokenHash])
+  @@map("portal_sessions")
+}
+
+// Support tickets from portal
+model SupportTicket {
+  id          String   @id @default(cuid())
+  companyId   String
+  clientId    String
+  clientEmail String
+  clientName  String
+  
+  type        TicketType     @default(QUESTION)
+  priority    TicketPriority @default(NORMAL)
+  status      TicketStatus   @default(OPEN)
+  
+  title       String
+  description String   @db.Text
+  resolution  String?  @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+  
+  // Relations
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client  CompanyContact @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  replies TicketReply[]  // One-to-many with replies
+  
+  @@index([companyId])
+  @@index([clientId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("support_tickets")
+}
+
+// Ticket replies
+model TicketReply {
+  id          String   @id @default(cuid())
+  ticketId    String
+  authorType  AuthorType @default(CLIENT)
+  authorName  String
+  authorEmail String
+  message     String   @db.Text
+  isInternal  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String      // Added for direct company relation
+  
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("ticket_replies")
+}
+
+// Portal messages (conversations)
+model PortalMessage {
+  id          String   @id @default(cuid())
+  companyId   String
+  clientId    String
+  clientEmail String
+  subject     String
+  message     String   @db.Text
+  direction   MessageDirection @default(INCOMING)
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client  CompanyContact @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([clientId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("portal_messages")
+}
+
+// Project updates (shared with client)
+model ProjectUpdate {
+  id          String   @id @default(cuid())
+  companyId   String
+  clientId    String
+  title       String
+  content     String   @db.Text
+  updateType  UpdateType @default(GENERAL)
+  isPublished Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdBy   String   // Admin user ID or name
+  
+  // Relations
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client  CompanyContact @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([clientId])
+  @@index([publishedAt])
+  @@map("project_updates")
+}
+
+// Client files (shared documents)
+model ClientFile {
+  id          String   @id @default(cuid())
+  companyId   String
+  clientId    String
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  mimeType    String
+  description String?
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime?
+  
+  // Relations
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client  CompanyContact @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([companyId])
+  @@index([clientId])
+  @@index([createdAt])
+  @@map("client_files")
+}
+
+// Enums
+enum TicketType {
+  BUG
+  CHANGE
+  QUESTION
+  MAINTENANCE
+}
+
+enum TicketPriority {
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum AuthorType {
+  CLIENT
+  ADMIN
+  SYSTEM
+}
+
+enum MessageDirection {
+  INCOMING  // Client to admin
+  OUTGOING  // Admin to client
+}
+
+enum UpdateType {
+  GENERAL
+  MILESTONE
+  FEATURE
+  BUG_FIX
+  MAINTENANCE
+}

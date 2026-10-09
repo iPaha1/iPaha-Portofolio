@@ -10,6 +10,7 @@ import { tokenGate } from "@/lib/tokens/token-gate";
 import { deductTokens } from "@/lib/tokens/token-deduct";
 import { prismadb } from "@/lib/db";
 import { getIpFromRequest, trackToolUsage } from "@/lib/tools/track-tool-usage";
+import { getClaudeCompletion } from "@/lib/ai/anthropic-client";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -152,18 +153,24 @@ IMPORTANT RULES:
 - The curveball should be unexpected but relevant to their industry/role`;
 
     // ── ② CALL ANTHROPIC API ──────────────────────────────────────────────
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 6000,
-      temperature: 0.3, // Lower temperature for more consistent JSON
-      messages: [{ role: "user", content: prompt }],
-    });
+    // const message = await anthropic.messages.create({
+    //   model: "claude-sonnet-4-20250514",
+    //   max_tokens: 6000,
+    //   temperature: 0.3, // Lower temperature for more consistent JSON
+    //   messages: [{ role: "user", content: prompt }],
+    // });
+
+    // const processingMs = Date.now() - start;
+    
+    // // Get raw response
+    // const raw = message.content[0].type === "text" ? message.content[0].text : "{}";
+    // console.log(`[cv-analyser/interview] Raw response length: ${raw.length} chars`);
+    
+    // ── ② CALL ANTHROPIC API (via shared client) ────────────────────────────
+    const { text: raw, stopReason } = await getClaudeCompletion(prompt, { maxTokens: 6000 });
 
     const processingMs = Date.now() - start;
-    
-    // Get raw response
-    const raw = message.content[0].type === "text" ? message.content[0].text : "{}";
-    console.log(`[cv-analyser/interview] Raw response length: ${raw.length} chars`);
+    console.log(`[cv-analyser/interview] Raw response length: ${raw.length} chars, stopReason: ${stopReason}`);
     
     // Log first 200 chars for debugging in development
     if (process.env.NODE_ENV === "development") {

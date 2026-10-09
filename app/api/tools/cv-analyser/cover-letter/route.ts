@@ -13,6 +13,7 @@ import { tokenGate } from "@/lib/tokens/token-gate";
 import { deductTokens } from "@/lib/tokens/token-deduct";
 import { prismadb } from "@/lib/db";
 import { getIpFromRequest, trackToolUsage } from "@/lib/tools/track-tool-usage";
+import { getClaudeCompletion } from "@/lib/ai/anthropic-client";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -125,18 +126,27 @@ CRITICAL FORMATTING INSTRUCTIONS:
 - Return clean, properly formatted text with appropriate paragraph breaks`;
 
     // ── ② CALL ANTHROPIC API ──────────────────────────────────────────────
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 6000,
-      temperature: 0.3, // Lower temperature for more consistent output
-      messages: [{ role: "user", content: prompt }],
-    });
+    // const message = await anthropic.messages.create({
+    //   model: "claude-sonnet-4-20250514",
+    //   max_tokens: 6000,
+    //   temperature: 0.3, // Lower temperature for more consistent output
+    //   messages: [{ role: "user", content: prompt }],
+    // });
+
+    // const processingMs = Date.now() - start;
+
+    // // Extract and clean cover letter
+    // let coverLetter = message.content[0].type === "text" ? message.content[0].text.trim() : "";
+    
+    // ── ② CALL ANTHROPIC API (via shared client) ────────────────────────────
+    const { text, stopReason } = await getClaudeCompletion(prompt, { maxTokens: 6000 });
 
     const processingMs = Date.now() - start;
+    console.log(`[cv-analyser/cover-letter] Raw response length: ${text.length} chars, stopReason: ${stopReason}`);
 
     // Extract and clean cover letter
-    let coverLetter = message.content[0].type === "text" ? message.content[0].text.trim() : "";
-    
+    let coverLetter = text.trim();
+
     // Remove any markdown formatting if present
     coverLetter = coverLetter.replace(/^```(?:\w+)?\s*/i, "").replace(/\s*```$/i, "").trim();
     

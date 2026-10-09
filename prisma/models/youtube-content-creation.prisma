@@ -1,0 +1,476 @@
+
+// ─── YouTube Creator Channel Profile ─────────────────────────────────────────
+// One per user. Stores channel identity, preferences, and generation config.
+
+model YoutubeCreatorProfile {
+  id                  String        @id @default(cuid())
+  userId              String        @unique
+
+  // Channel identity
+  channelName         String?
+  channelHandle       String?       // e.g. @isaacpaha
+  channelDescription  String?       @db.Text
+  channelAvatarUrl    String?
+  channelBannerUrl    String?
+  channelId           String?       // YouTube API channel ID
+  subscriberCount     Int           @default(0)
+  totalVideos         Int           @default(0)
+  totalViews          Int           @default(0)
+
+  // Content preferences (used for AI generation)
+  videosPerWeek       Int           @default(3)
+  defaultTone         YoutubeContentTone   @default(CALM)
+  targetAudience      String?       @db.Text   // e.g. "young adults, graduates"
+  creatorBio          String?       @db.Text   // personal context for AI
+  uniqueVoiceNotes    String?       @db.Text   // AI voice fingerprint instructions
+  channelMission      String?       @db.Text
+
+  // Core themes (JSON string[] of ThemeCategory values + custom)
+  coreThemes          String?       @db.Text
+
+  // Delivery style preferences
+  speakingPace        String?       // "slow" | "medium" | "fast"
+  cameraStyle         String?       // "close-up" | "medium" | "wide"
+  backgroundStyle     String?       // "minimal" | "bookshelf" | "outdoor" etc.
+
+  // Anti-repetition memory (JSON: topic fingerprints)
+  topicMemory         String?       @db.LongText
+
+  // Analytics snapshot (cached)
+  avgViewsPerVideo    Int           @default(0)
+  avgWatchTimeSeconds Int           @default(0)
+  topPerformingNiche  String?
+
+  // Onboarding
+  isOnboarded         Boolean       @default(false)
+  onboardedAt         DateTime?
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weeklyBatches       YoutubeWeeklyBatch[]
+  contentIdeas        YoutubeContentIdea[]
+  channelGoals        YoutubeChannelGoal[]
+  analyticsSnapshots  YoutubeAnalyticsSnapshot[]
+  contentCalendar     YoutubeCalendarEntry[]
+  youtubeVideos       YoutubeVideo[]
+
+  @@map("youtube_creator_profiles")
+  @@index([userId])
+}
+
+// ─── Weekly Content Batch ─────────────────────────────────────────────────────
+// Each "Generate Week" click creates one batch containing N video scripts.
+
+model YoutubeWeeklyBatch {
+  id              String         @id @default(cuid())
+  profileId       String
+  weekNumber      Int                                // ISO week number
+  year            Int
+  weekLabel       String?                            // e.g. "Week 14 · Apr 2025"
+  status          YtWeekStatus   @default(GENERATING)
+
+  // Generation config snapshot (what was used to generate this batch)
+  videosRequested Int            @default(3)
+  toneUsed        YoutubeContentTone    @default(CALM)
+  themesUsed      String?        @db.Text            // JSON string[]
+  personalContext String?        @db.Text
+  targetAudience  String?        @db.Text
+
+  // AI generation metadata
+  generatedAt     DateTime?
+  generationMs    Int?                               // time taken
+  tokensUsed      Int?
+  modelUsed       String?        @default("claude-sonnet-4-20250514")
+
+  // Batch-level narrative thread (AI plans an arc across videos)
+  narrativeArc    String?        @db.Text
+
+  // Stats
+  totalVideos     Int            @default(0)
+  publishedCount  Int            @default(0)
+  draftCount      Int            @default(0)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  profile         YoutubeCreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  videos          YoutubeVideo[]
+
+  @@map("youtube_weekly_batches")
+  @@index([profileId])
+  @@index([weekNumber, year])
+  @@index([status])
+  @@unique([profileId, weekNumber, year])
+}
+
+
+// ─── YouTube Video ─────────────────────────────────────────────────────────────
+// One per generated script. Contains the full video package.
+
+model YoutubeVideo {
+  id              String       @id @default(cuid())
+  batchId         String?                             // null if created standalone
+  profileId       String
+
+  // Core identity
+  title           String
+  status          VideoStatus  @default(DRAFT)
+  orderInBatch    Int          @default(0)
+
+  // Script
+  hook            String?      @db.Text
+  intro           String?      @db.Text
+  body            String?      @db.LongText
+  perspectiveShift String?     @db.Text
+  closingLine     String?      @db.Text
+  fullScript      String?      @db.LongText          // compiled full script
+
+  // Delivery instructions
+  toneNotes       String?      @db.Text              // e.g. "speak slowly, pause after hook"
+  pausePoints     String?      @db.Text              // JSON: string[] of cues
+  emphasisPoints  String?      @db.Text              // JSON: string[] of words/phrases
+  facialCues      String?      @db.Text
+  energyArc       String?      @db.Text              // how energy should flow
+
+  // Filming guide
+  cameraPosition  String?
+  lightingSuggestion String?
+  bodyLanguageTips String?     @db.Text
+  setDressing     String?      @db.Text
+
+  // YouTube upload package
+  seoTitle        String?                            // click-optimised title
+  description     String?      @db.LongText          // full YouTube description
+  tags            String?      @db.Text              // JSON string[]
+  thumbnailTextIdeas String?   @db.Text              // JSON string[]
+  category        String?                            // YouTube category
+  targetAudience  String?
+  youtubeMetadata String?      @db.Text              // JSON: {playlist, language, etc.}
+
+  // Social media posts (generated alongside)
+  twitterPost     String?      @db.Text
+  linkedinPost    String?      @db.Text
+  facebookPost    String?      @db.Text
+  tiktokCaption   String?      @db.Text
+  shortsCaption   String?      @db.Text
+
+  // Topic fingerprint for anti-repetition
+  topicFingerprint String?     @db.Text             // JSON: key themes/concepts
+  coreConcepts    String?      @db.Text              // JSON string[]
+
+  // Scheduling & publishing
+  scheduledFor    DateTime?
+  publishedAt     DateTime?
+  youtubeVideoId  String?                            // ID after upload to YouTube
+  youtubeUrl      String?
+
+  // Performance (synced from YouTube API)
+  viewCount       Int          @default(0)
+  likeCount       Int          @default(0)
+  commentCount    Int          @default(0)
+  avgWatchPercent Float?
+  impressions     Int          @default(0)
+  ctr             Float?                             // click-through rate
+
+  // User notes & edits
+  userNotes       String?      @db.Text
+  isStarred       Boolean      @default(false)
+  isEdited        Boolean      @default(false)
+  editedAt        DateTime?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  batch           YoutubeWeeklyBatch?  @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  profile         YoutubeCreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  scriptSections  YoutubeScriptSection[]
+  revisions       YoutubeVideoRevision[]
+  calendarEntry   YoutubeCalendarEntry?
+  performanceLogs YoutubePerformanceLog[]
+
+  @@map("youtube_videos")
+  @@index([batchId])
+  @@index([profileId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([publishedAt])
+  @@index([isStarred])
+}
+
+// ─── Script Section ────────────────────────────────────────────────────────────
+// Stores each script section independently for granular editing & regeneration.
+
+model YoutubeScriptSection {
+  id          String        @id @default(cuid())
+  videoId     String
+  section     ScriptSection
+  content     String        @db.LongText
+  order       Int           @default(0)
+  wordCount   Int           @default(0)
+  estimatedSeconds Int      @default(0)       // reading time estimate
+  isApproved  Boolean       @default(false)
+  userEdited  Boolean       @default(false)
+  aiVersion   String?                         // which AI version generated this
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  video       YoutubeVideo  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@map("youtube_script_sections")
+  @@index([videoId])
+  @@index([section])
+}
+
+// ─── Video Revision History ────────────────────────────────────────────────────
+// Snapshot of a video's script at a point in time. Enables rollback.
+
+model YoutubeVideoRevision {
+  id          String   @id @default(cuid())
+  videoId     String
+  revisionNum Int      @default(1)
+  changeNote  String?                         // why this was saved
+  fullScript  String   @db.LongText
+  metadata    String?  @db.Text              // JSON snapshot of title, seoTitle, tags
+  createdAt   DateTime @default(now())
+
+  video       YoutubeVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@map("youtube_video_revisions")
+  @@index([videoId])
+}
+
+// ─── Content Ideas Bank ────────────────────────────────────────────────────────
+// AI-generated and user-submitted ideas waiting to be developed into scripts.
+
+model YoutubeContentIdea {
+  id              String        @id @default(cuid())
+  profileId       String
+  title           String
+  hook            String?       @db.Text
+  angle           String?       @db.Text     // unique perspective/angle
+  whyNow          String?       @db.Text     // why this is timely/relevant
+  targetEmotion   String?                    // emotion the video should evoke
+  themes          String?       @db.Text     // JSON string[] of ThemeCategory
+  difficulty      String?                    // "easy" | "medium" | "deep"
+  estimatedLength Int?                       // minutes
+  isAiGenerated   Boolean       @default(true)
+  isUsed          Boolean       @default(false)
+  usedInVideoId   String?
+  isSaved         Boolean       @default(false)
+  userNotes       String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  profile         YoutubeCreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("youtube_content_ideas")
+  @@index([profileId])
+  @@index([isUsed])
+  @@index([isSaved])
+}
+
+// ─── Channel Goals ─────────────────────────────────────────────────────────────
+// Tracks the creator's growth goals and milestones.
+
+model YoutubeChannelGoal {
+  id              String   @id @default(cuid())
+  profileId       String
+  title           String                     // e.g. "Reach 1,000 subscribers"
+  description     String?  @db.Text
+  targetMetric    String                     // "subscribers" | "views" | "videos" | "watchHours"
+  targetValue     Int
+  currentValue    Int      @default(0)
+  targetDate      DateTime?
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  profile         YoutubeCreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("youtube_channel_goals")
+  @@index([profileId])
+  @@index([isCompleted])
+}
+
+// ─── Analytics Snapshot ─────────────────────────────────────────────────────────
+// Periodic cached snapshots of YouTube channel analytics.
+
+model YoutubeAnalyticsSnapshot {
+  id                  String   @id @default(cuid())
+  profileId           String
+  snapshotDate        DateTime @db.Date
+  // Channel-level
+  subscriberCount     Int      @default(0)
+  subscriberGrowth    Int      @default(0)
+  totalViews          Int      @default(0)
+  viewsGrowth         Int      @default(0)
+  watchHoursTotal     Float    @default(0)
+  watchHoursGrowth    Float    @default(0)
+  // Content metrics
+  videosPublished     Int      @default(0)
+  avgViewsPerVideo    Float    @default(0)
+  avgLikesPerVideo    Float    @default(0)
+  avgCtr              Float    @default(0)
+  avgWatchPercent     Float    @default(0)
+  // Top performing video this period
+  topVideoId          String?
+  topVideoTitle       String?
+  topVideoViews       Int      @default(0)
+  // Audience
+  topCountry          String?
+  avgViewerAge        String?
+  genderSplit         String?  @db.Text     // JSON
+  // Social reach (combined)
+  totalSocialImpressions Int   @default(0)
+  createdAt           DateTime @default(now())
+
+  profile             YoutubeCreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("youtube_analytics_snapshots")
+  @@index([profileId])
+  @@index([snapshotDate])
+  @@unique([profileId, snapshotDate])
+}
+
+// ─── Video Performance Log ──────────────────────────────────────────────────────
+// Time-series performance data per video, synced from YouTube API.
+
+model YoutubePerformanceLog {
+  id              String   @id @default(cuid())
+  videoId         String
+  logDate         DateTime @db.Date
+  views           Int      @default(0)
+  likes           Int      @default(0)
+  comments        Int      @default(0)
+  shares          Int      @default(0)
+  impressions     Int      @default(0)
+  ctr             Float?
+  avgWatchPercent Float?
+  watchSeconds    Int      @default(0)
+  newSubscribers  Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  video           YoutubeVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@map("youtube_performance_logs")
+  @@index([videoId])
+  @@index([logDate])
+  @@unique([videoId, logDate])
+}
+
+// ─── Content Calendar Entry ────────────────────────────────────────────────────
+
+model YoutubeCalendarEntry {
+  id              String      @id @default(cuid())
+  profileId       String
+  videoId         String?     @unique
+  title           String
+  scheduledDate   DateTime
+  status          VideoStatus @default(DRAFT)
+  color           String?     @default("#f59e0b")
+  notes           String?     @db.Text
+  isRecurring     Boolean     @default(false)
+  recurringDays   String?     @db.Text          // JSON: number[] (0=Sun…6=Sat)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  profile         YoutubeCreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  video           YoutubeVideo?         @relation(fields: [videoId], references: [id], onDelete: SetNull)
+
+  @@map("youtube_calendar_entries")
+  @@index([profileId])
+  @@index([scheduledDate])
+}
+
+// ─── AI Generation Session ──────────────────────────────────────────────────────
+// Full audit trail of every AI generation call made by the content studio.
+
+model YoutubeAiSession {
+  id              String   @id @default(cuid())
+  profileId       String
+  batchId         String?
+  videoId         String?
+  sessionType     String                        // "weekly_batch" | "single_video" | "social_posts" | "ideas" | "regen_section"
+  prompt          String   @db.LongText
+  response        String?  @db.LongText
+  modelUsed       String   @default("claude-sonnet-4-20250514")
+  tokensInput     Int?
+  tokensOutput    Int?
+  durationMs      Int?
+  wasSuccess      Boolean  @default(true)
+  errorMessage    String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  @@map("youtube_ai_sessions")
+  @@index([profileId])
+  @@index([batchId])
+  @@index([videoId])
+  @@index([sessionType])
+  @@index([createdAt])
+}
+
+
+
+// ─── YouTube Content Studio Enums ────────────────────────────────────────────
+
+enum VideoStatus {
+  DRAFT
+  GENERATING
+  READY
+  FILMING
+  EDITING
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum YoutubeContentTone {
+  CALM
+  REFLECTIVE
+  DIRECT
+  ENERGETIC
+  STORYTELLING
+  PHILOSOPHICAL
+  MOTIVATIONAL
+  CONVERSATIONAL
+}
+
+enum SocialPostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+enum YtWeekStatus {
+  GENERATING
+  READY
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum ThemeCategory {
+  LIFE_UNDERSTANDING
+  SELF_BELIEF
+  CONFIDENCE
+  VALUES
+  MINDSET
+  RELATIONSHIPS
+  CAREER
+  MONEY
+  PURPOSE
+  CUSTOM
+}
+
+enum ScriptSection {
+  HOOK
+  INTRO
+  BODY
+  PERSPECTIVE_SHIFT
+  CLOSING
+}

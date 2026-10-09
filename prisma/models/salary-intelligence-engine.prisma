@@ -1,0 +1,120 @@
+model SalaryCheck {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Input snapshot
+  jobTitle         String          @db.VarChar(300)
+  industry         String          @db.VarChar(200)
+  location         String          @db.VarChar(200)
+  yearsExperience  Int
+  currentSalary    Int             // annual, in GBP
+  currency         String          @default("GBP") @db.VarChar(10)
+  educationLevel   String?         @db.VarChar(100)
+  companySize      String?         @db.VarChar(100)
+  skills           String?         @db.Text         // JSON array
+  remoteSetup      String?         @db.VarChar(100)
+  benefits         String?         @db.Text         // JSON array
+  lastRaiseMonths  Int?
+
+  // Results
+  resultJson       String?         @db.LongText
+  verdict          SalaryVerdict?
+  marketMedian     Int?            // calculated median salary
+  gapAmount        Int?            // currentSalary - marketMedian (negative = underpaid)
+  gapPercent       Float?
+
+  // Meta
+  status           SalaryCheckStatus @default(SAVED)
+  isStarred        Boolean           @default(false)
+  negotiationOutcome String?          @db.Text      // what happened after
+  notes            String?           @db.Text
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  negotiations     NegotiationSession[]
+
+  @@index([userId])
+  @@index([verdict])
+  @@index([createdAt])
+}
+
+model NegotiationSession {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  salaryCheckId String?
+  salaryCheck   SalaryCheck? @relation(fields: [salaryCheckId], references: [id], onDelete: SetNull)
+
+  // What they're negotiating
+  askingFor      String          @db.VarChar(500)  // e.g. "£10k raise", "promotion to Senior"
+  currentSalary  Int?
+  targetSalary   Int?
+  context        String?         @db.Text          // job offer, annual review, promotion
+
+  // Generated content
+  scriptJson     String?         @db.LongText      // full negotiation script
+  riskLevel      NegotiationRisk @default(MEDIUM)
+  confidenceScore Int            @default(50)      // 0-100
+
+  // Outcome tracking
+  outcomeAmount  Int?            // what they actually got
+  wasSuccessful  Boolean?
+  outcomeNotes   String?         @db.Text
+  
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([salaryCheckId])
+}
+
+model SalaryIntelligenceProgress {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalChecks        Int      @default(0)
+  totalNegotiations  Int      @default(0)
+  successfulRaises   Int      @default(0)
+  totalRaiseAmount   Int      @default(0)    // cumulative raise amount earned
+  streakDays         Int      @default(0)
+  xpPoints           Int      @default(0)
+  lastActivityDate   DateTime?
+
+  // JSON: [{ industry, count }]
+  industriesJson     String  @db.Text
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+
+enum SalaryVerdict {
+  SIGNIFICANTLY_UNDERPAID   // >20% below market
+  UNDERPAID                 // 10-20% below market
+  FAIRLY_PAID               // within 10% of median
+  WELL_PAID                 // 10-20% above market
+  EXCEPTIONALLY_PAID        // >20% above market
+}
+
+enum NegotiationRisk {
+  LOW     // strong position, negotiate confidently
+  MEDIUM  // good position, negotiate carefully
+  HIGH    // weaker position, build leverage first
+}
+
+enum CareerMomentum {
+  ACCELERATING   // on track or ahead of curve
+  ON_TRACK       // progressing normally
+  STALLING       // signs of plateau
+  AT_RISK        // needs immediate action
+}
+
+enum SalaryCheckStatus {
+  DRAFT
+  SAVED
+  ACTING_ON_IT
+  NEGOTIATED
+  OUTCOME_RECORDED
+}

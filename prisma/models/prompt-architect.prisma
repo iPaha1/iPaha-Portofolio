@@ -1,0 +1,125 @@
+model PromptProject {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Input
+  rawIdea          String         @db.Text              // what user wanted
+  category         PromptCategory @default(GENERAL)
+  targetModel      AIModel        @default(ANY)
+  techniques       String?        @db.Text              // JSON array of techniques used
+
+  // Generated output
+  generatedPrompt  String?        @db.LongText          // the main generated prompt
+  systemPrompt     String?        @db.LongText          // optional system prompt
+  negativePrompt   String?        @db.LongText          // for image models
+  resultJson       String?        @db.LongText          // full result with variants/tips
+
+  // Quality
+  qualityScore     Int?                                  // 0-100
+  qualityLabel     PromptQuality?
+
+  // User actions
+  isSaved          Boolean        @default(true)
+  isStarred        Boolean        @default(false)
+  title            String?        @db.VarChar(300)       // user-given title
+  notes            String?        @db.Text
+  useCount         Int            @default(0)            // how many times they've used/copied it
+  tags             String?        @db.Text              // JSON array user-defined tags
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([targetModel])
+  @@index([createdAt])
+}
+
+model PromptScoreRecord {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  originalPrompt   String         @db.LongText
+  improvedPrompt   String?        @db.LongText
+  scoreJson        String?        @db.LongText           // full scoring breakdown
+  qualityScore     Int?
+  qualityLabel     PromptQuality?
+  category         PromptCategory @default(GENERAL)
+  targetModel      AIModel        @default(ANY)
+
+  createdAt        DateTime       @default(now())
+
+  @@index([userId])
+}
+
+model PromptWorkspace {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalGenerated     Int      @default(0)
+  totalScored        Int      @default(0)
+  totalCopied        Int      @default(0)
+  streakDays         Int      @default(0)
+  xpPoints           Int      @default(0)
+  lastActivityDate   DateTime?
+
+  // JSON arrays
+  categoriesJson     String   @db.Text  // [{ category, count }]
+  modelsJson         String   @db.Text  // [{ model, count }]
+  techniquesJson     String   @db.Text  // [{ technique, count }]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+enum PromptCategory {
+  CODING_APP          // Build apps, scripts, code
+  WRITING_CONTENT     // Articles, essays, copy
+  IMAGE_GENERATION    // Midjourney, DALL-E, Stable Diffusion
+  BUSINESS_STRATEGY   // Plans, analysis, frameworks
+  DATA_ANALYSIS       // Spreadsheets, reports, insights
+  CREATIVE_FICTION    // Stories, characters, worldbuilding
+  RESEARCH            // Literature review, synthesis
+  VIDEO_SCRIPT        // YouTube, TikTok, ads
+  EDUCATION_TEACHING  // Lesson plans, explanations
+  PRODUCTIVITY        // Templates, SOPs, systems
+  ROLEPLAY_PERSONA    // Character, assistant personas
+  GENERAL             // Everything else
+}
+
+enum AIModel {
+  CLAUDE
+  CHATGPT_GPT4
+  GEMINI
+  MIDJOURNEY
+  DALL_E
+  STABLE_DIFFUSION
+  LLAMA
+  MISTRAL
+  PERPLEXITY
+  ANY
+}
+
+enum PromptTechnique {
+  CHAIN_OF_THOUGHT      // Step by step reasoning
+  FEW_SHOT              // Examples in prompt
+  ZERO_SHOT             // No examples
+  ROLE_PROMPTING        // Act as a [role]
+  STRUCTURED_OUTPUT     // JSON/markdown/table format
+  NEGATIVE_PROMPTING    // What NOT to do
+  TREE_OF_THOUGHT       // Multiple reasoning paths
+  SELF_REFLECTION       // Ask AI to review its output
+  REACT                 // Reason + Act pattern
+  PERSONA               // Specific personality/style
+}
+
+enum PromptQuality {
+  POOR        // 0-30: vague, missing context
+  BASIC       // 31-50: some structure but incomplete
+  DECENT      // 51-70: clear but could be stronger
+  STRONG      // 71-85: well-engineered
+  EXPERT      // 86-100: professional grade
+}

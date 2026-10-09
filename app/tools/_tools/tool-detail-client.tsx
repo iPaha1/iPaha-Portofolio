@@ -470,6 +470,7 @@ export const ToolDetailClient = ({ isSignedIn, tool, relatedTools }: ToolDetailC
                     <div className="p-6 md:p-8">{ToolComponent}</div>
                   </div>
                 ) : (
+                  // Placeholder for tools without a built component — should be rare since we build components for all featured tools
                   <div className="bg-gray-50 border border-gray-200 border-dashed rounded-xs p-12 text-center">
                     <div className="text-5xl mb-4">{tool.icon}</div>
                     <p className="text-gray-500 text-lg font-semibold mb-2">

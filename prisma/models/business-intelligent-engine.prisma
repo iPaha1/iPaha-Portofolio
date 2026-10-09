@@ -1,0 +1,103 @@
+model BusinessIdea {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Core idea
+  ideaName         String          @db.VarChar(300)
+  description      String          @db.LongText
+  industry         String?         @db.VarChar(200)
+  targetMarket     String?         @db.Text
+  problemSolved    String?         @db.Text
+  uniqueAdvantage  String?         @db.Text
+  stage            BusinessStage   @default(IDEA)
+  businessModel    BusinessModel   @default(OTHER)
+  location         String?         @db.VarChar(200)
+  budget           String?         @db.VarChar(100)   // e.g. "£5,000–£20,000"
+  founderBackground String?        @db.Text
+
+  // Validation results
+  validationJson   String?         @db.LongText
+  validationScore  Int?            // 0-100
+  validationVerdict ValidationScore?
+
+  // Full plan results
+  planJson         String?         @db.LongText
+  planGenerated    Boolean         @default(false)
+
+  // Meta
+  status           BusinessIntelligencePlanStatus      @default(DRAFT)
+  isSaved          Boolean         @default(true)
+  isStarred        Boolean         @default(false)
+  notes            String?         @db.Text
+  tags             String?         @db.Text           // JSON array
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([validationVerdict])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model BusinessWorkspace {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalIdeas       Int      @default(0)
+  validatedIdeas   Int      @default(0)
+  completePlans    Int      @default(0)
+  launchedIdeas    Int      @default(0)
+  streakDays       Int      @default(0)
+  xpPoints         Int      @default(0)
+  lastActivityDate DateTime?
+
+  // JSON arrays
+  industriesJson   String   @db.Text  // [{ industry, count }]
+  modelsJson       String   @db.Text  // [{ model, count }]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum BusinessStage {
+  IDEA             // Just an idea, nothing built
+  VALIDATION       // Testing assumptions
+  MVP              // Minimal product exists
+  EARLY_TRACTION   // Some customers / revenue
+  GROWTH           // Scaling
+  ESTABLISHED      // Operating business
+}
+
+enum BusinessModel {
+  SAAS             // Software as a Service
+  MARKETPLACE      // Two-sided marketplace
+  E_COMMERCE       // Direct product sales
+  SUBSCRIPTION     // Recurring physical/service
+  AGENCY           // Services / consulting
+  CONTENT          // Media, creator economy
+  HARDWARE         // Physical product
+  FRANCHISE        // Franchise model
+  FREEMIUM         // Free + paid tiers
+  OTHER
+}
+
+enum ValidationScore {
+  STRONG_BUY        // 80-100: Exceptional opportunity
+  BUY               // 65-79: Good opportunity, pursue it
+  HOLD              // 50-64: Has merit, needs refinement
+  NEEDS_WORK        // 35-49: Significant gaps to address
+  PIVOT_REQUIRED    // 0-34: Core assumptions are flawed
+}
+
+enum BusinessIntelligencePlanStatus {
+  DRAFT
+  VALIDATED
+  IN_PROGRESS
+  PLAN_COMPLETE
+  PITCHING
+  LAUNCHED
+  ARCHIVED
+}

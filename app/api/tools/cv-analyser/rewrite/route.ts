@@ -12,6 +12,7 @@ import { tokenGate } from "@/lib/tokens/token-gate";
 import { deductTokens } from "@/lib/tokens/token-deduct";
 import { prismadb } from "@/lib/db";
 import { getIpFromRequest, trackToolUsage } from "@/lib/tools/track-tool-usage";
+import { getClaudeCompletion } from "@/lib/ai/anthropic-client";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -152,17 +153,27 @@ CRITICAL FORMATTING:
     const prompt = prompts[validMode];
 
     // ── ② CALL ANTHROPIC API ──────────────────────────────────────────────
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 6000,
-      temperature: 0.3, // Lower temperature for more consistent output
-      messages: [{ role: "user", content: prompt }],
-    });
+    // const message = await anthropic.messages.create({
+    //   model: "claude-sonnet-4-20250514",
+    //   max_tokens: 6000,
+    //   temperature: 0.3, // Lower temperature for more consistent output
+    //   messages: [{ role: "user", content: prompt }],
+    // });
+
+    // const processingMs = Date.now() - start;
+    
+    // // Get raw response
+    // let result = message.content[0].type === "text" ? message.content[0].text : "";
+    
+    // ── ② CALL ANTHROPIC API (via shared client) ────────────────────────────
+    const { text, stopReason } = await getClaudeCompletion(prompt, { maxTokens: 6000 });
 
     const processingMs = Date.now() - start;
-    
+    console.log(`[cv-analyser/rewrite] Raw response length: ${text.length} chars, stopReason: ${stopReason}`);
+
     // Get raw response
-    let result = message.content[0].type === "text" ? message.content[0].text : "";
+    let result = text;
+    
     
     // Clean up the response
     result = result.trim();

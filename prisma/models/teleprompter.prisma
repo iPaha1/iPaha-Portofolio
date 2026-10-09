@@ -1,0 +1,75 @@
+model TeleprompterSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Scroll
+  scrollSpeed    Int     @default(6)      // 1–20
+
+  // Typography
+  fontSize       Int     @default(46)     // px
+  fontFamily     TeleprompterFont @default(SANS)
+  lineHeight     Float   @default(1.75)
+  textWidth      Int     @default(80)     // % of stage width
+
+  // Display
+  theme          TeleprompterTheme @default(BLACK_WHITE)
+  textColorHex   String  @default("#ffffff") @db.VarChar(10)
+  bgColorHex     String  @default("#000000") @db.VarChar(10)
+  focusLinePos   Int     @default(28)     // % from top
+  showFocusLine  Boolean @default(true)
+  showEdgeFade   Boolean @default(true)
+
+  // Behaviour
+  useCountdown   Boolean @default(true)
+  loopScript     Boolean @default(false)
+  tapToPause     Boolean @default(true)
+  wpm            Int     @default(130)    // words per minute for time estimate
+
+  // Last saved script (optional)
+  lastScript     String? @db.LongText
+  lastScriptName String? @db.VarChar(300)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model TeleprompterSession {
+  id     String   @id @default(cuid())
+  userId String?
+  user   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Session data
+  scriptWordCount Int     @default(0)
+  durationSeconds Int     @default(0)    // how long they were in teleprompter view
+  completed       Boolean @default(false) // did they reach 100%?
+  maxProgress     Int     @default(0)     // max % reached (0–100)
+  speedUsed       Int     @default(6)
+
+  // Aggregated counts
+  pauseCount      Int     @default(0)
+  restartCount    Int     @default(0)
+
+  ipAddress       String? @db.VarChar(100)
+  userAgent       String? @db.VarChar(500)
+
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum TeleprompterFont {
+  SANS
+  SERIF
+  MONO
+}
+
+enum TeleprompterTheme {
+  BLACK_WHITE     // Default: white text on black
+  BLACK_AMBER     // Amber text on black (easy on eyes)
+  BLACK_GREEN     // Green text on black (classic)
+  DARK_WHITE      // White text on deep dark
+  NAVY_WHITE      // White text on navy
+  PAPER           // Black text on cream (daylight)
+}

@@ -164,6 +164,28 @@ model User {
   contentStudioProjects   ContentStudioProject[]
   contentStudioWorkspace  ContentStudioWorkspace?
 
+  // Salary Intelligence Engine
+  salaryChecks              SalaryCheck[]
+  negotiationSessions       NegotiationSession[]
+  salaryIntelligenceProgress SalaryIntelligenceProgress?
+
+  // Prompt Architect
+  promptProjects    PromptProject[]
+  promptScores      PromptScoreRecord[]
+  promptWorkspace   PromptWorkspace?
+
+  // Teleprompter
+  teleprompterSettings  TeleprompterSettings?
+  teleprompterSessions  TeleprompterSession[]
+
+  // Business Intelligence Engine
+  businessIdeas     BusinessIdea[]
+  businessWorkspace BusinessWorkspace?
+
+  // Startup Generator
+  startupIdeas          StartupIdea[]
+  startupIdeaWorkspace  StartupIdeaWorkspace?
+
   // Gamification & achievements
   userAchievements         UserAchievement[]
   gameParticipation    GameParticipation[]
@@ -181,6 +203,11 @@ model User {
   // Token Rush Challenge relations
   rushChallengesCreated     TokenRushChallenge[] @relation("ChallengeCreator")
   tokenRushCashouts         TokenRushCashout[]
+
+  // Youtube Content Creation relations
+  youtubeCreatorProfile YoutubeCreatorProfile?
+
+  cvExports           CvExport[]
 
 
   @@map("users")
@@ -2350,6 +2377,7 @@ model CvAnalysis {
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   coverLetters      CvCoverLetter[]
   interviewSessions CvInterviewSession[]
+  exports           CvExport[]
  
   @@map("cv_analyses")
   @@index([userId])
@@ -2427,6 +2455,36 @@ enum CVRoleMode {
   CREATIVE
 }
 
+
+// ─── CV Export (Template → PDF/Word) ─────────────────────────────────────────
+
+model CvExport {
+  id          String    @id @default(cuid())
+  userId      String
+  analysisId  String?   // optional link back to the analysis this came from
+
+  templateId  String    // e.g. "modern-minimal", "classic-serif"
+  format      ExportFormat
+
+  cvContent   String    @db.Text   // the exact text that was rendered (tailored or original)
+  jobTitle    String?
+  companyName String?
+
+  fileUrl     String?   // if you persist to S3/blob storage
+  createdAt   DateTime  @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis    CvAnalysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+
+  @@map("cv_exports")
+  @@index([userId])
+  @@index([analysisId])
+}
+
+enum ExportFormat {
+  PDF
+  DOCX
+}
 
 
 // =============================================================================

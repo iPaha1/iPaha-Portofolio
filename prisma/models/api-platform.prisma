@@ -1,0 +1,691 @@
+// =============================================================================
+// isaacpaha.com — Multi-Tenancy Schema Additions
+// Add these models to your existing schema.prisma file
+// =============================================================================
+// These models extend your existing schema without modifying any existing table.
+// Every business entity table should add: companyId String + @@index([companyId])
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// CORE TENANT TABLE
+// Stores each registered company as a first-class tenant
+// -----------------------------------------------------------------------------
+// model Company {
+//   id               String        @id @default(cuid())
+
+//   // Identity
+//   legalName        String?                             // "iPaha Ltd"
+//   displayName      String?                             // "iPaha"
+//   slug             String        @unique              // "ipaha-ltd" — used in API URLs
+//   registrationNo   String?                            // UK Companies House number
+
+//   // Domains
+//   primaryDomain    String?                            // "ipaha.co.uk"
+//   allowedDomains   String?       @db.Text             // JSON string[] — CORS origins
+
+//   // Branding (for dashboard context switcher)
+//   logoUrl          String?
+//   accentColor      String        @default("#f59e0b")
+//   description      String?       @db.Text
+
+//   // Contact
+//   contactEmail     String?
+//   contactPhone     String?
+//   addressLine1     String?
+//   addressLine2     String?
+//   city             String?
+//   postcode         String?
+//   country          String        @default("GB")
+
+//   // Plan & status
+//   planTier         CompanyPlan   @default(STARTER)
+//   isActive         Boolean       @default(true)
+//   isSuspended      Boolean       @default(false)
+//   suspendedReason  String?
+
+//   // Dynamic dashboard config (JSON)
+//   // Defines sidebar navigation, enabled modules, custom settings per company
+//   // Schema: { nav: NavGroup[], modules: string[], settings: Record<string,any> }
+//   dashboardConfig  String?       @db.LongText
+
+//   // Arbitrary metadata for future use
+//   metadata         String?       @db.LongText         // JSON
+
+//   // Timestamps
+//   createdAt        DateTime      @default(now())
+//   updatedAt        DateTime?      @updatedAt
+
+//   // Relations
+//   apiKeys          CompanyApiKey[]
+//   members          CompanyMember[]
+//   auditLogs        CompanyAuditLog[]
+//   webhookEndpoints WebhookEndpoint[]
+//   webhookEvents    WebhookEvent[]
+
+//   // Business entities (one per feature area — add as you build)
+//   bookings         Booking[]
+//   contacts         CompanyContact[]
+//   invoices         Invoice[]
+//   mediaAssets      CompanyMediaAsset[]
+//   formSubmissions  FormSubmission[]
+//   apiRequestLogs   ApiRequestLog[]
+
+
+//   apps        App[]
+
+//   @@map("companies")
+//   @@index([slug])
+//   @@index([isActive])
+//   @@index([planTier])
+// }
+
+
+model Company {
+  id               String        @id @default(cuid())
+
+  // Identity
+  legalName        String?                             // "iPaha Ltd"
+  displayName      String?                             // "iPaha"
+  slug             String        @unique              // "ipaha-ltd" — used in API URLs
+  registrationNo   String?                            // UK Companies House number
+
+  // Domains
+  primaryDomain    String?                            // "ipaha.co.uk"
+  allowedDomains   String?       @db.Text             // JSON string[] — CORS origins
+
+  // Branding (for dashboard context switcher)
+  logoUrl          String?
+  accentColor      String        @default("#f59e0b")
+  description      String?       @db.Text
+
+  // Contact
+  contactEmail     String?
+  contactPhone     String?
+  addressLine1     String?
+  addressLine2     String?
+  city             String?
+  postcode         String?
+  country          String        @default("GB")
+
+  // Plan & status
+  planTier         CompanyPlan   @default(STARTER)
+  isActive         Boolean       @default(true)
+  isSuspended      Boolean       @default(false)
+  suspendedReason  String?
+
+  // Dynamic dashboard config (JSON)
+  // Defines sidebar navigation, enabled modules, custom settings per company
+  // Schema: { nav: NavGroup[], modules: string[], settings: Record<string,any> }
+  dashboardConfig  String?       @db.LongText
+
+  // Arbitrary metadata for future use
+  metadata         String?       @db.LongText         // JSON
+
+  // Timestamps
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime?      @updatedAt
+
+  // Relations
+  apiKeys          CompanyApiKey[]
+  members          CompanyMember[]
+  auditLogs        CompanyAuditLog[]
+  webhookEndpoints WebhookEndpoint[]
+  webhookEvents    WebhookEvent[]
+
+  // Business entities (one per feature area — add as you build)
+  bookings         Booking[]
+  contacts         CompanyContact[]
+  invoices         Invoice[]
+  mediaAssets      CompanyMediaAsset[]
+  formSubmissions  FormSubmission[]
+  apiRequestLogs   ApiRequestLog[]
+  apps             App[]
+
+  // ─── PORTAL RELATIONS (Customer Portal) ────────────────────────────────
+  portalSessions   PortalSession[]     // Active portal sessions
+  supportTickets   SupportTicket[]     // Customer support tickets
+  ticketReplies    TicketReply[]       // Replies to tickets (through tickets)
+  portalMessages   PortalMessage[]     // Direct messages from portal
+  projectUpdates   ProjectUpdate[]     // Project status updates
+  clientFiles      ClientFile[]        // Shared files/documents
+
+ 
+  @@map("companies")
+  @@index([slug])
+  @@index([isActive])
+  @@index([planTier])
+}
+
+
+enum CompanyPlan {
+  STARTER
+  GROWTH
+  PRO
+  ENTERPRISE
+}
+
+// -----------------------------------------------------------------------------
+// API KEYS
+// One company can have multiple keys (e.g. production, staging, read-only)
+// The raw key is ONLY returned once at creation — we store a hash
+// -----------------------------------------------------------------------------
+model CompanyApiKey {
+  id               String        @id @default(cuid())
+  companyId        String
+
+  // Display
+  name             String                             // "Production key", "Read-only key"
+  keyPrefix        String                             // First 8 chars: "ipaha_sk" — shown in dashboard
+  keyHash          String        @unique              // HMAC-SHA256 of full key — used for lookup
+  lastFourChars    String                             // Last 4 chars — shown masked in dashboard
+
+  // Permissions
+  // JSON array of scope strings, e.g.:
+  // ["bookings:read","bookings:write","contacts:read","invoices:read"]
+  scopes           String        @db.Text
+
+  // Rate limiting (requests per minute — null = inherit from plan)
+  rateLimit        Int?                               // req/min override for this key
+  rateLimitWindow  Int           @default(60)         // seconds
+
+  // Access restrictions
+  allowedIps       String?       @db.Text             // JSON string[] — null = all IPs
+  allowedDomains   String?       @db.Text             // JSON string[] — null = any origin
+
+  // Lifecycle
+  isActive         Boolean       @default(true)
+  expiresAt        DateTime?                          // null = never expires
+  revokedAt        DateTime?
+  revokedReason    String?
+
+  // Usage tracking
+  lastUsedAt       DateTime?
+  lastUsedIp       String?
+  totalRequests    BigInt        @default(0)
+  totalErrors      BigInt        @default(0)
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  company          Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_api_keys")
+  @@index([companyId])
+  @@index([keyHash])                                  // Critical — used on every request
+  @@index([keyPrefix])
+  @@index([isActive])
+}
+
+// -----------------------------------------------------------------------------
+// COMPANY MEMBERS
+// Links your main users to companies with roles — for future team delegation
+// -----------------------------------------------------------------------------
+model CompanyMember {
+  id          String            @id @default(cuid())
+  companyId   String
+  userId      String                                  // FK to your existing User model
+  role        CompanyMemberRole @default(VIEWER)
+  isActive    Boolean           @default(true)
+  invitedAt   DateTime          @default(now())
+  acceptedAt  DateTime?
+
+  company     Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_members")
+  @@unique([companyId, userId])
+  @@index([companyId])
+  @@index([userId])
+}
+
+enum CompanyMemberRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+// -----------------------------------------------------------------------------
+// AUDIT LOG
+// Immutable log of all actions — both API and dashboard
+// -----------------------------------------------------------------------------
+model CompanyAuditLog {
+  id          String   @id @default(cuid())
+  companyId   String
+
+  // Actor
+  actorType   String                                  // "api_key" | "admin_user" | "system"
+  actorId     String                                  // apiKeyId or userId or "system"
+  actorName   String?                                 // Human-readable label
+
+  // Action
+  action      String                                  // "booking.created" | "contact.updated"
+  entityType  String?                                 // "booking" | "contact" | "invoice"
+  entityId    String?
+
+  // Context
+  ipAddress   String?
+  userAgent   String?
+  requestId   String?                                 // Correlates with ApiRequestLog
+
+  // State snapshot
+  before      String?  @db.LongText                  // JSON: state before change
+  after       String?  @db.LongText                  // JSON: state after change
+
+  metadata    String?  @db.Text                      // JSON: extra context
+
+  createdAt   DateTime @default(now())
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_audit_logs")
+  @@index([companyId])
+  @@index([actorId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// API REQUEST LOG
+// Every inbound API request logged for debugging + analytics
+// -----------------------------------------------------------------------------
+model ApiRequestLog {
+  id              String   @id @default(cuid())
+  companyId       String?                             // null if auth failed before resolving company
+
+  // Request
+  requestId       String   @unique                   // UUID — returned in X-Request-ID header
+  method          String                             // GET | POST | PATCH | DELETE
+  path            String                             // /api/v1/companies/ipaha-ltd/bookings
+  queryParams     String?  @db.Text                 // JSON
+  apiKeyId        String?
+
+  // Response
+  statusCode      Int
+  responseMs      Int                                // Latency in milliseconds
+  errorCode       String?                            // e.g. "VALIDATION_ERROR"
+
+  // Client
+  ipAddress       String?
+  userAgent       String?
+  origin          String?
+
+  createdAt       DateTime @default(now())
+
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@map("api_request_logs")
+  @@index([companyId])
+  @@index([requestId])
+  @@index([createdAt])
+  @@index([statusCode])
+  @@index([apiKeyId])
+}
+
+// -----------------------------------------------------------------------------
+// WEBHOOKS
+// Each company registers endpoint URLs and subscribes to event types
+// -----------------------------------------------------------------------------
+model WebhookEndpoint {
+  id           String    @id @default(cuid())
+  companyId    String
+
+  url          String                                // HTTPS endpoint to POST to
+  description  String?
+
+  // Events this endpoint subscribes to — JSON string[]
+  // e.g. ["booking.created","booking.updated","invoice.paid"]
+  events       String    @db.Text
+
+  // HMAC signing secret — stored plain (it's a shared secret the client also knows)
+  // Generated on creation, shown once, can be rotated
+  signingSecret String                               // Used to sign payloads with HMAC-SHA256
+
+  isActive     Boolean   @default(true)
+
+  // Stats
+  totalDeliveries  Int   @default(0)
+  totalFailures    Int   @default(0)
+  lastDeliveryAt   DateTime?
+  lastFailureAt    DateTime?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deliveries   WebhookDelivery[]
+
+  @@map("webhook_endpoints")
+  @@index([companyId])
+  @@index([isActive])
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  companyId   String
+
+  // The event type that was triggered
+  eventType   String                                 // "booking.created"
+  entityType  String                                 // "booking"
+  entityId    String                                 // ID of the affected record
+
+  // Full payload sent to all matching endpoints
+  payload     String    @db.LongText                // JSON
+
+  createdAt   DateTime  @default(now())
+
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deliveries  WebhookDelivery[]
+
+  @@map("webhook_events")
+  @@index([companyId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model WebhookDelivery {
+  id          String    @id @default(cuid())
+  eventId     String
+  endpointId  String
+
+  // Delivery result
+  status      WebhookDeliveryStatus @default(PENDING)
+  attemptCount Int       @default(0)
+  nextRetryAt  DateTime?
+
+  // Last attempt details
+  responseStatus  Int?                               // HTTP status from the endpoint
+  responseBody    String?  @db.Text
+  errorMessage    String?
+
+  // Timing
+  deliveredAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  event        WebhookEvent     @relation(fields: [eventId],    references: [id], onDelete: Cascade)
+  endpoint     WebhookEndpoint  @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_deliveries")
+  @@index([eventId])
+  @@index([endpointId])
+  @@index([status])
+  @@index([nextRetryAt])
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  RETRYING
+  ABANDONED
+}
+
+// =============================================================================
+// BUSINESS ENTITY TABLES
+// Each includes companyId for tenant isolation
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// BOOKINGS — Used by iPaha Ltd (consultation requests)
+// -----------------------------------------------------------------------------
+model Booking {
+  id              String        @id @default(cuid())
+  companyId       String                             // TENANT SCOPE
+
+  // Client
+  clientName      String
+  clientEmail     String
+  clientPhone     String?
+  clientCompany   String?
+  clientMessage   String?       @db.Text
+
+  // Booking details
+  serviceType     String?                            // "consultation" | "project-review"
+  preferredDate   DateTime?
+  confirmedDate   DateTime?
+  duration        Int?                               // minutes
+  location        BookingLocation @default(VIDEO_CALL)
+  meetingUrl      String?                            // Zoom/Cal.com link
+
+  // Status
+  status          BookingStatus @default(PENDING)
+  assignedTo      String?                            // userId of team member handling it
+  internalNotes   String?       @db.Text
+
+  // Source
+  source          String?                            // "website_form" | "api" | "portal"
+  referralSource  String?
+
+  // Metadata
+  metadata        String?       @db.Text             // JSON — custom fields per company
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+  @@index([companyId])
+  @@index([status])
+  @@index([clientEmail])
+  @@index([createdAt])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum BookingLocation {
+  VIDEO_CALL
+  IN_PERSON
+  PHONE
+}
+// -----------------------------------------------------------------------------
+// CONTACTS — CRM-lite for both companies
+// -----------------------------------------------------------------------------
+model CompanyContact {
+  id            String    @id @default(cuid())
+  companyId     String                                 // TENANT SCOPE
+
+  // Basic identity
+  firstName     String
+  lastName      String?
+  email         String
+  phone         String?
+  
+  // Professional info
+  jobTitle      String?
+  company       String?                                // If different from parentCompany
+  department    String?
+
+  // Communication & relationship
+  notes         String?   @db.Text
+  tags          String?   @db.Text                    // JSON string[] e.g. ["decision-maker", "technical"]
+  source        String?                                // e.g. "website", "referral", "event"
+  preferredContactMethod String?                       // "email" | "phone" | "whatsapp" etc.
+
+  // Status
+  isActive      Boolean   @default(true)
+  isPrimary     Boolean   @default(false)             // Main point of contact for the company
+
+  // Additional data
+  metadata      String?   @db.Text                    // Flexible JSON for custom fields
+  lastContactedAt DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  parentCompany   Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supportTickets  SupportTicket[]
+  portalSessions  PortalSession[]
+  projectUpdates  ProjectUpdate[]
+  clientFiles     ClientFile[]
+  portalMessages  PortalMessage[]   // messages where this contact is the client
+  invoices          Invoice[] 
+
+  @@map("company_contacts") 
+  @@unique([companyId, email])           // Prevent duplicate emails per company
+  @@index([companyId])
+  @@index([email])
+  @@index([isActive])
+  @@index([isPrimary])
+  @@index([lastContactedAt])
+  @@index([createdAt])
+}
+
+
+// -----------------------------------------------------------------------------
+// INVOICES — Shared across companies (iPaha Ltd & future billing use)
+// -----------------------------------------------------------------------------
+// model Invoice {
+//   id              String        @id @default(cuid())
+//   companyId       String                             // TENANT SCOPE
+
+//   invoiceNumber   String
+//   clientName      String
+//   clientEmail     String
+//   clientCompany   String?        // Add this field
+//   clientAddress   String?       @db.Text
+
+//   status          InvoiceStatus @default(DRAFT)
+
+//   lineItems       String        @db.LongText         // JSON LineItem[]
+//   subtotal        Decimal       @db.Decimal(10,2)
+//   taxRate         Decimal       @db.Decimal(5,2)     @default(20)
+//   taxAmount       Decimal       @db.Decimal(10,2)
+//   total           Decimal       @db.Decimal(10,2)
+//   currency        String        @default("GBP")
+
+//   issuedAt        DateTime?
+//   dueAt           DateTime?
+//   paidAt          DateTime?
+//   paymentRef      String?
+
+//   notes           String?       @db.Text
+//   metadata        String?       @db.Text             // JSON
+
+//   createdAt       DateTime      @default(now())
+//   updatedAt       DateTime      @updatedAt
+
+//   company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+//   @@map("invoices")
+//   @@unique([companyId, invoiceNumber])
+//   @@index([companyId])
+//   @@index([status])
+//   @@index([clientEmail])
+//   @@index([createdAt])
+// }
+
+
+model Invoice {
+  id              String        @id @default(cuid())
+  companyId       String        // TENANT SCOPE
+  clientId        String?       // Link to CompanyContact (optional for now, migrate later)
+  
+  invoiceNumber   String
+  clientName      String
+  clientEmail     String
+  clientCompany   String?
+  clientAddress   String?       @db.Text
+
+  status          InvoiceStatus @default(DRAFT)
+
+  lineItems       String        @db.LongText         // JSON LineItem[]
+  subtotal        Decimal       @db.Decimal(10,2)
+  taxRate         Decimal       @db.Decimal(5,2)     @default(20)
+  taxAmount       Decimal       @db.Decimal(10,2)
+  total           Decimal       @db.Decimal(10,2)
+  currency        String        @default("GBP")
+
+  issuedAt        DateTime?
+  dueAt           DateTime?
+  paidAt          DateTime?
+  paymentRef      String?
+
+  notes           String?       @db.Text
+  metadata        String?       @db.Text             // JSON
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  client          CompanyContact? @relation(fields: [clientId], references: [id])
+
+  @@map("invoices")
+  @@unique([companyId, invoiceNumber])
+  @@index([companyId])
+  @@index([clientId])
+  @@index([status])
+  @@index([clientEmail])
+  @@index([createdAt])
+}
+
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// -----------------------------------------------------------------------------
+// COMPANY MEDIA ASSETS — Tenant-scoped media library
+// -----------------------------------------------------------------------------
+model CompanyMediaAsset {
+  id           String    @id @default(cuid())
+  companyId    String                                // TENANT SCOPE
+
+  filename     String
+  originalName String
+  url          String    @db.Text
+  cloudinaryId String?
+  mimeType     String
+  size         Int
+  alt          String?
+  tags         String?   @db.Text                   // JSON string[]
+
+  uploadedBy   String?                              // userId
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_media_assets")
+  @@index([companyId])
+  @@index([createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// FORM SUBMISSIONS — Generic catch-all for any form on company sites
+// -----------------------------------------------------------------------------
+model FormSubmission {
+  id          String    @id @default(cuid())
+  companyId   String                                 // TENANT SCOPE
+
+  formId      String                                 // e.g. "contact" | "newsletter" | "quote"
+  data        String    @db.LongText                // JSON — arbitrary form fields
+  ipAddress   String?
+  userAgent   String?
+  source      String?
+  isRead      Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("form_submissions")
+  @@index([companyId])
+  @@index([formId])
+  @@index([isRead])
+  @@index([createdAt])
+}

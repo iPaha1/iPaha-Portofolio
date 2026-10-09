@@ -19,6 +19,7 @@ import { tokenGate } from "@/lib/tokens/token-gate";
 import { deductTokens } from "@/lib/tokens/token-deduct";
 import { getIpFromRequest, trackToolUsage } from "@/lib/tools/track-tool-usage";
 import { prismadb } from "@/lib/db";
+import { getClaudeCompletion } from "@/lib/ai/anthropic-client";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
@@ -220,20 +221,32 @@ export async function POST(req: NextRequest) {
     console.log(`[cv-analyser/analyse] Token gate passed for user ${gateResult.dbUserId}`);
 
     // ── ② CALL ANTHROPIC API ──────────────────────────────────────────
-    const prompt = buildPrompt(cvText, jobDescription, roleMode);
+    // const prompt = buildPrompt(cvText, jobDescription, roleMode);
     
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 6000,
-      temperature: 0.3, // Lower temperature for more consistent JSON
-      messages: [{ role: "user", content: prompt }],
+    // const message = await anthropic.messages.create({
+    //   // model: "claude-sonnet-4-20250514",
+    //   model: "claude-sonnet-5",
+    //   max_tokens: 6000,
+    //   // temperature: 0.3, // Lower temperature for more consistent JSON
+    //   messages: [{ role: "user", content: prompt }],
+    // });
+
+    // const processingMs = Date.now() - start;
+
+    // // Get raw response
+    // const raw = message.content[0].type === "text" ? message.content[0].text : "{}";
+    // console.log(`[cv-analyser/analyse] Raw response length: ${raw.length} chars`);
+    
+    // ── ② CALL ANTHROPIC API ──────────────────────────────────────────
+    const prompt = buildPrompt(cvText, jobDescription, roleMode);
+
+    const { text: raw, stopReason } = await getClaudeCompletion(prompt, {
+      maxTokens: 12000,
     });
 
     const processingMs = Date.now() - start;
 
-    // Get raw response
-    const raw = message.content[0].type === "text" ? message.content[0].text : "{}";
-    console.log(`[cv-analyser/analyse] Raw response length: ${raw.length} chars`);
+    console.log(`[cv-analyser/analyse] Raw response length: ${raw.length} chars, stopReason: ${stopReason}`);
     
     // Log first 200 chars for debugging
     if (process.env.NODE_ENV === "development") {

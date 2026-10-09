@@ -87,19 +87,19 @@ model App {
   @@index([primaryCategory])
 }
 
-model Company {
-  id          String  @id @default(cuid())
-  name        String  @unique
-  slug        String  @unique
-  flag        String  @default("🇬🇭")   // emoji flag
-  description String? @db.Text
-  website     String?
-  foundedYear Int?
+// model Company {
+//   id          String  @id @default(cuid())
+//   name        String  @unique
+//   slug        String  @unique
+//   flag        String  @default("🇬🇭")   // emoji flag
+//   description String? @db.Text
+//   website     String?
+//   foundedYear Int?
 
-  apps        App[]
+//   apps        App[]
 
-  @@map("companies")
-}
+//   @@map("companies")
+// }
 
 enum AppStatus {
   COMING_SOON

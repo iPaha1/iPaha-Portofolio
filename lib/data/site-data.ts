@@ -30,28 +30,28 @@ export const COMPANIES = [
     href: "https://ipaha.co.uk",
     year: "2019",
   },
-  {
-    id: "ipahaStores-ltd",
-    name: "iPahaStores Ltd",
-    flag: "🇬🇧",
-    location: "United Kingdom",
-    description:
-      "SaaS and e-commerce platform company powering next-generation online retail experiences.",
-    website: "ipahastore.com",
-    href: "https://ipahastore.com",
-    year: "2021",
-  },
-  {
-    id: "okPah-ltd",
-    name: "OkPah Ltd",
-    flag: "🇬🇭",
-    location: "Ghana",
-    description:
-      "Innovation-driven startup building homegrown digital platforms for the Ghanaian market.",
-    website: "okpah.com",
-    href: "https://okpah.com",
-    year: "2022",
-  },
+  // {
+  //   id: "ipahaStores-ltd",
+  //   name: "iPahaStores Ltd",
+  //   flag: "🇬🇧",
+  //   location: "United Kingdom",
+  //   description:
+  //     "SaaS and e-commerce platform company powering next-generation online retail experiences.",
+  //   website: "ipahastore.com",
+  //   href: "https://ipahastore.com",
+  //   year: "2021",
+  // },
+  // {
+  //   id: "okPah-ltd",
+  //   name: "OkPah Ltd",
+  //   flag: "🇬🇭",
+  //   location: "Ghana",
+  //   description:
+  //     "Innovation-driven startup building homegrown digital platforms for the Ghanaian market.",
+  //   website: "okpah.com",
+  //   href: "https://okpah.com",
+  //   year: "2022",
+  // },
 ];
 
 export const PRODUCTS = [
