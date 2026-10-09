@@ -549,12 +549,12 @@ async function seed() {
       if (existing) {
         record = await prisma.company.update({
           where: { slug: co.slug },
-          data:  { name: co.name, flag: co.flag, description: co.description, website: co.website, foundedYear: co.foundedYear },
+          data:  { displayName: co.name, flag: co.flag, description: co.description, website: co.website, foundedYear: co.foundedYear },
         });
         console.log(`  🔄 Updated  — ${co.name}`);
       } else {
         record = await prisma.company.create({
-          data: { name: co.name, slug: co.slug, flag: co.flag, description: co.description, website: co.website, foundedYear: co.foundedYear },
+          data: { displayName: co.name, slug: co.slug, flag: co.flag, description: co.description, website: co.website, foundedYear: co.foundedYear },
         });
         console.log(`  ✅ Created  — ${co.name}`);
       }

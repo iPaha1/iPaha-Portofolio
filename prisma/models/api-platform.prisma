@@ -86,8 +86,12 @@ model Company {
   // Identity
   legalName        String?                             // "iPaha Ltd"
   displayName      String?                             // "iPaha"
+  flag         String  @default("🇬🇭")   // ← add this back if you want emoji flags
   slug             String        @unique              // "ipaha-ltd" — used in API URLs
   registrationNo   String?                            // UK Companies House number
+  website          String?                    // ← add
+  foundedYear      Int?                       // ← add
+
 
   // Domains
   primaryDomain    String?                            // "ipaha.co.uk"

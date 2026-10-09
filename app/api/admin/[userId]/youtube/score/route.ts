@@ -9,7 +9,7 @@ import { buildScriptScorePrompt, parseAiJson } from "@/app/(dashboard)/admin/[us
 
 const MODEL = "claude-sonnet-4-20250514";
 
-export async function POST(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const { userId: clerkId } = await auth();
     if (!clerkId) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });

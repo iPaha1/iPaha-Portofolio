@@ -31,7 +31,7 @@ export async function getAppStats() {
           accentColor:true,
           userCount:  true,
           viewCount:  true,
-          company:    { select: { name: true, flag: true } },
+          company:    true,
         },
       }),
     ]);
@@ -93,7 +93,7 @@ export async function getApps({
       skip:    (page - 1) * pageSize,
       take:    pageSize,
       include: {
-        company:    { select: { name: true, flag: true, slug: true } },
+        company:    { select: { displayName: true, flag: true, slug: true } },
         categories: true,
         // ── techItems included so AppCard tech stack renders ──────────────────
         techItems:  { select: { name: true, category: true } },
@@ -268,7 +268,7 @@ export async function createApp(data: {
       }),
     },
     include: {
-      company:   { select: { name: true, flag: true, slug: true } },
+      company:   { select: { displayName: true, flag: true, slug: true } },
       techItems: { select: { name: true, category: true } },
       _count:    { select: { screenshots: true, changelog: true } },
     },
@@ -331,7 +331,7 @@ export async function updateApp(
     where: { id },
     data:  rest,
     include: {
-      company:   { select: { name: true, flag: true, slug: true } },
+      company:   { select: { displayName: true, flag: true, slug: true } },
       techItems: { select: { name: true, category: true } },
       _count:    { select: { screenshots: true, changelog: true } },
     },
@@ -404,7 +404,7 @@ export async function duplicateApp(id: string) {
       isPublished:     false,
     },
     include: {
-      company:   { select: { name: true, flag: true, slug: true } },
+      company:   { select: { displayName: true, flag: true, slug: true } },
       techItems: { select: { name: true, category: true } },
       _count:    { select: { screenshots: true, changelog: true } },
     },

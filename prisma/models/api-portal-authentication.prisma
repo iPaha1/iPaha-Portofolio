@@ -22,8 +22,10 @@ model PortalAuthCode {
 model PortalSession {
   id         String   @id @default(cuid())
   contactId   String
+  email      String                       // ← add this
   token      String   @unique
   tokenHash  String   @unique              // HMAC-SHA256 hash for lookup
+  revokedAt  DateTime?              // ← add this
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   lastUsedAt DateTime @default(now())

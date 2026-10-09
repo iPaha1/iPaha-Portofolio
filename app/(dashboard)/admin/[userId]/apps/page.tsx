@@ -57,9 +57,16 @@ export default async function AppsAdminPage({ params, searchParams }: Props) {
   console.log("Raw stats from DB:", rawStats);
   console.log("Apps data from DB:", appsData);
 
-  // rawStats already has the right shape — pass it straight through
-  // (no byStatus → bystatus typo from the original)
-  const stats = rawStats;
+  const stats = {
+    ...rawStats,
+    topViewed: rawStats.topViewed.map((app) => ({
+      ...app,
+      company: {
+        name: app.company.displayName ?? app.company.legalName ?? app.company.slug,
+        flag: "",
+      },
+    })),
+  };
   console.log("App stats:", stats);
   console.log(`==============[AppsAdminPage] Fetched stats and ${appsData.apps.length} apps from the database================`);
 
